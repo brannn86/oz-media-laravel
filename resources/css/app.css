@@ -13,6 +13,25 @@
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
+    /*
+     * OZ brand (Brand Guideline OZ Radio Bandung 2026).
+     * TangoSans is the primary display face; it is listed first so a
+     * self-hosted copy takes over automatically. Plus Jakarta Sans is the
+     * guideline's secondary face and the working fallback.
+     */
+    --font-oz: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-oz-display:
+        'TangoSans', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+    --color-oz-yellow: #f2bd51;
+    --color-oz-butter: #fcf48e;
+    --color-oz-black: #000000;
+    --color-oz-white: #ffffff;
+    --color-oz-red: #d8281b;
+    --color-oz-navy: #141f43;
+    --color-oz-ink: #3a3a3a;
+    --color-oz-paper: #f6f6f4;
+
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
@@ -139,5 +158,56 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+/*
+ * Rich text from the CMS (news bodies, event descriptions, About/Privacy).
+ * Kept small on purpose: the editor only produces headings, paragraphs,
+ * lists, links, quotes and images.
+ */
+@layer components {
+    .oz-prose {
+        @apply font-oz text-[1.0625rem] leading-[1.75] text-oz-ink;
+    }
+
+    .oz-prose > * + * {
+        @apply mt-5;
+    }
+
+    .oz-prose h2 {
+        @apply mt-10 font-oz-display text-2xl leading-tight font-extrabold tracking-tight text-oz-black;
+    }
+
+    .oz-prose h3 {
+        @apply mt-8 font-oz-display text-xl leading-snug font-bold text-oz-black;
+    }
+
+    .oz-prose strong {
+        @apply font-semibold text-oz-black;
+    }
+
+    .oz-prose a {
+        @apply font-semibold text-oz-black underline decoration-oz-yellow decoration-[3px] underline-offset-4 hover:decoration-oz-black;
+    }
+
+    .oz-prose ul {
+        @apply list-disc pl-6;
+    }
+
+    .oz-prose ol {
+        @apply list-decimal pl-6;
+    }
+
+    .oz-prose li + li {
+        @apply mt-2;
+    }
+
+    .oz-prose blockquote {
+        @apply border-l-4 border-oz-yellow pl-5 text-xl leading-snug font-semibold text-oz-black;
+    }
+
+    .oz-prose img {
+        @apply rounded-2xl;
     }
 }

@@ -1,0 +1,191 @@
+import {
+    LoaderCircle,
+    Maximize2,
+    Minimize2,
+    Pause,
+    Play,
+    RotateCcw,
+    Video,
+    Volume1,
+    Volume2,
+    VolumeX,
+} from 'lucide-react';
+import { usePlayer } from '@/components/player/player-context';
+import { cn } from '@/lib/utils';
+import type { Broadcast } from '@/types';
+
+/**
+ * The sticky bottom bar. Rendered once by StationLayout.
+ */
+export function PlayerBar({ broadcast }: { broadcast: Broadcast }) {
+    const player = usePlayer();
+    const { mode, active, status } = player;
+
+    const current = broadcast.current;
+    const hosts = current?.program.announcers
+        ?.map((announcer) => announcer.display_name)
+        .join(' & ');
+
+    const isVideo = mode === 'video';
+    const playing = isVideo ? active : status === 'playing';
+
+    const buttonLabel = isVideo
+        ? active
+            ? 'Close the video livestream'
+            : 'Watch the livestream'
+        : status === 'error'
+          ? 'Retry the stream'
+          : active
+            ? 'Pause the radio'
+            : 'Play the radio live';
+
+    return (
+        <div
+            role="region"
+            aria-label="Live player"
+            className="fixed inset-x-0 bottom-0 z-40 bg-oz-black text-oz-white"
+        >
+            <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center gap-3 px-3 sm:gap-5 sm:px-6">
+                <button
+                    type="button"
+                    onClick={player.toggle}
+                    aria-label={buttonLabel}
+                    title={buttonLabel}
+                    className="grid size-12 shrink-0 place-items-center rounded-full bg-oz-yellow text-oz-black transition-transform hover:scale-105 focus-visible:ring-4 focus-visible:ring-oz-yellow/50 focus-visible:outline-none active:scale-95 sm:size-14"
+                >
+                    <PlayIcon
+                        isVideo={isVideo}
+                        active={active}
+                        status={status}
+                    />
+                </button>
+
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                        <LiveBadge live={current !== null} pulsing={playing} />
+                        {isVideo && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-oz-white/10 px-2 py-0.5 text-xs font-semibold text-oz-white">
+                                <Video className="size-3.5" aria-hidden />
+                                Video livestream
+                            </span>
+                        )}
+                    </div>
+                    <p className="mt-1 truncate font-oz-display text-sm font-extrabold sm:text-base">
+                        {current?.program.title ?? player.station.name}
+                    </p>
+                    <p className="truncate text-xs text-oz-white/60">
+                        {status === 'error' && !isVideo
+                            ? 'The stream is not responding. Tap play to try again.'
+                            : hosts
+                              ? `With ${hosts}`
+                              : (player.station.tagline ?? 'Live radio')}
+                    </p>
+                </div>
+
+                {isVideo && active && (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            player.setVideoLayout(
+                                player.videoLayout === 'docked'
+                                    ? 'expanded'
+                                    : 'docked',
+                            )
+                        }
+                        className="grid size-10 place-items-center rounded-full text-oz-white/80 hover:bg-oz-white/10 hover:text-oz-white focus-visible:ring-2 focus-visible:ring-oz-yellow focus-visible:outline-none"
+                        aria-label={
+                            player.videoLayout === 'docked'
+                                ? 'Enlarge video'
+                                : 'Shrink video'
+                        }
+                    >
+                        {player.videoLayout === 'docked' ? (
+                            <Maximize2 className="size-5" />
+                        ) : (
+                            <Minimize2 className="size-5" />
+                        )}
+                    </button>
+                )}
+
+                {!isVideo && <VolumeControl />}
+            </div>
+        </div>
+    );
+}
+
+function PlayIcon({
+    isVideo,
+    active,
+    status,
+}: {
+    isVideo: boolean;
+    active: boolean;
+    status: string;
+}) {
+    const className = 'size-6 fill-current';
+
+    if (isVideo) {
+        return active ? (
+            <Pause className={className} />
+        ) : (
+            <Play className={cn(className, 'translate-x-0.5')} />
+        );
+    }
+
+    if (status === 'loading') {
+        return <LoaderCircle className="size-6 motion-safe:animate-spin" />;
+    }
+
+    if (status === 'error') {
+        return <RotateCcw className="size-6" />;
+    }
+
+    return active ? (
+        <Pause className={className} />
+    ) : (
+        <Play className={cn(className, 'translate-x-0.5')} />
+    );
+}
+
+function LiveBadge({ live, pulsing }: { live: boolean; pulsing: boolean }) {
+    return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-oz-red px-2 py-0.5 text-xs font-bold text-oz-white">
+            <span className="relative flex size-2">
+                {pulsing && (
+                    <span className="absolute inline-flex size-full rounded-full bg-oz-white opacity-75 motion-safe:animate-ping" />
+                )}
+                <span className="relative inline-flex size-2 rounded-full bg-oz-white" />
+            </span>
+            {live ? 'On air' : 'Live'}
+        </span>
+    );
+}
+
+function VolumeControl() {
+    const { volume, muted, setVolume, toggleMute } = usePlayer();
+    const level = muted ? 0 : volume;
+    const Icon = level === 0 ? VolumeX : level < 0.5 ? Volume1 : Volume2;
+
+    return (
+        <div className="hidden items-center gap-2 md:flex">
+            <button
+                type="button"
+                onClick={toggleMute}
+                aria-label={muted ? 'Unmute' : 'Mute'}
+                className="grid size-10 place-items-center rounded-full text-oz-white/80 hover:bg-oz-white/10 hover:text-oz-white focus-visible:ring-2 focus-visible:ring-oz-yellow focus-visible:outline-none"
+            >
+                <Icon className="size-5" />
+            </button>
+            <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={level}
+                onChange={(event) => setVolume(Number(event.target.value))}
+                aria-label="Volume"
+                className="w-28 accent-oz-yellow"
+            />
+        </div>
+    );
+}

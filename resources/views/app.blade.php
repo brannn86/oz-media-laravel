@@ -34,12 +34,37 @@
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
+        @php($meta = $page['props']['meta'] ?? null)
+        @if (is_array($meta))
+            {{-- Server-rendered so crawlers and link previews see them without SSR. --}}
+            @if (filled($meta['description'] ?? null))
+                <meta name="description" content="{{ $meta['description'] }}">
+                <meta property="og:description" content="{{ $meta['description'] }}">
+            @endif
+            <meta property="og:title" content="{{ $meta['title'] }}">
+            <meta property="og:type" content="{{ $meta['type'] ?? 'website' }}">
+            <meta property="og:url" content="{{ $meta['url'] ?? request()->url() }}">
+            <meta property="og:site_name" content="OZ Media">
+            @if (filled($meta['image'] ?? null))
+                <meta property="og:image" content="{{ $meta['image'] }}">
+                <meta name="twitter:card" content="summary_large_image">
+                <meta name="twitter:image" content="{{ $meta['image'] }}">
+            @else
+                <meta name="twitter:card" content="summary">
+            @endif
+            <meta name="twitter:title" content="{{ $meta['title'] }}">
+            @if (filled($meta['published_at'] ?? null))
+                <meta property="article:published_time" content="{{ $meta['published_at'] }}">
+            @endif
+            <link rel="canonical" href="{{ $meta['url'] ?? request()->url() }}">
+        @endif
+
         @fonts
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
+            <title>{{ is_array($meta) ? $meta['title'] : config('app.name', 'Laravel') }}</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">

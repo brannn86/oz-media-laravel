@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\SocialPlatform;
+use App\Models\Concerns\BelongsToStation;
+use Carbon\CarbonImmutable;
+use Database\Factories\SocialHighlightFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+/**
+ * @property int $id
+ * @property int $station_id
+ * @property SocialPlatform $platform
+ * @property string $post_url
+ * @property string $title
+ * @property string|null $custom_thumbnail
+ * @property bool $is_featured
+ * @property int $sort_order
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
+ */
+#[Fillable(['station_id', 'platform', 'post_url', 'title', 'custom_thumbnail', 'is_featured', 'sort_order'])]
+class SocialHighlight extends Model
+{
+    /** @use HasFactory<SocialHighlightFactory> */
+    use BelongsToStation, HasFactory;
+
+    protected function casts(): array
+    {
+        return [
+            'platform' => SocialPlatform::class,
+            'is_featured' => 'boolean',
+            'sort_order' => 'integer',
+        ];
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     */
+    public function scopeFeatured(Builder $query): void
+    {
+        $query->where('is_featured', true);
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     */
+    public function scopeOrdered(Builder $query): void
+    {
+        $query->orderBy('sort_order')->orderByDesc('id');
+    }
+}

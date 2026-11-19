@@ -5,15 +5,31 @@ import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import StationLayout from '@/layouts/StationLayout';
+import { configureEcho } from '@laravel/echo-react';
+
+configureEcho({
+    broadcaster: 'reverb',
+});
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 void createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    // Public pages send complete titles ("Programs | OZ Bandung"); app pages get the suffix.
+    title: (title) =>
+        !title
+            ? appName
+            : title.includes(' | ')
+              ? title
+              : `${title} - ${appName}`,
     layout: (name) => {
         switch (true) {
             case name === 'welcome':
+            case name.startsWith('corporate/'):
                 return null;
+            // Persistent: the player inside survives navigation between station pages.
+            case name.startsWith('station/'):
+                return StationLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):

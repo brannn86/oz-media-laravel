@@ -1,0 +1,38 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use App\Actions\Broadcast\GetCurrentBroadcastAction;
+use App\Http\Resources\BroadcastResource;
+use App\Http\Resources\StationResource;
+use App\Models\Station;
+use Closure;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Shares the current station and its on-air status with every page under /{station},
+ * so StationLayout (and its persistent player) always has them.
+ *
+ * Both are lazy closures: the player refreshes them with a partial reload
+ * (`only: ['station', 'broadcast']`) without re-rendering the page.
+ */
+class ShareStationContext
+{
+    public function __construct(private readonly GetCurrentBroadcastAction $getCurrentBroadcast) {}
+
+    public function handle(Request $request, Closure $next): Response
+    {
+        $station = $request->route('station');
+
+        abort_unless($station instanceof Station && $station->is_active, 404);
+
+        Inertia::share([
+            'station' => fn () => StationResource::make($station)->resolve($request),
+            'broadcast' => fn () => BroadcastResource::make($this->getCurrentBroadcast->handle($station))->resolve($request),
+        ]);
+
+        return $next($request);
+    }
+}
