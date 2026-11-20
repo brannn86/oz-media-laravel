@@ -2,6 +2,7 @@ import {
     LoaderCircle,
     Maximize2,
     MessageCircle,
+    Music,
     Minimize2,
     Pause,
     Play,
@@ -12,6 +13,8 @@ import {
     VolumeX,
 } from 'lucide-react';
 import { useChat } from '@/components/chat/chat-context';
+import { useLive } from '@/components/live/live-context';
+import type { DrawerTab } from '@/components/live/live-context';
 import { usePlayer } from '@/components/player/player-context';
 import { cn } from '@/lib/utils';
 import type { Broadcast } from '@/types';
@@ -111,40 +114,66 @@ export function PlayerBar({ broadcast }: { broadcast: Broadcast }) {
 
                 {!isVideo && <VolumeControl />}
 
-                <ChatToggle />
+                <DrawerToggles />
             </div>
         </div>
     );
 }
 
-function ChatToggle() {
-    const chat = useChat();
+function DrawerToggles() {
+    const { unread } = useChat();
+    const live = useLive();
+
+    const toggle = (tab: DrawerTab) =>
+        live.drawerOpen && live.drawerTab === tab
+            ? live.closeDrawer()
+            : live.openDrawer(tab);
+
+    const isOn = (tab: DrawerTab) => live.drawerOpen && live.drawerTab === tab;
+
+    const buttonClass = (on: boolean) =>
+        cn(
+            'relative inline-flex h-11 shrink-0 items-center gap-2 rounded-full px-3 text-sm font-bold transition-colors focus-visible:ring-2 focus-visible:ring-oz-yellow focus-visible:outline-none sm:px-4',
+            on
+                ? 'bg-oz-yellow text-oz-black'
+                : 'bg-oz-white/10 text-oz-white hover:bg-oz-white/20',
+        );
 
     return (
-        <button
-            type="button"
-            onClick={() => chat.setOpen(!chat.open)}
-            aria-expanded={chat.open}
-            aria-label={
-                chat.unread > 0
-                    ? `Live chat, ${chat.unread} new messages`
-                    : 'Live chat'
-            }
-            className={cn(
-                'relative inline-flex h-11 shrink-0 items-center gap-2 rounded-full px-3 text-sm font-bold transition-colors focus-visible:ring-2 focus-visible:ring-oz-yellow focus-visible:outline-none sm:px-4',
-                chat.open
-                    ? 'bg-oz-yellow text-oz-black'
-                    : 'bg-oz-white/10 text-oz-white hover:bg-oz-white/20',
-            )}
-        >
-            <MessageCircle className="size-5" aria-hidden />
-            <span className="hidden sm:inline">Chat</span>
-            {chat.unread > 0 && !chat.open && (
-                <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-oz-red px-1 text-[0.7rem] font-bold text-oz-white tabular-nums">
-                    {chat.unread > 99 ? '99+' : chat.unread}
-                </span>
-            )}
-        </button>
+        <div className="flex shrink-0 gap-2">
+            <button
+                type="button"
+                onClick={() => toggle('requests')}
+                aria-expanded={isOn('requests')}
+                aria-label="Request a song"
+                className={cn(
+                    buttonClass(isOn('requests')),
+                    'hidden sm:inline-flex',
+                )}
+            >
+                <Music className="size-5" aria-hidden />
+                <span className="hidden lg:inline">Request</span>
+            </button>
+            <button
+                type="button"
+                onClick={() => toggle('chat')}
+                aria-expanded={isOn('chat')}
+                aria-label={
+                    unread > 0
+                        ? `Live chat, ${unread} new messages`
+                        : 'Live chat'
+                }
+                className={buttonClass(isOn('chat'))}
+            >
+                <MessageCircle className="size-5" aria-hidden />
+                <span className="hidden sm:inline">Chat</span>
+                {unread > 0 && !isOn('chat') && (
+                    <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-oz-red px-1 text-[0.7rem] font-bold text-oz-white tabular-nums">
+                        {unread > 99 ? '99+' : unread}
+                    </span>
+                )}
+            </button>
+        </div>
     );
 }
 

@@ -2,7 +2,7 @@
 
 namespace App\Actions\Chat;
 
-use App\Actions\Chat\Concerns\BroadcastsChatEvents;
+use App\Actions\Concerns\BroadcastsSafely;
 use App\Events\Chat\ChatMessageDeleted;
 use App\Events\Chat\ChatMessagePinned;
 use App\Events\Chat\ChatSettingsUpdated;
@@ -20,7 +20,7 @@ use InvalidArgumentException;
  */
 class ModerateChatAction
 {
-    use BroadcastsChatEvents;
+    use BroadcastsSafely;
 
     /**
      * Pins a message, unpinning whatever was pinned before (one per station).

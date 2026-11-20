@@ -63,6 +63,42 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | OZ Poin, Song Requests, Polls & Reactions
+    |--------------------------------------------------------------------------
+    |
+    | Listening earns per_heartbeat points for each accepted heartbeat (one a
+    | minute while the player runs). Heartbeats are accepted at most once every
+    | heartbeat_interval_seconds per *account*, so extra tabs or devices earn
+    | nothing more, and listening points stop at daily_listening_cap (WIB day).
+    | The first listen of each day adds streak_bonus_per_day x streak length,
+    | up to streak_bonus_max_days.
+    |
+    */
+
+    'points' => [
+        'per_heartbeat' => 1,
+        'heartbeat_interval_seconds' => 55,
+        'daily_listening_cap' => 120,
+        'streak_bonus_per_day' => 5,
+        'streak_bonus_max_days' => 7,
+        'song_request_approved' => 25,
+        'poll_vote' => 5,
+    ],
+
+    'requests' => [
+        // Open (waiting or coming up) requests one listener may have per station.
+        'max_open_per_listener' => 2,
+        'cooldown_seconds' => 300,
+    ],
+
+    'reactions' => [
+        // Per listener: at most this many reactions every `per_seconds`.
+        'max' => 3,
+        'per_seconds' => 2,
+    ],
+
     'network' => [
         'partners' => [
             [

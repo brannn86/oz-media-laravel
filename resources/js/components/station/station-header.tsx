@@ -19,6 +19,7 @@ export function stationNavigation(slug: string) {
         { label: 'Announcers', href: stationRoutes.announcers(slug).url },
         { label: 'Events', href: stationRoutes.events(slug).url },
         { label: 'News', href: stationRoutes.news.index(slug).url },
+        { label: 'OZ Poin', href: stationRoutes.rewards(slug).url },
         { label: 'About', href: stationRoutes.about(slug).url },
     ];
 }

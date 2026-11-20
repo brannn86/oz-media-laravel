@@ -27,6 +27,8 @@ class AccountResource extends JsonResource
             'has_password' => $this->password !== null,
             'has_google' => $this->google_id !== null,
             'chat_muted_until' => $this->isChatMuted() ? $this->chat_muted_until?->toIso8601String() : null,
+            'points_balance' => $this->points_balance,
+            'current_streak_days' => $this->current_streak_days,
         ];
     }
 }

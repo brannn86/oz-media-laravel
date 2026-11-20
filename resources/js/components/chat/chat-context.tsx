@@ -1,6 +1,7 @@
 import { useEchoPublic } from '@laravel/echo-react';
 import { createContext, useCallback, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useLive } from '@/components/live/live-context';
 import { apiFetch, errorMessage } from '@/lib/api';
 import type {
     Account,
@@ -13,8 +14,8 @@ import type {
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 type ChatApi = {
-    open: boolean;
-    setOpen: (open: boolean) => void;
+    /** Loads history the first time the chat tab is shown, and clears unread. */
+    ensureLoaded: () => void;
     status: LoadStatus;
     messages: ChatMessage[];
     pinned: ChatMessage | null;
@@ -53,7 +54,8 @@ export function ChatProvider({
     chat: SharedChatProps;
     children: ReactNode;
 }) {
-    const [open, setOpenState] = useState(false);
+    const { drawerOpen, drawerTab } = useLive();
+    const visible = drawerOpen && drawerTab === 'chat';
     const [status, setStatus] = useState<LoadStatus>('idle');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [pinned, setPinned] = useState<ChatMessage | null>(null);
@@ -86,20 +88,13 @@ export function ChatProvider({
         }
     }, [base]);
 
-    const setOpen = useCallback(
-        (next: boolean) => {
-            setOpenState(next);
+    const ensureLoaded = useCallback(() => {
+        setUnread(0);
 
-            if (next) {
-                setUnread(0);
-
-                if (status === 'idle' || status === 'error') {
-                    void load();
-                }
-            }
-        },
-        [status, load],
-    );
+        if (status === 'idle' || status === 'error') {
+            void load();
+        }
+    }, [status, load]);
 
     const append = useCallback((message: ChatMessage) => {
         setMessages((current) =>
@@ -115,11 +110,11 @@ export function ChatProvider({
         ({ message }) => {
             append(message);
 
-            if (!open && message.user.id !== me?.id) {
+            if (!visible && message.user.id !== me?.id) {
                 setUnread((n) => n + 1);
             }
         },
-        [open, me?.id],
+        [visible, me?.id],
     );
 
     useEchoPublic<{ id: number }>(
@@ -201,8 +196,7 @@ export function ChatProvider({
     return (
         <ChatContext.Provider
             value={{
-                open,
-                setOpen,
+                ensureLoaded,
                 status,
                 messages,
                 pinned,

@@ -1,52 +1,33 @@
-import { Link, usePage } from '@inertiajs/react';
-import { LoaderCircle, Pin, SendHorizontal, Timer, X } from 'lucide-react';
+import { LoaderCircle, Pin, SendHorizontal, Timer } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useChat } from '@/components/chat/chat-context';
+import { SignInPrompt } from '@/components/live/sign-in-prompt';
 import { cn } from '@/lib/utils';
 import { formatTime } from '@/lib/wib';
-import { login, register } from '@/routes';
-import google from '@/routes/auth/google';
+
 import type { ChatMessage } from '@/types';
 
 /**
- * Collapsible live chat panel. Right-hand drawer on desktop, full screen
- * above the player bar on phones. Listening carries on while it is open.
+ * The live chat tab of the player drawer (see LiveDrawer).
  */
-export function ChatDrawer() {
+export function ChatPanel() {
     const chat = useChat();
+    const { ensureLoaded } = chat;
 
-    if (!chat.open) {
-        return null;
-    }
+    useEffect(() => {
+        ensureLoaded();
+    }, [ensureLoaded]);
 
     return (
-        <section
-            aria-label="Live chat"
-            className="fixed inset-x-0 top-0 bottom-[4.5rem] z-40 flex flex-col bg-oz-white font-oz text-oz-black shadow-2xl motion-safe:animate-in motion-safe:slide-in-from-right-8 sm:top-16 sm:left-auto sm:w-[24rem] sm:border-l sm:border-oz-black/10"
-        >
-            <header className="flex items-center justify-between gap-3 border-b border-oz-black/10 px-4 py-3">
-                <div>
-                    <h2 className="font-oz-display text-xl font-extrabold tracking-tight">
-                        Live chat
-                    </h2>
-                    {chat.settings.slow_mode_seconds > 0 && (
-                        <p className="flex items-center gap-1 text-xs font-semibold text-oz-ink/70">
-                            <Timer className="size-3.5" aria-hidden />
-                            Slow mode: one message every{' '}
-                            {chat.settings.slow_mode_seconds}s
-                        </p>
-                    )}
-                </div>
-                <button
-                    type="button"
-                    onClick={() => chat.setOpen(false)}
-                    aria-label="Close chat"
-                    className="grid size-10 place-items-center rounded-full hover:bg-oz-black/5 focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none"
-                >
-                    <X className="size-5" />
-                </button>
-            </header>
+        <>
+            {chat.settings.slow_mode_seconds > 0 && (
+                <p className="flex items-center gap-1 border-b border-oz-black/10 px-4 py-2 text-xs font-semibold text-oz-ink/70">
+                    <Timer className="size-3.5" aria-hidden />
+                    Slow mode: one message every{' '}
+                    {chat.settings.slow_mode_seconds}s
+                </p>
+            )}
 
             {chat.pinned && (
                 <div className="flex gap-2 border-b border-oz-black/10 bg-oz-butter px-4 py-3">
@@ -65,7 +46,7 @@ export function ChatDrawer() {
 
             <MessageList />
             <Composer />
-        </section>
+        </>
     );
 }
 
@@ -187,7 +168,7 @@ function MessageItem({
 
 function Composer() {
     const chat = useChat();
-    const { url } = usePage();
+
     const [body, setBody] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [sending, setSending] = useState(false);
@@ -198,37 +179,12 @@ function Composer() {
     }
 
     if (!chat.me) {
-        const query = { query: { return: url } };
-
         return (
-            <div className="border-t border-oz-black/10 p-4">
-                <p className="font-semibold">Join the conversation</p>
-                <p className="mt-1 text-sm text-oz-ink">
-                    Log in to send messages. Reading is open to everyone.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                    <Link
-                        href={login.url(query)}
-                        className="rounded-full bg-oz-black px-5 py-2 text-sm font-bold text-oz-white focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none"
-                    >
-                        Log in
-                    </Link>
-                    <Link
-                        href={register.url(query)}
-                        className="rounded-full border-2 border-oz-black px-5 py-2 text-sm font-bold focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none"
-                    >
-                        Create account
-                    </Link>
-                    {chat.googleSignIn && (
-                        <a
-                            href={google.redirect.url(query)}
-                            className="rounded-full border-2 border-oz-black/15 px-5 py-2 text-sm font-bold hover:border-oz-black focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none"
-                        >
-                            Continue with Google
-                        </a>
-                    )}
-                </div>
-            </div>
+            <SignInPrompt
+                title="Join the conversation"
+                text="Log in to send messages. Reading is open to everyone."
+                className="border-t border-oz-black/10 p-4"
+            />
         );
     }
 

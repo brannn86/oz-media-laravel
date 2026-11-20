@@ -1,6 +1,11 @@
 import { Minimize2, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import { useChat } from '@/components/chat/chat-context';
+import { useLive } from '@/components/live/live-context';
+import {
+    ReactionButtons,
+    ReactionOverlay,
+    useReactions,
+} from '@/components/live/reactions';
 import { attachStream } from '@/components/player/attach-stream';
 import { usePlayer } from '@/components/player/player-context';
 import { cn } from '@/lib/utils';
@@ -14,7 +19,8 @@ import type { VideoSource } from '@/types';
  */
 export function VideoDock() {
     const player = usePlayer();
-    const chatOpen = useChat().open;
+    const drawerOpen = useLive().drawerOpen;
+    const reactions = useReactions(player.station.slug);
     const { stream, mode, active, videoLayout } = player;
 
     if (mode !== 'video' || !active || !stream.video) {
@@ -41,8 +47,8 @@ export function VideoDock() {
                         ? 'inset-x-3 top-1/2 mx-auto max-w-5xl -translate-y-[calc(50%+2.25rem)] rounded-2xl sm:inset-x-8'
                         : cn(
                               'right-3 bottom-[5.25rem] left-3 rounded-2xl sm:left-auto sm:w-[26rem]',
-                              // Sit beside the chat drawer instead of under it.
-                              chatOpen && 'sm:right-[25rem]',
+                              // Sit beside the drawer instead of under it.
+                              drawerOpen && 'sm:right-[25rem]',
                           ),
                 )}
             >
@@ -51,6 +57,7 @@ export function VideoDock() {
                         {player.station.name} live
                     </p>
                     <div className="flex items-center gap-1">
+                        <ReactionButtons onReact={reactions.send} />
                         {expanded && (
                             <button
                                 type="button"
@@ -71,8 +78,9 @@ export function VideoDock() {
                         </button>
                     </div>
                 </div>
-                <div className="aspect-video w-full bg-oz-black">
+                <div className="relative aspect-video w-full bg-oz-black">
                     <VideoSurface source={stream.video} />
+                    <ReactionOverlay floaters={reactions.floaters} />
                 </div>
             </section>
         </>

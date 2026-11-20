@@ -14,6 +14,7 @@ enum NavigationGroup: string implements HasLabel
     case SocialAndEvents = 'social_events';
     case Station = 'station';
     case LiveChat = 'live_chat';
+    case Loyalty = 'loyalty';
     case Access = 'access';
 
     public function getLabel(): string
@@ -24,6 +25,7 @@ enum NavigationGroup: string implements HasLabel
             self::SocialAndEvents => 'Social & Events',
             self::Station => 'Station',
             self::LiveChat => 'Live Chat',
+            self::Loyalty => 'OZ Poin',
             self::Access => 'Access Control',
         };
     }

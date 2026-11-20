@@ -2,7 +2,7 @@
  * Shapes of the public-site props (see app/Http/Resources).
  */
 
-import type { SharedChatProps } from './chat';
+import type { Account, SharedChatProps } from './chat';
 
 export type VideoSource = {
     type: 'youtube' | 'hls' | 'embed';
@@ -128,5 +128,7 @@ export type StationPageProps = {
     station: Station;
     broadcast: Broadcast;
     chat: SharedChatProps;
+    /** The signed-in listener, or null for guests. */
+    account: Account | null;
     meta: PageMeta;
 };

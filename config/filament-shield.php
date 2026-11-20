@@ -255,6 +255,7 @@ return [
 
     'custom_permissions' => [
         'Moderate:ChatMessage' => 'Moderate live chat (pin, delete, mute, slow mode)',
+        'Host:StudioMode' => 'Run song requests and live polls in Studio Mode',
     ],
 
     /*

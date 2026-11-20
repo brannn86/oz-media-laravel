@@ -2,3 +2,26 @@
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+
+/* Studio Mode: reactions float up and fade. */
+@keyframes studio-reaction-rise {
+    from {
+        transform: translateY(0) scale(0.9);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-6rem) scale(1.25);
+        opacity: 0;
+    }
+}
+
+.studio-reaction {
+    animation: studio-reaction-rise 2.4s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .studio-reaction {
+        animation: none;
+        opacity: 0.8;
+    }
+}

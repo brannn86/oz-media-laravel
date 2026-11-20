@@ -2,8 +2,12 @@ import { router, usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { ChatProvider } from '@/components/chat/chat-context';
-import { ChatDrawer } from '@/components/chat/chat-drawer';
 import { useListenerPresence } from '@/components/chat/use-listener-presence';
+import { LiveProvider } from '@/components/live/live-context';
+import { LiveDrawer } from '@/components/live/live-drawer';
+import { PollPopup } from '@/components/live/poll-popup';
+import { RequestsProvider } from '@/components/live/requests-context';
+import { useListeningHeartbeat } from '@/components/live/use-listening-heartbeat';
 import { PlayerBar } from '@/components/player/player-bar';
 import { PlayerProvider, usePlayer } from '@/components/player/player-context';
 import { VideoDock } from '@/components/player/video-dock';
@@ -22,41 +26,59 @@ const MAX_REFRESH_MS = 30 * 60_000;
  * the live chat keeps its conversation and Reverb subscription.
  */
 export default function StationLayout({ children }: { children: ReactNode }) {
-    const { station, broadcast, chat } = usePage<StationPageProps>().props;
+    const { station, broadcast, chat, account } =
+        usePage<StationPageProps>().props;
 
     useBroadcastRefresh(broadcast);
 
     return (
         <PlayerProvider station={station} broadcast={broadcast}>
-            <ChatProvider station={station} chat={chat}>
-                <CountMeAsListener stationSlug={station.slug} />
-                <div className="flex min-h-screen flex-col bg-oz-white font-oz text-oz-black antialiased">
-                    <a
-                        href="#main"
-                        className="sr-only z-50 rounded-full bg-oz-black px-4 py-2 text-oz-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
-                    >
-                        Skip to content
-                    </a>
-                    <StationHeader station={station} />
-                    <main id="main" className="flex-1">
-                        {children}
-                    </main>
-                    <StationFooter station={station} />
-                    {/* Room so the fixed player never covers the footer. */}
-                    <div aria-hidden className="h-[4.5rem] bg-oz-black" />
-                </div>
-                <ChatDrawer />
-                <VideoDock />
-                <PlayerBar broadcast={broadcast} />
-            </ChatProvider>
+            <LiveProvider account={account}>
+                <ChatProvider station={station} chat={chat}>
+                    <RequestsProvider station={station}>
+                        <ListeningTracker stationSlug={station.slug} />
+                        <div className="flex min-h-screen flex-col bg-oz-white font-oz text-oz-black antialiased">
+                            <a
+                                href="#main"
+                                className="sr-only z-50 rounded-full bg-oz-black px-4 py-2 text-oz-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+                            >
+                                Skip to content
+                            </a>
+                            <StationHeader station={station} />
+                            <main id="main" className="flex-1">
+                                {children}
+                            </main>
+                            <StationFooter station={station} />
+                            {/* Room so the fixed player never covers the footer. */}
+                            <div
+                                aria-hidden
+                                className="h-[4.5rem] bg-oz-black"
+                            />
+                        </div>
+                        <LiveDrawer />
+                        <PollPopup station={station} />
+                        <VideoDock />
+                        <PlayerBar broadcast={broadcast} />
+                    </RequestsProvider>
+                </ChatProvider>
+            </LiveProvider>
         </PlayerProvider>
     );
 }
 
-function CountMeAsListener({ stationSlug }: { stationSlug: string }) {
-    const { active } = usePlayer();
+/**
+ * While the player is on: count this visitor as a listener (presence) and,
+ * for signed-in listeners, earn OZ Poin every minute it is actually playing.
+ */
+function ListeningTracker({ stationSlug }: { stationSlug: string }) {
+    const { active, mode, status } = usePlayer();
 
     useListenerPresence(stationSlug, active);
+    // Audio must really be playing; video counts while the livestream is open.
+    useListeningHeartbeat(
+        stationSlug,
+        active && (mode === 'video' || status === 'playing'),
+    );
 
     return null;
 }

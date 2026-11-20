@@ -30,6 +30,9 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $google_id
  * @property string|null $avatar_url
  * @property CarbonImmutable|null $chat_muted_until
+ * @property int $points_balance OZ Poin; always equals the sum of point_transactions.
+ * @property int $current_streak_days Consecutive WIB days with listening.
+ * @property CarbonImmutable|null $last_listened_date
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -56,7 +59,26 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Pas
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'chat_muted_until' => 'immutable_datetime',
+            'points_balance' => 'integer',
+            'current_streak_days' => 'integer',
+            'last_listened_date' => 'immutable_date',
         ];
+    }
+
+    /**
+     * @return HasMany<PointTransaction, $this>
+     */
+    public function pointTransactions(): HasMany
+    {
+        return $this->hasMany(PointTransaction::class);
+    }
+
+    /**
+     * @return HasMany<RewardRedemption, $this>
+     */
+    public function redemptions(): HasMany
+    {
+        return $this->hasMany(RewardRedemption::class);
     }
 
     /**

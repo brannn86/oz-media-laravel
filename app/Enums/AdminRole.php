@@ -65,6 +65,8 @@ enum AdminRole: string implements HasColor, HasLabel
                 'ViewAny:Station',
                 'View:Station',
                 'ToggleVideoLive:Station',
+                ...self::resource('Reward'),
+                ...self::resource('RewardRedemption'),
                 ...self::studio(),
             ],
         };
@@ -77,7 +79,10 @@ enum AdminRole: string implements HasColor, HasLabel
      */
     public static function allPermissions(): array
     {
-        $models = ['Station', 'Program', 'ProgramSchedule', 'Announcer', 'Post', 'Event', 'SocialHighlight', 'User'];
+        $models = [
+            'Station', 'Program', 'ProgramSchedule', 'Announcer', 'Post', 'Event', 'SocialHighlight', 'User',
+            'Reward', 'RewardRedemption',
+        ];
 
         return [
             ...array_merge(...array_map(self::resource(...), $models)),
@@ -88,13 +93,14 @@ enum AdminRole: string implements HasColor, HasLabel
     }
 
     /**
-     * Studio Mode: the live monitor page and chat moderation. Every admin role gets it.
+     * Studio Mode: the live monitor page, chat moderation, and running song
+     * requests and polls on air. Every admin role gets it.
      *
      * @return list<string>
      */
     private static function studio(): array
     {
-        return ['View:StudioMode', 'Moderate:ChatMessage'];
+        return ['View:StudioMode', 'Moderate:ChatMessage', 'Host:StudioMode'];
     }
 
     /**

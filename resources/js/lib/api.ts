@@ -1,3 +1,5 @@
+import { echo } from '@laravel/echo-react';
+
 /**
  * Small JSON client for /api/v1 from the website.
  *
@@ -11,6 +13,14 @@ export type ApiResult<T> = {
     data: T;
     headers: Headers;
 };
+
+function currentSocketId(): string | undefined {
+    try {
+        return echo().socketId();
+    } catch {
+        return undefined;
+    }
+}
 
 function xsrfToken(): string | null {
     const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
@@ -34,6 +44,13 @@ export async function apiFetch<T = unknown>(
 
     if (token) {
         headers.set('X-XSRF-TOKEN', token);
+    }
+
+    // Lets the server skip echoing a broadcast back to this tab (e.g. reactions).
+    const socketId = currentSocketId();
+
+    if (socketId) {
+        headers.set('X-Socket-ID', socketId);
     }
 
     const response = await fetch(path, {

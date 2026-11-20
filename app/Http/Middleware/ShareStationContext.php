@@ -4,10 +4,12 @@ namespace App\Http\Middleware;
 
 use App\Actions\Broadcast\GetCurrentBroadcastAction;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Resources\AccountResource;
 use App\Http\Resources\BroadcastResource;
 use App\Http\Resources\ChatSettingsResource;
 use App\Http\Resources\StationResource;
 use App\Models\Station;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -37,6 +39,10 @@ class ShareStationContext
                 'settings' => ChatSettingsResource::make($station)->resolve($request),
                 'google_sign_in' => GoogleAuthController::isConfigured(),
             ],
+            // The signed-in listener (points, streak), or null for guests.
+            'account' => fn () => $request->user() instanceof User
+                ? AccountResource::make($request->user())->resolve($request)
+                : null,
         ]);
 
         return $next($request);

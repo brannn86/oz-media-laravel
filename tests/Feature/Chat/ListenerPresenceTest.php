@@ -1,8 +1,11 @@
 <?php
 
+use App\Actions\Broadcast\ListenerPresence;
 use App\Models\Station;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
+use Pusher\ApiErrorException;
 
 beforeEach(function () {
     // Presence signing is local HMAC work: no Reverb server needed.
@@ -39,6 +42,29 @@ it('identifies signed-in listeners by account', function () {
     ])->assertOk();
 
     expect(json_decode($response->json('channel_data'), true)['user_id'])->toBe("user:{$user->id}");
+});
+
+it('counts an empty listener channel as zero, not as Reverb being down', function () {
+    $presence = new class extends ListenerPresence
+    {
+        public ?Throwable $failure = null;
+
+        protected function pusher(): Pusher\Pusher
+        {
+            $pusher = Mockery::mock(Pusher\Pusher::class);
+            $pusher->shouldReceive('getPresenceUsers')->andThrow($this->failure);
+
+            return $pusher;
+        }
+    };
+    $station = Station::where('slug', 'oz-bandung')->first();
+
+    $presence->failure = new ApiErrorException('{}', 404);
+    expect($presence->count($station))->toBe(0);
+
+    Cache::flush();
+    $presence->failure = new RuntimeException('Connection refused');
+    expect($presence->count($station))->toBeNull();
 });
 
 it('refuses to sign any other channel', function () {

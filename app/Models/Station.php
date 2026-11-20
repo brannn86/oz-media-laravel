@@ -119,6 +119,37 @@ class Station extends Model
     }
 
     /**
+     * @return HasMany<SongRequest, $this>
+     */
+    public function songRequests(): HasMany
+    {
+        return $this->hasMany(SongRequest::class);
+    }
+
+    /**
+     * @return HasMany<Poll, $this>
+     */
+    public function polls(): HasMany
+    {
+        return $this->hasMany(Poll::class);
+    }
+
+    public function requestsChannel(): string
+    {
+        return "station.{$this->slug}.requests";
+    }
+
+    public function pollsChannel(): string
+    {
+        return "station.{$this->slug}.polls";
+    }
+
+    public function reactionsChannel(): string
+    {
+        return "station.{$this->slug}.reactions";
+    }
+
+    /**
      * Presence channel listeners join while the player is on; its size is the live listener count.
      */
     public function listenersChannel(): string

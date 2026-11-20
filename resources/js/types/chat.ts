@@ -27,6 +27,8 @@ export type Account = ChatUser & {
     has_password: boolean;
     has_google: boolean;
     chat_muted_until: string | null;
+    points_balance: number;
+    current_streak_days: number;
 };
 
 export type SharedChatProps = {

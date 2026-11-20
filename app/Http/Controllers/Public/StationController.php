@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers\Public;
 
+use App\Actions\Points\GetLeaderboardAction;
 use App\Enums\DayOfWeek;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AnnouncerResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\PostResource;
+use App\Http\Resources\RedemptionResource;
+use App\Http\Resources\RewardResource;
 use App\Http\Resources\ScheduleSlotResource;
 use App\Http\Resources\SocialHighlightResource;
 use App\Models\ProgramSchedule;
+use App\Models\Reward;
 use App\Models\Station;
+use App\Models\User;
 use App\Support\PageMeta;
 use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Illuminate\Database\Eloquent\Builder;
@@ -77,6 +82,34 @@ class StationController extends Controller
             'past' => EventResource::collection(
                 $station->events()->past()->limit(6)->get()
             )->resolve($request),
+        ]);
+    }
+
+    /**
+     * OZ Poin: how to earn, the leaderboard, rewards and your redemptions.
+     */
+    public function rewards(Request $request, Station $station, GetLeaderboardAction $leaderboard): Response
+    {
+        $user = $request->user();
+
+        return Inertia::render('station/rewards', [
+            'meta' => PageMeta::make("OZ Poin | {$station->name}", "Listen, request songs and vote in polls to earn OZ Poin, then swap them for {$station->name} merch and tickets."),
+            'leaderboard' => [
+                'week' => $leaderboard->handle($station, 'week'),
+                'all' => $leaderboard->handle($station, 'all'),
+            ],
+            'rewards' => RewardResource::collection(Reward::query()->availableOn($station)->get())->resolve($request),
+            'redemptions' => $user instanceof User
+                ? RedemptionResource::collection($user->redemptions()->with('reward')->latest()->limit(20)->get())->resolve($request)
+                : [],
+            'earning' => [
+                'per_minute' => (int) config('oz.points.per_heartbeat'),
+                'daily_listening_cap' => (int) config('oz.points.daily_listening_cap'),
+                'streak_bonus_per_day' => (int) config('oz.points.streak_bonus_per_day'),
+                'streak_bonus_max_days' => (int) config('oz.points.streak_bonus_max_days'),
+                'song_request_approved' => (int) config('oz.points.song_request_approved'),
+                'poll_vote' => (int) config('oz.points.poll_vote'),
+            ],
         ]);
     }
 

@@ -2,7 +2,7 @@
 
 namespace App\Actions\Chat;
 
-use App\Actions\Chat\Concerns\BroadcastsChatEvents;
+use App\Actions\Concerns\BroadcastsSafely;
 use App\Events\Chat\ChatMessageSent;
 use App\Models\ChatMessage;
 use App\Models\Station;
@@ -23,7 +23,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
  */
 class SendChatMessageAction
 {
-    use BroadcastsChatEvents;
+    use BroadcastsSafely;
 
     public function __construct(private readonly ProfanityFilter $filter) {}
 

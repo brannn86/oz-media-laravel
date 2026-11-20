@@ -2,7 +2,12 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ChatController;
+use App\Http\Controllers\Api\V1\HeartbeatController;
 use App\Http\Controllers\Api\V1\ListenerPresenceController;
+use App\Http\Controllers\Api\V1\PollController;
+use App\Http\Controllers\Api\V1\ReactionController;
+use App\Http\Controllers\Api\V1\RewardController;
+use App\Http\Controllers\Api\V1\SongRequestController;
 use App\Http\Controllers\Api\V1\StationController;
 use App\Http\Middleware\EnsureStationIsActive;
 use Illuminate\Support\Facades\Route;
@@ -42,5 +47,41 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('listeners/auth', ListenerPresenceController::class)
                 ->middleware('throttle:30,1')
                 ->name('listeners.auth');
+
+            // OZ Poin: one heartbeat a minute while playing (extra calls earn nothing).
+            Route::post('heartbeat', HeartbeatController::class)
+                ->middleware(['auth:sanctum', 'throttle:10,1'])
+                ->name('heartbeat');
+
+            // Song requests (scoped: a request id from another station 404s).
+            Route::scopeBindings()->group(function () {
+                Route::get('requests', [SongRequestController::class, 'index'])->name('requests.index');
+                Route::post('requests', [SongRequestController::class, 'store'])
+                    ->middleware(['auth:sanctum', 'throttle:10,1'])
+                    ->name('requests.store');
+                Route::post('requests/{songRequest}/upvote', [SongRequestController::class, 'upvote'])
+                    ->middleware(['auth:sanctum', 'throttle:60,1'])
+                    ->name('requests.upvote');
+
+                Route::get('polls/current', [PollController::class, 'current'])->name('polls.current');
+                Route::post('polls/{poll}/votes', [PollController::class, 'vote'])
+                    ->middleware(['auth:sanctum', 'throttle:20,1'])
+                    ->name('polls.vote');
+            });
+
+            Route::post('reactions', ReactionController::class)
+                ->middleware('throttle:120,1')
+                ->name('reactions');
+
+            Route::get('rewards', [RewardController::class, 'index'])->name('rewards.index');
+            Route::post('rewards/{reward}/redeem', [RewardController::class, 'redeem'])
+                ->middleware(['auth:sanctum', 'throttle:10,1'])
+                ->name('rewards.redeem');
+            Route::get('leaderboard', [RewardController::class, 'leaderboard'])->name('leaderboard');
         });
+
+    Route::middleware('auth:sanctum')->prefix('me')->name('me.')->group(function () {
+        Route::get('points', [RewardController::class, 'myPoints'])->name('points');
+        Route::get('redemptions', [RewardController::class, 'myRedemptions'])->name('redemptions');
+    });
 });

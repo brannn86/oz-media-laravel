@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Broadcasting\Broadcasters\PusherBroadcaster;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Cache;
+use Pusher\ApiErrorException;
 use Pusher\Pusher;
 use RuntimeException;
 use Throwable;
@@ -52,6 +53,15 @@ class ListenerPresence
             function () use ($station): ?int {
                 try {
                     return count($this->pusher()->getPresenceUsers($this->presenceChannel($station))->users ?? []);
+                } catch (ApiErrorException $e) {
+                    // Reverb answers 404 for a presence channel nobody is in.
+                    if ($e->getCode() === 404) {
+                        return 0;
+                    }
+
+                    report($e);
+
+                    return null;
                 } catch (Throwable $e) {
                     report($e);
 
@@ -66,7 +76,7 @@ class ListenerPresence
         return 'presence-'.$station->listenersChannel();
     }
 
-    private function pusher(): Pusher
+    protected function pusher(): Pusher
     {
         $broadcaster = Broadcast::driver();
 

@@ -6,21 +6,35 @@ use App\Actions\Broadcast\BroadcastStatus;
 use App\Actions\Broadcast\GetCurrentBroadcastAction;
 use App\Actions\Broadcast\ListenerPresence;
 use App\Actions\Chat\ModerateChatAction;
+use App\Actions\Polls\ClosePollAction;
+use App\Actions\Polls\LaunchPollAction;
+use App\Actions\SongRequests\ModerateSongRequestAction;
+use App\Enums\PollStatus;
+use App\Enums\PollType;
 use App\Filament\Actions\ToggleStreamModeAction;
 use App\Filament\NavigationGroup;
 use App\Models\ChatMessage;
+use App\Models\Poll;
+use App\Models\SongRequest;
 use App\Models\Station;
 use App\Models\User;
 use BackedEnum;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
@@ -29,15 +43,19 @@ use UnitEnum;
 
 /**
  * Live studio monitor: listener count, the chat feed with one-click
- * moderation, and quick switches for video live and slow mode.
+ * moderation, the song request queue, live polls, floating reactions, and
+ * quick switches for video live and slow mode.
  *
- * Updates arrive over Reverb (Livewire Echo listeners on the chat channel);
- * the listener count is polled from the presence channel every few seconds.
+ * Updates arrive over Reverb (Livewire Echo listeners on the chat, request
+ * and poll channels; reactions are drawn client-side by Alpine). The listener
+ * count is polled from the presence channel every few seconds.
  *
  * @property-read Collection<int, ChatMessage> $messages
  * @property-read ChatMessage|null $pinned
  * @property-read int|null $listenerCount
  * @property-read BroadcastStatus $broadcast
+ * @property-read Collection<int, SongRequest> $songRequests
+ * @property-read Poll|null $poll
  */
 class StudioMode extends Page
 {
@@ -100,6 +118,8 @@ class StudioMode extends Page
             "echo:{$channel},.chat.message.deleted" => 'refreshFeed',
             "echo:{$channel},.chat.message.pinned" => 'refreshFeed',
             "echo:{$channel},.chat.settings.updated" => 'refreshFeed',
+            "echo:{$this->station->requestsChannel()},.song-request.updated" => 'refreshRequests',
+            "echo:{$this->station->pollsChannel()},.poll.updated" => 'refreshPoll',
         ];
     }
 
@@ -107,6 +127,190 @@ class StudioMode extends Page
     {
         unset($this->messages, $this->pinned);
         $this->station->refresh();
+    }
+
+    public function refreshRequests(): void
+    {
+        unset($this->songRequests);
+    }
+
+    public function refreshPoll(): void
+    {
+        unset($this->poll);
+    }
+
+    public function canHost(): bool
+    {
+        return (bool) auth()->user()?->can('Host:StudioMode');
+    }
+
+    /**
+     * The live request queue: coming up first, then most upvoted.
+     *
+     * @return Collection<int, SongRequest>
+     */
+    #[Computed]
+    public function songRequests(): Collection
+    {
+        return $this->station->songRequests()->queue()->with('user')->limit(30)->get();
+    }
+
+    /**
+     * The live poll, or the one that just closed (results stay up for 10 minutes).
+     */
+    #[Computed]
+    public function poll(): ?Poll
+    {
+        return $this->station->polls()
+            ->where(fn ($query) => $query
+                ->where('status', PollStatus::Live)
+                ->orWhere('closed_at', '>=', now()->subMinutes(10)))
+            ->with('options')
+            ->orderByRaw('case when status = ? then 0 else 1 end', [PollStatus::Live->value])
+            ->latest('opened_at')
+            ->first();
+    }
+
+    public function approveRequestAction(): Action
+    {
+        return $this->requestAction('approveRequest', 'Coming up', Heroicon::OutlinedCheck, 'success',
+            fn (SongRequest $request, ModerateSongRequestAction $moderate) => $moderate->approve($request));
+    }
+
+    public function playRequestAction(): Action
+    {
+        return $this->requestAction('playRequest', 'Played', Heroicon::OutlinedPlay, 'info',
+            fn (SongRequest $request, ModerateSongRequestAction $moderate) => $moderate->markPlayed($request));
+    }
+
+    public function rejectRequestAction(): Action
+    {
+        return $this->requestAction('rejectRequest', 'Reject', Heroicon::OutlinedXMark, 'danger',
+            fn (SongRequest $request, ModerateSongRequestAction $moderate) => $moderate->reject($request));
+    }
+
+    public function launchPollAction(): Action
+    {
+        return Action::make('launchPoll')
+            ->label('Launch a poll')
+            ->icon(Heroicon::OutlinedChartBar)
+            ->authorize(fn (): bool => $this->canHost())
+            ->modalHeading('Launch a live poll')
+            ->modalDescription('It pops up on every listener\'s player straight away. Launching replaces any poll that is still open.')
+            ->modalSubmitActionLabel('Go live')
+            ->schema([
+                ToggleButtons::make('type')
+                    ->options(PollType::class)
+                    ->default(PollType::SongBattle->value)
+                    ->inline()
+                    ->live()
+                    ->required(),
+                TextInput::make('question')
+                    ->required()
+                    ->maxLength(200)
+                    ->placeholder('Song battle: which one should we play next?'),
+                Repeater::make('options')
+                    ->label('Answers')
+                    ->simple(TextInput::make('label')->required()->maxLength(120))
+                    ->minItems(2)
+                    ->maxItems(4)
+                    // A simple repeater holds plain strings, one per answer.
+                    ->default(['', ''])
+                    ->addActionLabel('Add answer')
+                    ->reorderable(false),
+                Select::make('correct')
+                    ->label('Correct answer')
+                    ->helperText('Revealed to listeners when you close the poll.')
+                    ->options(fn (Get $get): array => array_filter(array_map(
+                        fn (array $option): string => $option['label'],
+                        $this->pollOptions($get('options')),
+                    )))
+                    ->visible(fn (Get $get): bool => $this->pollType($get('type')) === PollType::Trivia)
+                    ->required(fn (Get $get): bool => $this->pollType($get('type')) === PollType::Trivia),
+            ])
+            ->action(function (array $data, LaunchPollAction $launch): void {
+                $type = $this->pollType($data['type']) ?? PollType::General;
+                $correct = $type === PollType::Trivia && is_numeric($data['correct'] ?? null) ? (int) $data['correct'] : null;
+
+                $launch->handle(
+                    $this->station,
+                    auth()->user(),
+                    is_string($data['question'] ?? null) ? $data['question'] : '',
+                    $type,
+                    $this->pollOptions($data['options'] ?? [], $correct),
+                );
+                $this->refreshPoll();
+
+                Notification::make()->title('Poll is live')->success()->send();
+            });
+    }
+
+    public function closePollAction(): Action
+    {
+        return Action::make('closePoll')
+            ->label(fn (): string => $this->poll?->type === PollType::Trivia ? 'Close & reveal answer' : 'Close poll')
+            ->icon(Heroicon::OutlinedStopCircle)
+            ->color('gray')
+            ->authorize(fn (): bool => $this->canHost())
+            ->visible(fn (): bool => $this->poll?->isLive() === true)
+            ->action(function (ClosePollAction $close): void {
+                if ($this->poll) {
+                    $close->handle($this->poll);
+                    $this->refreshPoll();
+                }
+            });
+    }
+
+    private function requestAction(string $name, string $label, Heroicon $icon, string $color, Closure $change): Action
+    {
+        return Action::make($name)
+            ->label($label)
+            ->icon($icon)
+            ->color($color)
+            ->size('sm')
+            ->link()
+            ->authorize(fn (): bool => $this->canHost())
+            ->action(function (array $arguments) use ($change): void {
+                $request = $this->station->songRequests()->with('user', 'station')->find($arguments['request'] ?? null);
+
+                if (! $request instanceof SongRequest) {
+                    return;
+                }
+
+                try {
+                    app()->call($change, ['request' => $request]);
+                } catch (ValidationException $e) {
+                    Notification::make()->title(collect($e->errors())->flatten()->first())->warning()->send();
+                }
+
+                $this->refreshRequests();
+            });
+    }
+
+    /**
+     * The repeater's answers as LaunchPollAction expects them.
+     *
+     * @return list<array{label: string, is_correct: bool}>
+     */
+    private function pollOptions(mixed $raw, ?int $correctIndex = null): array
+    {
+        $options = [];
+
+        foreach (is_array($raw) ? array_values($raw) : [] as $index => $option) {
+            $label = is_array($option) ? ($option['label'] ?? '') : $option;
+
+            $options[] = [
+                'label' => is_string($label) ? $label : '',
+                'is_correct' => $correctIndex === $index,
+            ];
+        }
+
+        return $options;
+    }
+
+    private function pollType(mixed $value): ?PollType
+    {
+        return $value instanceof PollType ? $value : PollType::tryFrom((string) $value);
     }
 
     /**
@@ -266,6 +470,7 @@ class StudioMode extends Page
         $others = Station::query()->whereKeyNot($this->station->getKey())->orderBy('name')->get();
 
         return [
+            $this->launchPollAction(),
             ToggleStreamModeAction::make($this->station),
             ...($others->isEmpty() ? [] : [
                 ActionGroup::make($others->map(fn (Station $station): Action => Action::make("switch-{$station->id}")
