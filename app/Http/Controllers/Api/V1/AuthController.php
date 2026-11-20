@@ -1,0 +1,96 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Actions\Auth\IssueApiTokenAction;
+use App\Actions\Auth\IssuedToken;
+use App\Actions\Auth\RegisterListenerAction;
+use App\Actions\Auth\ResolveGoogleListenerAction;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\AccountResource;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\AbstractProvider;
+use Throwable;
+
+/**
+ * Token auth for the mobile app. The website uses Fortify sessions instead,
+ * but both go through the same App\Actions\Auth classes.
+ */
+class AuthController extends Controller
+{
+    public function register(Request $request, RegisterListenerAction $register, IssueApiTokenAction $tokens): JsonResponse
+    {
+        $request->validate(['device_name' => ['required', 'string', 'max:100']]);
+
+        $user = $register->handle($request->only(['name', 'email', 'password', 'password_confirmation']));
+
+        return $this->tokenResponse($tokens->for($user, $request->string('device_name')->toString()), 201);
+    }
+
+    public function login(Request $request, IssueApiTokenAction $tokens): JsonResponse
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+            'device_name' => ['required', 'string', 'max:100'],
+        ]);
+
+        return $this->tokenResponse($tokens->withPassword(
+            $credentials['email'],
+            $credentials['password'],
+            $credentials['device_name'],
+            (string) $request->ip(),
+        ));
+    }
+
+    /**
+     * The app signs in with Google natively and sends us the Google access token.
+     */
+    public function google(Request $request, ResolveGoogleListenerAction $resolve, IssueApiTokenAction $tokens): JsonResponse
+    {
+        $data = $request->validate([
+            'access_token' => ['required', 'string'],
+            'device_name' => ['required', 'string', 'max:100'],
+        ]);
+
+        try {
+            /** @var AbstractProvider $driver */
+            $driver = Socialite::driver('google');
+            $google = $driver->stateless()->userFromToken($data['access_token']);
+        } catch (Throwable) {
+            throw ValidationException::withMessages(['access_token' => 'Google did not accept this sign-in. Please try again.']);
+        }
+
+        return $this->tokenResponse($tokens->for($resolve->handle($google), $data['device_name']));
+    }
+
+    public function logout(Request $request): Response
+    {
+        $token = $request->user()?->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+        }
+
+        return response()->noContent();
+    }
+
+    public function me(Request $request): AccountResource
+    {
+        return AccountResource::make($request->user());
+    }
+
+    private function tokenResponse(IssuedToken $issued, int $status = 200): JsonResponse
+    {
+        return response()->json([
+            'token' => $issued->plainTextToken,
+            'token_type' => 'Bearer',
+            'user' => AccountResource::make($issued->user)->resolve(),
+        ], $status);
+    }
+}

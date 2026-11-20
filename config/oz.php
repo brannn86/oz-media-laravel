@@ -29,6 +29,40 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Live Chat
+    |--------------------------------------------------------------------------
+    |
+    | min_interval_seconds is the floor between two messages from one listener;
+    | a station's chat_slow_mode_seconds can raise it, never lower it. Cooldowns
+    | live in the rate limiter's cache store (Redis in production).
+    |
+    | Blocked words are masked (first letter kept) rather than rejected, so a
+    | message is never silently lost. Matching is whole-word, case-insensitive
+    | and tolerates stretched letters ("anjiiing"). The live list is edited in
+    | the admin (Live Chat > Blocked Words); default_blocked_words only seeds it
+    | on a fresh install.
+    |
+    */
+
+    'chat' => [
+        'min_interval_seconds' => 3,
+        'max_length' => 280,
+        'history_size' => 50,
+        'slow_mode_options' => [0, 5, 10, 30, 60],
+        'mute_options_minutes' => [10, 60, 1440],
+        'default_blocked_words' => [
+            // Indonesian / Sundanese
+            // (Everyday words like "babi" and Sundanese "sia" are left out on purpose.)
+            'anjing', 'anjir', 'anjrit', 'bangsat', 'bajingan', 'kontol', 'memek',
+            'ngentot', 'entot', 'goblok', 'goblog', 'tolol', 'jancok', 'jancuk', 'asu',
+            'tai', 'kampret', 'pepek', 'lonte', 'perek', 'kehed',
+            // English
+            'fuck', 'fucking', 'shit', 'bitch', 'asshole', 'cunt', 'dick', 'bastard', 'motherfucker',
+        ],
+    ],
+
     'network' => [
         'partners' => [
             [

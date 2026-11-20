@@ -10,7 +10,12 @@ import { defineConfig, lazyPlugins } from 'vite-plus';
 export default defineConfig({
     plugins: lazyPlugins(() => [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.tsx'],
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.tsx',
+                // Filament panel theme (Studio Mode and other custom admin views).
+                'resources/css/filament/admin/theme.css',
+            ],
             refresh: true,
             fonts: [
                 bunny('Instrument Sans', {

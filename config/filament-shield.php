@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use App\Filament\Pages\MutedListeners;
+use App\Filament\Resources\BlockedWords\BlockedWordResource;
 use App\Filament\Resources\Stations\StationResource;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
 use Filament\Pages\Dashboard;
@@ -28,7 +30,7 @@ return [
             'pages' => true,
             'widgets' => true,
             'resources' => true,
-            'custom_permissions' => false,
+            'custom_permissions' => true,
         ],
     ],
 
@@ -191,6 +193,8 @@ return [
         'exclude' => [
             // Roles are fixed (dev / editorial / social_media); see App\Policies\RolePolicy.
             RoleResource::class,
+            // Live chat screens follow Moderate:ChatMessage (App\Policies\BlockedWordPolicy).
+            BlockedWordResource::class,
         ],
     ],
 
@@ -210,6 +214,8 @@ return [
         'prefix' => 'view',
         'exclude' => [
             Dashboard::class,
+            // Gated by Moderate:ChatMessage in its canAccess().
+            MutedListeners::class,
         ],
     ],
 
@@ -247,7 +253,9 @@ return [
     |
     */
 
-    'custom_permissions' => [],
+    'custom_permissions' => [
+        'Moderate:ChatMessage' => 'Moderate live chat (pin, delete, mute, slow mode)',
+    ],
 
     /*
     |--------------------------------------------------------------------------

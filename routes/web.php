@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Public\CorporateController;
 use App\Http\Controllers\Public\StationController;
 use App\Http\Controllers\Public\StationNewsController;
@@ -13,6 +14,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+// Listener "Continue with Google" (session login; the app uses POST /api/v1/auth/google).
+Route::middleware('guest')->prefix('auth/google')->name('auth.google.')->group(function () {
+    Route::get('redirect', [GoogleAuthController::class, 'redirect'])->name('redirect');
+    Route::get('callback', [GoogleAuthController::class, 'callback'])->name('callback');
+});
 
 /*
 |--------------------------------------------------------------------------

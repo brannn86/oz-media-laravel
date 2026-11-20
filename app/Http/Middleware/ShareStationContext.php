@@ -3,7 +3,9 @@
 namespace App\Http\Middleware;
 
 use App\Actions\Broadcast\GetCurrentBroadcastAction;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Resources\BroadcastResource;
+use App\Http\Resources\ChatSettingsResource;
 use App\Http\Resources\StationResource;
 use App\Models\Station;
 use Closure;
@@ -31,6 +33,10 @@ class ShareStationContext
         Inertia::share([
             'station' => fn () => StationResource::make($station)->resolve($request),
             'broadcast' => fn () => BroadcastResource::make($this->getCurrentBroadcast->handle($station))->resolve($request),
+            'chat' => fn () => [
+                'settings' => ChatSettingsResource::make($station)->resolve($request),
+                'google_sign_in' => GoogleAuthController::isConfigured(),
+            ],
         ]);
 
         return $next($request);

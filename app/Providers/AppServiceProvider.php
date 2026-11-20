@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Enums\AdminRole;
+use App\Support\ProfanityFilter;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Not a singleton: long-running workers must pick up list edits (the list itself is cached).
+        $this->app->bind(ProfanityFilter::class, fn (): ProfanityFilter => ProfanityFilter::fromDatabase());
     }
 
     /**

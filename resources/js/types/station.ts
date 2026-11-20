@@ -2,6 +2,8 @@
  * Shapes of the public-site props (see app/Http/Resources).
  */
 
+import type { SharedChatProps } from './chat';
+
 export type VideoSource = {
     type: 'youtube' | 'hls' | 'embed';
     src: string;
@@ -125,5 +127,6 @@ export type Paginated<T> = {
 export type StationPageProps = {
     station: Station;
     broadcast: Broadcast;
+    chat: SharedChatProps;
     meta: PageMeta;
 };

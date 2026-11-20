@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * @property string|null $stream_audio_url
  * @property string|null $stream_video_url
  * @property bool $is_video_live
+ * @property int $chat_slow_mode_seconds Minimum seconds between messages per listener (0 = off).
  * @property array{email?: string|null, phone?: string|null, address?: string|null, whatsapp?: string|null}|null $contact_info
  * @property array{youtube?: string|null, tiktok?: string|null, instagram?: string|null, x?: string|null}|null $social_links
  * @property string|null $about_content
@@ -32,7 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  */
 #[ObservedBy(StationObserver::class)]
 #[Fillable([
-    'slug', 'name', 'tagline', 'stream_audio_url', 'stream_video_url', 'is_video_live',
+    'slug', 'name', 'tagline', 'stream_audio_url', 'stream_video_url', 'is_video_live', 'chat_slow_mode_seconds',
     'contact_info', 'social_links', 'about_content', 'privacy_policy_content', 'is_active',
 ])]
 class Station extends Model
@@ -45,6 +46,7 @@ class Station extends Model
         return [
             'is_video_live' => 'boolean',
             'is_active' => 'boolean',
+            'chat_slow_mode_seconds' => 'integer',
             'contact_info' => 'array',
             'social_links' => 'array',
         ];
@@ -98,6 +100,30 @@ class Station extends Model
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);
+    }
+
+    /**
+     * @return HasMany<ChatMessage, $this>
+     */
+    public function chatMessages(): HasMany
+    {
+        return $this->hasMany(ChatMessage::class);
+    }
+
+    /**
+     * Reverb channel carrying this station's live chat (public: anyone can read).
+     */
+    public function chatChannel(): string
+    {
+        return "station.{$this->slug}.chat";
+    }
+
+    /**
+     * Presence channel listeners join while the player is on; its size is the live listener count.
+     */
+    public function listenersChannel(): string
+    {
+        return "station.{$this->slug}.listeners";
     }
 
     /**

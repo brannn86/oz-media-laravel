@@ -11,18 +11,26 @@ import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import PasskeyVerify from '@/components/passkey-verify';
+import { GoogleSignInButton } from '@/components/google-sign-in-button';
 
 type Props = {
     status?: string;
     canResetPassword: boolean;
+    googleSignIn?: boolean;
 };
 
-export default function Login({ status, canResetPassword }: Props) {
+export default function Login({
+    status,
+    canResetPassword,
+    googleSignIn = false,
+}: Props) {
     return (
         <>
             <Head title="Log in" />
 
             <PasskeyVerify />
+
+            {googleSignIn && <GoogleSignInButton />}
 
             <Form
                 {...store.form()}

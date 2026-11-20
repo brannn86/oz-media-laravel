@@ -1,6 +1,7 @@
 import {
     LoaderCircle,
     Maximize2,
+    MessageCircle,
     Minimize2,
     Pause,
     Play,
@@ -10,6 +11,7 @@ import {
     Volume2,
     VolumeX,
 } from 'lucide-react';
+import { useChat } from '@/components/chat/chat-context';
 import { usePlayer } from '@/components/player/player-context';
 import { cn } from '@/lib/utils';
 import type { Broadcast } from '@/types';
@@ -108,8 +110,41 @@ export function PlayerBar({ broadcast }: { broadcast: Broadcast }) {
                 )}
 
                 {!isVideo && <VolumeControl />}
+
+                <ChatToggle />
             </div>
         </div>
+    );
+}
+
+function ChatToggle() {
+    const chat = useChat();
+
+    return (
+        <button
+            type="button"
+            onClick={() => chat.setOpen(!chat.open)}
+            aria-expanded={chat.open}
+            aria-label={
+                chat.unread > 0
+                    ? `Live chat, ${chat.unread} new messages`
+                    : 'Live chat'
+            }
+            className={cn(
+                'relative inline-flex h-11 shrink-0 items-center gap-2 rounded-full px-3 text-sm font-bold transition-colors focus-visible:ring-2 focus-visible:ring-oz-yellow focus-visible:outline-none sm:px-4',
+                chat.open
+                    ? 'bg-oz-yellow text-oz-black'
+                    : 'bg-oz-white/10 text-oz-white hover:bg-oz-white/20',
+            )}
+        >
+            <MessageCircle className="size-5" aria-hidden />
+            <span className="hidden sm:inline">Chat</span>
+            {chat.unread > 0 && !chat.open && (
+                <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-oz-red px-1 text-[0.7rem] font-bold text-oz-white tabular-nums">
+                    {chat.unread > 99 ? '99+' : chat.unread}
+                </span>
+            )}
+        </button>
     );
 }
 

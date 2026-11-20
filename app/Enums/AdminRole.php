@@ -57,6 +57,7 @@ enum AdminRole: string implements HasColor, HasLabel
                 ...self::resource('ProgramSchedule'),
                 ...self::resource('Announcer'),
                 ...self::resource('Post'),
+                ...self::studio(),
             ],
             self::SocialMedia => [
                 ...self::resource('SocialHighlight'),
@@ -64,6 +65,7 @@ enum AdminRole: string implements HasColor, HasLabel
                 'ViewAny:Station',
                 'View:Station',
                 'ToggleVideoLive:Station',
+                ...self::studio(),
             ],
         };
     }
@@ -81,7 +83,18 @@ enum AdminRole: string implements HasColor, HasLabel
             ...array_merge(...array_map(self::resource(...), $models)),
             'ToggleVideoLive:Station',
             'View:StationSettings',
+            ...self::studio(),
         ];
+    }
+
+    /**
+     * Studio Mode: the live monitor page and chat moderation. Every admin role gets it.
+     *
+     * @return list<string>
+     */
+    private static function studio(): array
+    {
+        return ['View:StudioMode', 'Moderate:ChatMessage'];
     }
 
     /**

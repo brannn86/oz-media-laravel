@@ -1,5 +1,6 @@
 import { Minimize2, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import { useChat } from '@/components/chat/chat-context';
 import { attachStream } from '@/components/player/attach-stream';
 import { usePlayer } from '@/components/player/player-context';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,7 @@ import type { VideoSource } from '@/types';
  */
 export function VideoDock() {
     const player = usePlayer();
+    const chatOpen = useChat().open;
     const { stream, mode, active, videoLayout } = player;
 
     if (mode !== 'video' || !active || !stream.video) {
@@ -37,7 +39,11 @@ export function VideoDock() {
                     'fixed z-40 overflow-hidden bg-oz-black shadow-2xl ring-1 ring-oz-white/10',
                     expanded
                         ? 'inset-x-3 top-1/2 mx-auto max-w-5xl -translate-y-[calc(50%+2.25rem)] rounded-2xl sm:inset-x-8'
-                        : 'right-3 bottom-[5.25rem] left-3 rounded-2xl sm:left-auto sm:w-[26rem]',
+                        : cn(
+                              'right-3 bottom-[5.25rem] left-3 rounded-2xl sm:left-auto sm:w-[26rem]',
+                              // Sit beside the chat drawer instead of under it.
+                              chatOpen && 'sm:right-[25rem]',
+                          ),
                 )}
             >
                 <div className="flex items-center justify-between gap-2 px-3 py-2 text-oz-white">
