@@ -1,6 +1,7 @@
 import { router, usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { AuthDialogProvider } from '@/components/auth/auth-dialog';
 import { ChatProvider } from '@/components/chat/chat-context';
 import { useListenerPresence } from '@/components/chat/use-listener-presence';
 import { LiveProvider } from '@/components/live/live-context';
@@ -34,33 +35,38 @@ export default function StationLayout({ children }: { children: ReactNode }) {
     return (
         <PlayerProvider station={station} broadcast={broadcast}>
             <LiveProvider account={account}>
-                <ChatProvider station={station} chat={chat}>
-                    <RequestsProvider station={station}>
-                        <ListeningTracker stationSlug={station.slug} />
-                        <div className="flex min-h-screen flex-col bg-oz-white font-oz text-oz-black antialiased">
-                            <a
-                                href="#main"
-                                className="sr-only z-50 rounded-full bg-oz-black px-4 py-2 text-oz-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
-                            >
-                                Skip to content
-                            </a>
-                            <StationHeader station={station} />
-                            <main id="main" className="flex-1">
-                                {children}
-                            </main>
-                            <StationFooter station={station} />
-                            {/* Room so the fixed player never covers the footer. */}
-                            <div
-                                aria-hidden
-                                className="h-[4.5rem] bg-oz-black"
-                            />
-                        </div>
-                        <LiveDrawer />
-                        <PollPopup station={station} />
-                        <VideoDock />
-                        <PlayerBar broadcast={broadcast} />
-                    </RequestsProvider>
-                </ChatProvider>
+                <AuthDialogProvider
+                    stationName={station.name}
+                    googleSignIn={chat.google_sign_in}
+                >
+                    <ChatProvider station={station} chat={chat}>
+                        <RequestsProvider station={station}>
+                            <ListeningTracker stationSlug={station.slug} />
+                            <div className="flex min-h-screen flex-col bg-oz-white font-oz text-oz-black antialiased">
+                                <a
+                                    href="#main"
+                                    className="sr-only z-50 rounded-full bg-oz-black px-4 py-2 text-oz-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+                                >
+                                    Skip to content
+                                </a>
+                                <StationHeader station={station} />
+                                <main id="main" className="flex-1">
+                                    {children}
+                                </main>
+                                <StationFooter station={station} />
+                                {/* Room so the fixed player never covers the footer. */}
+                                <div
+                                    aria-hidden
+                                    className="h-[4.5rem] bg-oz-black"
+                                />
+                            </div>
+                            <LiveDrawer />
+                            <PollPopup station={station} />
+                            <VideoDock />
+                            <PlayerBar broadcast={broadcast} />
+                        </RequestsProvider>
+                    </ChatProvider>
+                </AuthDialogProvider>
             </LiveProvider>
         </PlayerProvider>
     );

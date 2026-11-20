@@ -5,7 +5,7 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Controllers\Auth\GoogleAuthController;
-use App\Support\ReturnPath;
+use App\Http\Responses\LogoutResponse;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -13,6 +13,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LogoutResponse as LogoutResponseContract;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
@@ -23,7 +24,7 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(LogoutResponseContract::class, LogoutResponse::class);
     }
 
     /**
@@ -50,16 +51,13 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureViews(): void
     {
-        // ?return=/oz-bandung sends listeners back to the station after signing in.
-        Fortify::loginView(function (Request $request) {
-            ReturnPath::remember($request);
-
-            return Inertia::render('auth/login', [
-                'canResetPassword' => Features::enabled(Features::resetPasswords()),
-                'status' => $request->session()->get('status'),
-                'googleSignIn' => GoogleAuthController::isConfigured(),
-            ]);
-        });
+        // ?return=/oz-bandung sends listeners back to the station after signing in
+        // (remembered by the RememberReturnPath middleware on every Fortify route).
+        Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
+            'canResetPassword' => Features::enabled(Features::resetPasswords()),
+            'status' => $request->session()->get('status'),
+            'googleSignIn' => GoogleAuthController::isConfigured(),
+        ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/reset-password', [
             'email' => $request->email,
@@ -75,14 +73,10 @@ class FortifyServiceProvider extends ServiceProvider
             'status' => $request->session()->get('status'),
         ]));
 
-        Fortify::registerView(function (Request $request) {
-            ReturnPath::remember($request);
-
-            return Inertia::render('auth/register', [
-                'passwordRules' => Password::defaults()->toPasswordRulesString(),
-                'googleSignIn' => GoogleAuthController::isConfigured(),
-            ]);
-        });
+        Fortify::registerView(fn () => Inertia::render('auth/register', [
+            'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'googleSignIn' => GoogleAuthController::isConfigured(),
+        ]));
 
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/two-factor-challenge'));
 

@@ -59,8 +59,17 @@ export function RequestsProvider({
     const [status, setStatus] = useState<LoadStatus>('idle');
     const [queue, setQueue] = useState<SongRequest[]>([]);
     const [myUpvotes, setMyUpvotes] = useState<Set<number>>(new Set());
+    const { account } = useLive();
+    const [accountId, setAccountId] = useState(account?.id ?? null);
 
     const base = `/api/v1/stations/${station.slug}/requests`;
+
+    // Your upvotes belong to the session: reload after logging in or out.
+    if (accountId !== (account?.id ?? null)) {
+        setAccountId(account?.id ?? null);
+        setMyUpvotes(new Set());
+        setStatus('idle');
+    }
 
     const upsert = useCallback((request: SongRequest) => {
         setQueue((current) => {
@@ -91,8 +100,6 @@ export function RequestsProvider({
             })
             .catch(() => setStatus('error'));
     }, [base, status]);
-
-    const { account } = useLive();
 
     useEchoPublic<{ request: SongRequest }>(
         `station.${station.slug}.requests`,

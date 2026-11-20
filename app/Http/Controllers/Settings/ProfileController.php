@@ -40,7 +40,8 @@ class ProfileController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
 
-        return to_route('profile.edit');
+        // Back to wherever the form was (the station profile page or settings).
+        return redirect()->back(fallback: route('profile.edit'));
     }
 
     /**

@@ -6,13 +6,14 @@ use Illuminate\Http\Request;
 
 /**
  * Sends listeners back to the page they came from after signing in
- * (e.g. /login?return=/oz-bandung). Only same-site paths are accepted.
+ * (e.g. /login?return=/oz-bandung, or a `return` form field on POST /login).
+ * Only same-site paths are accepted.
  */
 class ReturnPath
 {
     public static function remember(Request $request, string $key = 'return'): void
     {
-        $path = $request->query($key);
+        $path = $request->input($key);
 
         if (is_string($path) && self::isSafe($path)) {
             $request->session()->put('url.intended', url($path));

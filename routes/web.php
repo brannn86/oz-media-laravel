@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Public\CorporateController;
 use App\Http\Controllers\Public\StationController;
 use App\Http\Controllers\Public\StationNewsController;
+use App\Http\Controllers\Public\StationProfileController;
 use App\Http\Middleware\ShareStationContext;
 use Illuminate\Support\Facades\Route;
 
@@ -45,4 +46,5 @@ Route::prefix('{station:slug}')
         Route::get('news/{slug}', [StationNewsController::class, 'show'])->name('news.show');
         Route::get('about', [StationController::class, 'about'])->name('about');
         Route::get('privacy', [StationController::class, 'privacy'])->name('privacy');
+        Route::get('profile', StationProfileController::class)->middleware('auth')->name('profile');
     });

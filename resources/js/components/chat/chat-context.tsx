@@ -54,9 +54,10 @@ export function ChatProvider({
     chat: SharedChatProps;
     children: ReactNode;
 }) {
-    const { drawerOpen, drawerTab } = useLive();
+    const { drawerOpen, drawerTab, account } = useLive();
     const visible = drawerOpen && drawerTab === 'chat';
     const [status, setStatus] = useState<LoadStatus>('idle');
+    const [accountId, setAccountId] = useState(account?.id ?? null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [pinned, setPinned] = useState<ChatMessage | null>(null);
     const [settings, setSettings] = useState(chat.settings);
@@ -65,6 +66,14 @@ export function ChatProvider({
     const [cooldownUntil, setCooldownUntil] = useState(0);
 
     const base = `/api/v1/stations/${station.slug}/chat`;
+
+    // Logging in or out from the popup keeps this layout mounted: reload so
+    // `me` (and with it the composer) follows the new session.
+    if (accountId !== (account?.id ?? null)) {
+        setAccountId(account?.id ?? null);
+        setMe(null);
+        setStatus('idle');
+    }
 
     const load = useCallback(async () => {
         setStatus('loading');
