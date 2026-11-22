@@ -1,6 +1,6 @@
 import { Form, usePage } from '@inertiajs/react';
 import { createContext, useCallback, useContext, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import PasswordInput from '@/components/password-input';
 import { OzMark } from '@/components/station/oz-mark';
 import {
@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { store as loginStore } from '@/routes/login';
+import { email as passwordEmail } from '@/routes/password';
 import { store as registerStore } from '@/routes/register';
 import google from '@/routes/auth/google';
 
@@ -328,49 +329,74 @@ function RegisterForm({ googleSignIn, onSuccess, onModeChange }: FormProps) {
     );
 }
 
-/** UI only for now: sending reset links from the popup comes later. */
+/**
+ * Sends a Fortify reset link. The email links back with ?return=, so the
+ * listener ends up on this station again after resetting and logging in.
+ * Unknown emails get the same answer as real ones (no account probing).
+ */
 function ForgotPasswordForm({
     onModeChange,
 }: {
     onModeChange: (mode: AuthMode) => void;
 }) {
-    const [submitted, setSubmitted] = useState(false);
-
-    const submit = (event: FormEvent) => {
-        event.preventDefault();
-        setSubmitted(true);
-    };
+    const returnPath = useReturnPath();
+    const [sentTo, setSentTo] = useState<string | null>(null);
+    const [email, setEmail] = useState('');
 
     return (
         <>
-            <form onSubmit={submit} className="grid gap-4">
-                <OzField id="auth-reset-email" label="Email address">
-                    <Input
-                        id="auth-reset-email"
-                        type="email"
-                        name="email"
-                        required
-                        autoComplete="email"
-                        placeholder="you@example.com"
-                        className={ozInputClass}
-                    />
-                </OzField>
-                {submitted && (
-                    <p
-                        role="status"
-                        className="rounded-2xl bg-oz-butter px-4 py-3 text-sm font-semibold"
-                    >
-                        Password reset is coming soon. Until then, contact the
-                        studio and we'll help you get back in.
-                    </p>
+            <Form
+                {...passwordEmail.form()}
+                options={{ preserveScroll: true }}
+                onSuccess={() => setSentTo(email)}
+                className="grid gap-4"
+            >
+                {({ processing, errors }) => (
+                    <>
+                        <input type="hidden" name="return" value={returnPath} />
+                        <OzField
+                            id="auth-reset-email"
+                            label="Email address"
+                            error={errors.email}
+                        >
+                            <Input
+                                id="auth-reset-email"
+                                type="email"
+                                name="email"
+                                required
+                                autoComplete="email"
+                                placeholder="you@example.com"
+                                value={email}
+                                onChange={(event) => {
+                                    setEmail(event.target.value);
+                                    setSentTo(null);
+                                }}
+                                aria-invalid={Boolean(errors.email)}
+                                className={ozInputClass}
+                            />
+                        </OzField>
+                        {sentTo && !errors.email && (
+                            <p
+                                role="status"
+                                className="rounded-2xl bg-oz-butter px-4 py-3 text-sm font-semibold"
+                                data-test="popup-reset-sent"
+                            >
+                                If {sentTo} has an account, a reset link is on
+                                its way. Check your inbox (and spam folder).
+                            </p>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className={cn(ozPrimaryButtonClass, 'w-full')}
+                            data-test="popup-reset-button"
+                        >
+                            {processing && <Spinner />}
+                            {sentTo ? 'Send again' : 'Send reset link'}
+                        </button>
+                    </>
                 )}
-                <button
-                    type="submit"
-                    className={cn(ozPrimaryButtonClass, 'w-full')}
-                >
-                    Send reset link
-                </button>
-            </form>
+            </Form>
             <SwitchPrompt
                 text="Remembered it?"
                 action="Back to log in"
