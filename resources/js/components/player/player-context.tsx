@@ -9,7 +9,7 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { attachStream } from '@/components/player/attach-stream';
-import type { Broadcast, Station, StreamStatus } from '@/types';
+import type { Broadcast, NowPlaying, Station, StreamStatus } from '@/types';
 
 export type PlaybackStatus = 'idle' | 'loading' | 'playing' | 'error';
 export type VideoLayout = 'docked' | 'expanded';
@@ -17,6 +17,8 @@ export type VideoLayout = 'docked' | 'expanded';
 type PlayerApi = {
     station: Station;
     stream: StreamStatus;
+    /** Song on air and recently played, kept live over Reverb. */
+    nowPlaying: NowPlaying;
     /** Video when the station is livestreaming and has a video source. */
     mode: 'audio' | 'video';
     /** The listener wants the station on (audio playing or video open). */
@@ -55,6 +57,30 @@ function sameStream(a: StreamStatus, b: StreamStatus): boolean {
     );
 }
 
+const RECENT_LIMIT = 10;
+
+function nowPlayingKey(value: NowPlaying): string {
+    return `${value.track?.id ?? '-'}:${value.recent[0]?.id ?? '-'}`;
+}
+
+/** Applies a "now-playing.updated" push: the song that ended moves to recent. */
+function advance(prev: NowPlaying, track: NowPlaying['track']): NowPlaying {
+    if (prev.track?.id === track?.id) {
+        return prev;
+    }
+
+    const ended = prev.track
+        ? [{ ...prev.track, ended_at: new Date().toISOString() }]
+        : [];
+
+    return {
+        track,
+        recent: [...ended, ...prev.recent]
+            .filter((played) => played.id !== track?.id)
+            .slice(0, RECENT_LIMIT),
+    };
+}
+
 /**
  * Owns the one <audio> element for the station site. Lives in StationLayout,
  * which Inertia keeps mounted between pages, so playback never restarts on navigation.
@@ -62,10 +88,12 @@ function sameStream(a: StreamStatus, b: StreamStatus): boolean {
 export function PlayerProvider({
     station,
     broadcast,
+    nowPlaying: nowPlayingProp,
     children,
 }: {
     station: Station;
     broadcast: Broadcast;
+    nowPlaying: NowPlaying;
     children: ReactNode;
 }) {
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -83,6 +111,23 @@ export function PlayerProvider({
         station.channel,
         '.stream-status.updated',
         (payload) => setStream(payload),
+    );
+
+    // Same pattern for the song on air: fresh props on navigation, Reverb in between.
+    const [nowPlayingSeen, setNowPlayingSeen] = useState(() =>
+        nowPlayingKey(nowPlayingProp),
+    );
+    const [nowPlaying, setNowPlaying] = useState(nowPlayingProp);
+
+    if (nowPlayingKey(nowPlayingProp) !== nowPlayingSeen) {
+        setNowPlayingSeen(nowPlayingKey(nowPlayingProp));
+        setNowPlaying(nowPlayingProp);
+    }
+
+    useEchoPublic<Pick<NowPlaying, 'track'>>(
+        station.channel,
+        '.now-playing.updated',
+        (payload) => setNowPlaying((prev) => advance(prev, payload.track)),
     );
 
     const [active, setActive] = useState(false);
@@ -133,16 +178,32 @@ export function PlayerProvider({
             return;
         }
 
-        navigator.mediaSession.metadata = new MediaMetadata({
-            title: broadcast.current?.program.title ?? station.name,
-            artist: station.name,
-            album: station.tagline ?? undefined,
-        });
+        const program = broadcast.current?.program.title;
+        const track = nowPlaying.track;
+
+        navigator.mediaSession.metadata = new MediaMetadata(
+            track
+                ? {
+                      title: track.title,
+                      artist: track.artist ?? station.name,
+                      album: program ?? station.name,
+                  }
+                : {
+                      title: program ?? station.name,
+                      artist: station.name,
+                      album: station.tagline ?? undefined,
+                  },
+        );
         navigator.mediaSession.setActionHandler('play', () => setActive(true));
         navigator.mediaSession.setActionHandler('pause', () =>
             setActive(false),
         );
-    }, [broadcast.current?.program.title, station.name, station.tagline]);
+    }, [
+        broadcast.current?.program.title,
+        nowPlaying.track,
+        station.name,
+        station.tagline,
+    ]);
 
     const start = useCallback(() => {
         setStatus('loading');
@@ -177,6 +238,7 @@ export function PlayerProvider({
     const api: PlayerApi = {
         station,
         stream,
+        nowPlaying,
         mode,
         active,
         status: active ? status : 'idle',

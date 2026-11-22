@@ -27,13 +27,17 @@ const MAX_REFRESH_MS = 30 * 60_000;
  * the live chat keeps its conversation and Reverb subscription.
  */
 export default function StationLayout({ children }: { children: ReactNode }) {
-    const { station, broadcast, chat, account } =
+    const { station, broadcast, now_playing, chat, account } =
         usePage<StationPageProps>().props;
 
     useBroadcastRefresh(broadcast);
 
     return (
-        <PlayerProvider station={station} broadcast={broadcast}>
+        <PlayerProvider
+            station={station}
+            broadcast={broadcast}
+            nowPlaying={now_playing}
+        >
             <LiveProvider account={account}>
                 <AuthDialogProvider
                     stationName={station.name}

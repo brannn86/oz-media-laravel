@@ -27,6 +27,7 @@ export function PlayerBar({ broadcast }: { broadcast: Broadcast }) {
     const { mode, active, status } = player;
 
     const current = broadcast.current;
+    const track = player.nowPlaying.track;
     const hosts = current?.program.announcers
         ?.map((announcer) => announcer.display_name)
         .join(' & ');
@@ -78,12 +79,25 @@ export function PlayerBar({ broadcast }: { broadcast: Broadcast }) {
                     <p className="mt-1 truncate font-oz-display text-sm font-extrabold sm:text-base">
                         {current?.program.title ?? player.station.name}
                     </p>
-                    <p className="truncate text-xs text-oz-white/60">
-                        {status === 'error' && !isVideo
-                            ? 'The stream is not responding. Tap play to try again.'
-                            : hosts
-                              ? `With ${hosts}`
-                              : (player.station.tagline ?? 'Live radio')}
+                    <p
+                        className="truncate text-xs text-oz-white/60"
+                        aria-live="polite"
+                    >
+                        {status === 'error' && !isVideo ? (
+                            'The stream is not responding. Tap play to try again.'
+                        ) : track ? (
+                            <>
+                                <span className="sr-only">Now playing: </span>
+                                <span className="font-semibold text-oz-white/85">
+                                    {track.title}
+                                </span>
+                                {track.artist && ` · ${track.artist}`}
+                            </>
+                        ) : hosts ? (
+                            `With ${hosts}`
+                        ) : (
+                            (player.station.tagline ?? 'Live radio')
+                        )}
                     </p>
                 </div>
 

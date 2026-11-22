@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Enums\AdminRole;
 use App\Support\ProfanityFilter;
 use Carbon\CarbonImmutable;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -30,6 +31,18 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->protectAdminRoles();
+        $this->registerDevCommands();
+    }
+
+    /**
+     * `composer dev` / `php artisan dev` also runs the scheduler, so the
+     * Icecast now-playing sync works locally (Reverb registers itself).
+     */
+    protected function registerDevCommands(): void
+    {
+        if ($this->app->runningInConsole() && class_exists(DevCommands::class)) {
+            DevCommands::artisan('schedule:work', 'scheduler');
+        }
     }
 
     /**

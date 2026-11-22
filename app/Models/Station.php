@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StreamTitleFormat;
 use App\Models\Concerns\HasUniqueSlug;
 use App\Observers\StationObserver;
 use Carbon\CarbonImmutable;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * @property string|null $tagline
  * @property string|null $stream_audio_url
  * @property string|null $stream_video_url
+ * @property StreamTitleFormat $stream_title_format
  * @property bool $is_video_live
  * @property int $chat_slow_mode_seconds Minimum seconds between messages per listener (0 = off).
  * @property array{email?: string|null, phone?: string|null, address?: string|null, whatsapp?: string|null}|null $contact_info
@@ -33,7 +35,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  */
 #[ObservedBy(StationObserver::class)]
 #[Fillable([
-    'slug', 'name', 'tagline', 'stream_audio_url', 'stream_video_url', 'is_video_live', 'chat_slow_mode_seconds',
+    'slug', 'name', 'tagline', 'stream_audio_url', 'stream_video_url', 'stream_title_format', 'is_video_live', 'chat_slow_mode_seconds',
     'contact_info', 'social_links', 'about_content', 'privacy_policy_content', 'is_active',
 ])]
 class Station extends Model
@@ -41,9 +43,14 @@ class Station extends Model
     /** @use HasFactory<StationFactory> */
     use HasFactory, HasUniqueSlug;
 
+    protected $attributes = [
+        'stream_title_format' => 'title_artist',
+    ];
+
     protected function casts(): array
     {
         return [
+            'stream_title_format' => StreamTitleFormat::class,
             'is_video_live' => 'boolean',
             'is_active' => 'boolean',
             'chat_slow_mode_seconds' => 'integer',
@@ -155,6 +162,38 @@ class Station extends Model
     public function listenersChannel(): string
     {
         return "station.{$this->slug}.listeners";
+    }
+
+    /**
+     * @return HasMany<TrackPlay, $this>
+     */
+    public function trackPlays(): HasMany
+    {
+        return $this->hasMany(TrackPlay::class);
+    }
+
+    /**
+     * Icecast's status-json.xsl on the audio stream's server, and the stream's
+     * mount ("/ozbandung"). Null when the audio stream isn't an Icecast mount (HLS).
+     *
+     * @return array{url: string, mount: string}|null
+     */
+    public function icecastStatusEndpoint(): ?array
+    {
+        $parts = filled($this->stream_audio_url) ? parse_url($this->stream_audio_url) : false;
+
+        if (! is_array($parts) || ! isset($parts['scheme'], $parts['host'], $parts['path'])
+            || ! in_array($parts['scheme'], ['http', 'https'], true)
+            || $parts['path'] === '/' || str_ends_with(strtolower($parts['path']), '.m3u8')) {
+            return null;
+        }
+
+        $port = isset($parts['port']) ? ":{$parts['port']}" : '';
+
+        return [
+            'url' => "{$parts['scheme']}://{$parts['host']}{$port}/status-json.xsl",
+            'mount' => rtrim($parts['path'], '/'),
+        ];
     }
 
     /**

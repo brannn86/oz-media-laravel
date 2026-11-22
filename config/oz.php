@@ -99,6 +99,24 @@ return [
         'per_seconds' => 2,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Now Playing
+    |--------------------------------------------------------------------------
+    |
+    | `php artisan stations:sync-now-playing` (scheduled every 15 seconds)
+    | reads each station's Icecast status-json.xsl, derived from its audio
+    | stream URL. A song change is recorded in track_plays, pushed to players
+    | over Reverb, and marks matching open song requests as played.
+    |
+    */
+
+    'now_playing' => [
+        'timeout_seconds' => 5,
+        // How many past songs the site shows under "Recently played".
+        'recent_limit' => 10,
+    ],
+
     'network' => [
         'partners' => [
             [
