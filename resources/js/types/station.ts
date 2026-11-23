@@ -46,7 +46,11 @@ export type Program = {
     description: string | null;
     cover_image_url: string | null;
     announcers?: Announcer[];
+    /** Weekly slots, Sunday first (only where the page loads them). */
+    schedules?: ProgramSlot[];
 };
+
+export type ProgramSlot = Omit<ScheduleSlot, 'program'>;
 
 export type ScheduleSlot = {
     id: number;

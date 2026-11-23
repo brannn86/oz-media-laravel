@@ -1,14 +1,20 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { MessageCircle } from 'lucide-react';
+import { AnnouncerCarousel } from '@/components/station/announcer-carousel';
 import { EventRow } from '@/components/station/event-row';
 import { HighlightTile } from '@/components/station/highlight-tile';
 import { LeadStory, StoryItem } from '@/components/station/news-items';
 import { OnAirHero } from '@/components/station/on-air-hero';
+import { ProgramCards } from '@/components/station/program-cards';
 import { RecentlyPlayed } from '@/components/station/recently-played';
 import { SectionHeading } from '@/components/station/page-heading';
+import { StationDetailsProvider } from '@/components/station/station-details';
+import { cn } from '@/lib/utils';
 import stationRoutes from '@/routes/station';
 import type {
+    Announcer,
     Post,
+    Program,
     SocialHighlight,
     StationEvent,
     StationPageProps,
@@ -18,14 +24,24 @@ type Props = StationPageProps & {
     news: Post[];
     events: StationEvent[];
     highlights: SocialHighlight[];
+    programs: Program[];
+    announcers: Announcer[];
 };
 
 const moreLink =
     'shrink-0 rounded-full px-4 py-2 text-sm font-bold text-oz-black underline decoration-oz-yellow decoration-[3px] underline-offset-4 hover:decoration-oz-black focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none';
 
 export default function StationHome() {
-    const { station, broadcast, meta, news, events, highlights } =
-        usePage<Props>().props;
+    const {
+        station,
+        broadcast,
+        meta,
+        news,
+        events,
+        highlights,
+        programs,
+        announcers,
+    } = usePage<Props>().props;
     const [lead, ...rest] = news;
     const whatsapp = station.contact.whatsapp?.replace(/\D/g, '');
 
@@ -36,6 +52,57 @@ export default function StationHome() {
             <OnAirHero station={station} broadcast={broadcast} />
 
             <RecentlyPlayed />
+
+            <StationDetailsProvider programs={programs} announcers={announcers}>
+                {programs.length > 0 && (
+                    <section
+                        aria-labelledby="programs-title"
+                        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24"
+                    >
+                        <SectionHeading
+                            id="programs-title"
+                            title="Our shows"
+                            action={
+                                <Link
+                                    href={stationRoutes.programs(station.slug)}
+                                    className={moreLink}
+                                >
+                                    Full schedule
+                                </Link>
+                            }
+                        />
+                        <ProgramCards programs={programs} />
+                    </section>
+                )}
+
+                {announcers.length > 0 && (
+                    <section
+                        aria-labelledby="announcers-title"
+                        className="bg-oz-yellow py-16 sm:py-24"
+                    >
+                        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+                            <SectionHeading
+                                id="announcers-title"
+                                title="The voices"
+                                action={
+                                    <Link
+                                        href={stationRoutes.announcers(
+                                            station.slug,
+                                        )}
+                                        className={cn(
+                                            moreLink,
+                                            'decoration-oz-black',
+                                        )}
+                                    >
+                                        All announcers
+                                    </Link>
+                                }
+                            />
+                        </div>
+                        <AnnouncerCarousel announcers={announcers} />
+                    </section>
+                )}
+            </StationDetailsProvider>
 
             {lead && (
                 <section

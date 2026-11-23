@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import type { Announcer } from '@/types';
 
-function initials(name: string): string {
+export function initials(name: string): string {
     return name
         .split(/\s+/)
         .slice(0, 2)
@@ -44,18 +44,31 @@ export function AnnouncerAvatar({
 /** Overlapping portraits, e.g. the hosts of a show. */
 export function AvatarStack({
     announcers,
+    size = 'md',
     className,
 }: {
     announcers: Announcer[];
+    /** md: the on-air hero (yellow); sm: cards on paper. */
+    size?: 'md' | 'sm';
     className?: string;
 }) {
     return (
-        <span className={cn('flex -space-x-3', className)}>
+        <span
+            className={cn(
+                'flex shrink-0',
+                size === 'md' ? '-space-x-3' : '-space-x-2',
+                className,
+            )}
+        >
             {announcers.map((announcer) => (
                 <AnnouncerAvatar
                     key={announcer.id}
                     announcer={announcer}
-                    className="size-12 text-base ring-4 ring-oz-yellow sm:size-14"
+                    className={
+                        size === 'md'
+                            ? 'size-12 text-base ring-4 ring-oz-yellow sm:size-14'
+                            : 'size-9 text-xs ring-3 ring-oz-paper'
+                    }
                 />
             ))}
         </span>

@@ -8,10 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\AnnouncerResource;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\PostResource;
+use App\Http\Resources\ProgramResource;
 use App\Http\Resources\RedemptionResource;
 use App\Http\Resources\RewardResource;
 use App\Http\Resources\ScheduleSlotResource;
 use App\Http\Resources\SocialHighlightResource;
+use App\Models\Program;
 use App\Models\ProgramSchedule;
 use App\Models\Reward;
 use App\Models\Station;
@@ -45,6 +47,18 @@ class StationController extends Controller
             )->resolve($request), ttl: self::TIME_SENSITIVE_TTL),
             'highlights' => StationCache::remember($station, 'home-highlights', fn (): array => SocialHighlightResource::collection(
                 $station->socialHighlights()->featured()->ordered()->limit(6)->get()
+            )->resolve($request)),
+            // Shows in the order of the day (earliest start first), unscheduled ones last.
+            'programs' => StationCache::remember($station, 'home-programs', fn (): array => ProgramResource::collection(
+                $station->programs()->active()
+                    ->with(['schedules', 'announcers' => fn ($query) => $query->where('is_active', true)])
+                    ->orderBy('title')
+                    ->get()
+                    ->sortBy(fn (Program $program): string => $program->schedules->min('start_time') ?? '99:99')
+                    ->values()
+            )->resolve($request)),
+            'announcers' => StationCache::remember($station, 'home-announcers', fn (): array => AnnouncerResource::collection(
+                $station->announcers()->active()->with(['programs' => fn ($query) => $query->active()])->orderBy('name')->get()
             )->resolve($request)),
         ]);
     }

@@ -270,3 +270,13 @@
         opacity: 0.9;
     }
 }
+
+/* Endless announcer strip (station home): slides one loop, i.e. half the strip. */
+@keyframes oz-marquee {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}

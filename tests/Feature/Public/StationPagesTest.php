@@ -45,6 +45,25 @@ it('shares what is on air now (WIB) with the player', function () {
         ->where('broadcast.next.program.title', 'Midday Mix'));
 });
 
+it('lists programs (with schedule and hosts) and announcers on the home page', function () {
+    $hidden = $this->station->programs()->where('title', '!=', 'OZ Breakfast Club')->first();
+    $hidden->update(['is_active' => false]);
+    $offAir = $this->station->announcers()->first();
+    $offAir->update(['is_active' => false]);
+
+    $this->get('/oz-bandung')->assertInertia(fn (Assert $page) => $page
+        ->has('programs', $this->station->programs()->active()->count())
+        ->where('programs', fn ($programs) => collect($programs)->doesntContain('id', $hidden->id)
+            // Earliest show of the day first.
+            && collect($programs)->first()['title'] === 'OZ Breakfast Club')
+        ->has('programs.0.schedules.0', fn (Assert $slot) => $slot
+            ->where('start', '06:00')
+            ->etc())
+        ->where('programs.0.announcers', fn ($hosts) => collect($hosts)->doesntContain('id', $offAir->id))
+        ->has('announcers', $this->station->announcers()->active()->count())
+        ->has('announcers.0.programs'));
+});
+
 it('only shows published news and 404s drafts and scheduled posts', function () {
     $draft = $this->station->posts()->where('status', PostStatus::Draft)->first();
     $scheduled = $this->station->posts()->where('published_at', '>', now())->first();

@@ -23,6 +23,7 @@ class ProgramResource extends JsonResource
             'description' => $this->description,
             'cover_image_url' => $this->webpImageUrl('cover'),
             'announcers' => $this->whenLoaded('announcers', fn () => AnnouncerResource::collection($this->announcers)->resolve($request)),
+            'schedules' => $this->whenLoaded('schedules', fn () => ScheduleSlotResource::collection($this->schedules)->resolve($request)),
         ];
     }
 }
