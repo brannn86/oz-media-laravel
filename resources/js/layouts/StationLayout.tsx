@@ -1,6 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { AuthDialogProvider } from '@/components/auth/auth-dialog';
 import { ChatProvider } from '@/components/chat/chat-context';
 import { useListenerPresence } from '@/components/chat/use-listener-presence';
@@ -46,33 +46,57 @@ export default function StationLayout({ children }: { children: ReactNode }) {
                     <ChatProvider station={station} chat={chat}>
                         <RequestsProvider station={station}>
                             <ListeningTracker stationSlug={station.slug} />
-                            <div className="flex min-h-screen flex-col bg-oz-white font-oz text-oz-black antialiased">
-                                <a
-                                    href="#main"
-                                    className="sr-only z-50 rounded-full bg-oz-black px-4 py-2 text-oz-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
-                                >
-                                    Skip to content
-                                </a>
-                                <StationHeader station={station} />
-                                <main id="main" className="flex-1">
-                                    {children}
-                                </main>
-                                <StationFooter station={station} />
-                                {/* Room so the fixed player never covers the footer. */}
-                                <div
-                                    aria-hidden
-                                    className="h-[4.5rem] bg-oz-black"
-                                />
-                            </div>
-                            <LiveDrawer />
-                            <PollPopup station={station} />
-                            <VideoDock />
-                            <PlayerBar broadcast={broadcast} />
+                            <PlayerBarSpace>
+                                <div className="flex min-h-screen flex-col bg-oz-white font-oz text-oz-black antialiased">
+                                    <a
+                                        href="#main"
+                                        className="sr-only z-50 rounded-full bg-oz-black px-4 py-2 text-oz-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+                                    >
+                                        Skip to content
+                                    </a>
+                                    <StationHeader station={station} />
+                                    <main id="main" className="flex-1">
+                                        {children}
+                                    </main>
+                                    <StationFooter station={station} />
+                                    {/* Room so the fixed player never covers the footer. */}
+                                    <div
+                                        aria-hidden
+                                        className="h-(--oz-player-bar) bg-oz-black"
+                                    />
+                                </div>
+                                <LiveDrawer />
+                                <PollPopup station={station} />
+                                <VideoDock />
+                                <PlayerBar broadcast={broadcast} />
+                            </PlayerBarSpace>
                         </RequestsProvider>
                     </ChatProvider>
                 </AuthDialogProvider>
             </LiveProvider>
         </PlayerProvider>
+    );
+}
+
+/**
+ * The mini player bar only appears once the listener has tuned in. Its height
+ * is exposed as --oz-player-bar (0 while hidden) so everything fixed to the
+ * bottom of the screen (drawer, poll, video, footer spacer) sits above it.
+ */
+function PlayerBarSpace({ children }: { children: ReactNode }) {
+    const { hasStarted } = usePlayer();
+
+    return (
+        <div
+            className="contents"
+            style={
+                {
+                    '--oz-player-bar': hasStarted ? '4.5rem' : '0rem',
+                } as CSSProperties
+            }
+        >
+            {children}
+        </div>
     );
 }
 

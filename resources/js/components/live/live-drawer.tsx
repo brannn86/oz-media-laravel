@@ -27,7 +27,7 @@ export function LiveDrawer() {
     return (
         <section
             aria-label="Live chat and song requests"
-            className="fixed inset-x-0 top-0 bottom-[4.5rem] z-40 flex flex-col bg-oz-white font-oz text-oz-black shadow-2xl motion-safe:animate-in motion-safe:slide-in-from-right-8 sm:top-16 sm:left-auto sm:w-[24rem] sm:border-l sm:border-oz-black/10"
+            className="fixed inset-x-0 top-0 bottom-(--oz-player-bar) z-40 flex flex-col bg-oz-white font-oz text-oz-black shadow-2xl motion-safe:animate-in motion-safe:slide-in-from-right-8 sm:top-16 sm:left-auto sm:w-[24rem] sm:border-l sm:border-oz-black/10"
         >
             <header className="flex items-center justify-between gap-2 border-b border-oz-black/10 px-3 py-2">
                 <div role="tablist" aria-label="Drawer" className="flex gap-1">

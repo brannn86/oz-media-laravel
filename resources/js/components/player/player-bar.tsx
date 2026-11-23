@@ -1,4 +1,5 @@
 import {
+    Headphones,
     LoaderCircle,
     Maximize2,
     MessageCircle,
@@ -25,6 +26,16 @@ import type { Broadcast } from '@/types';
 export function PlayerBar({ broadcast }: { broadcast: Broadcast }) {
     const player = usePlayer();
     const { mode, active, status } = player;
+
+    // Hidden until the listener tunes in (from the hero); chat and requests
+    // stay one tap away meanwhile.
+    if (!player.hasStarted) {
+        return (
+            <div className="fixed right-3 bottom-3 z-40 rounded-full bg-oz-black p-1.5 shadow-xl sm:right-6 sm:bottom-6">
+                <DrawerToggles />
+            </div>
+        );
+    }
 
     const current = broadcast.current;
     const track = player.nowPlaying.track;
@@ -145,11 +156,48 @@ export function PlayerBar({ broadcast }: { broadcast: Broadcast }) {
                     </button>
                 )}
 
+                <ModeSwitch />
+
                 {!isVideo && <VolumeControl />}
 
                 <DrawerToggles />
             </div>
         </div>
+    );
+}
+
+/** Radio ⇄ video, when the other one is on air. */
+function ModeSwitch() {
+    const { mode, play, audioAvailable, videoAvailable } = usePlayer();
+    const other = mode === 'audio' ? 'video' : 'audio';
+    const available = other === 'video' ? videoAvailable : audioAvailable;
+
+    if (!available) {
+        return null;
+    }
+
+    const label =
+        other === 'video'
+            ? 'Switch to the video livestream'
+            : 'Switch to radio';
+
+    return (
+        <button
+            type="button"
+            onClick={() => play(other)}
+            aria-label={label}
+            title={label}
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-oz-white/10 px-3 text-sm font-bold text-oz-white transition-colors hover:bg-oz-white/20 focus-visible:ring-2 focus-visible:ring-oz-yellow focus-visible:outline-none sm:px-4"
+        >
+            {other === 'video' ? (
+                <Video className="size-5" aria-hidden />
+            ) : (
+                <Headphones className="size-5" aria-hidden />
+            )}
+            <span className="hidden lg:inline">
+                {other === 'video' ? 'Video' : 'Radio'}
+            </span>
+        </button>
     );
 }
 

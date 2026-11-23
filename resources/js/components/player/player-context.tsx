@@ -25,22 +25,32 @@ export type PlaybackStatus =
     | 'reconnecting'
     | 'error';
 export type VideoLayout = 'docked' | 'expanded';
+export type StreamMode = 'audio' | 'video';
 
 type PlayerApi = {
     station: Station;
     stream: StreamStatus;
     /** Song on air and recently played, kept live over Reverb. */
     nowPlaying: NowPlaying;
-    /** Video when the station is livestreaming and has a video source. */
-    mode: 'audio' | 'video';
+    /**
+     * What the listener tuned in to. Video only while the station is
+     * livestreaming; a listener who chose video falls back to audio otherwise.
+     */
+    mode: StreamMode;
+    audioAvailable: boolean;
+    videoAvailable: boolean;
     /** The listener wants the station on (audio playing or video open). */
     active: boolean;
+    /** Tuned in at least once this visit (the mini player shows from then on). */
+    hasStarted: boolean;
     status: PlaybackStatus;
     volume: number;
     muted: boolean;
     videoLayout: VideoLayout;
     toggle: () => void;
     start: () => void;
+    /** Tune in to (or switch to) audio or video. Call it from a tap. */
+    play: (mode: StreamMode) => void;
     stop: () => void;
     setVolume: (volume: number) => void;
     toggleMute: () => void;
@@ -155,12 +165,17 @@ export function PlayerProvider({
     );
 
     const [active, setActive] = useState(false);
+    const [hasStarted, setHasStarted] = useState(false);
     const [status, setStatus] = useState<PlaybackStatus>('idle');
     const [volume, setVolumeState] = useState(storedVolume);
     const [muted, setMuted] = useState(false);
     const [videoLayout, setVideoLayout] = useState<VideoLayout>('docked');
+    const [preferredMode, setPreferredMode] = useState<StreamMode>('audio');
 
-    const mode = stream.is_video_live && stream.video ? 'video' : 'audio';
+    const videoAvailable = Boolean(stream.is_video_live && stream.video);
+    const audioAvailable = Boolean(stream.audio_url);
+    const mode: StreamMode =
+        preferredMode === 'video' && videoAvailable ? 'video' : 'audio';
     const audioUrl = stream.audio_url;
 
     // Callbacks below run from media events and timers; refs keep them current.
@@ -265,11 +280,15 @@ export function PlayerProvider({
         activeRef.current = true;
         attempts.current = 0;
         setActive(true);
+        setHasStarted(true);
 
         if (modeRef.current === 'audio') {
             connect(); // Synchronous: still inside the tap.
+        } else {
+            disconnect(); // The video panel takes over.
+            setStatus('idle');
         }
-    }, [connect]);
+    }, [connect, disconnect]);
 
     const stop = useCallback(() => {
         activeRef.current = false;
@@ -295,6 +314,21 @@ export function PlayerProvider({
     // The station switched between audio and video (or changed its audio URL)
     // while the listener was tuned in: follow it.
     const followRef = useRef({ mode, audioUrl });
+
+    const play = useCallback(
+        (next: StreamMode) => {
+            const target: StreamMode =
+                next === 'video' && videoAvailable ? 'video' : 'audio';
+
+            setPreferredMode(target);
+            // Act on the new mode now, inside the tap; tell the follow effect
+            // it is already handled so it doesn't connect a second time.
+            modeRef.current = target;
+            followRef.current = { ...followRef.current, mode: target };
+            start();
+        },
+        [videoAvailable, start],
+    );
 
     useEffect(() => {
         const previous = followRef.current;
@@ -367,13 +401,17 @@ export function PlayerProvider({
         stream,
         nowPlaying,
         mode,
+        audioAvailable,
+        videoAvailable,
         active,
+        hasStarted,
         status: active ? status : 'idle',
         volume,
         muted,
         videoLayout,
         toggle,
         start,
+        play,
         stop,
         setVolume,
         toggleMute: () => setMuted((m) => !m),

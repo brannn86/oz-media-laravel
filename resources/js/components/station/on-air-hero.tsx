@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
-import { Music, Pause, Play, Video } from 'lucide-react';
+import { Music } from 'lucide-react';
 import { usePlayer } from '@/components/player/player-context';
+import { TuneInControls } from '@/components/player/tune-in-controls';
 import { AvatarStack } from '@/components/station/announcer-avatar';
 import { useNow } from '@/hooks/use-now';
 import { formatTime, formatWeekday } from '@/lib/wib';
@@ -33,16 +34,16 @@ export function OnAirHero({
           )
         : 0;
 
-    const isVideo = player.mode === 'video';
-    const listening = player.active;
     const hosts = current?.program.announcers ?? [];
 
     return (
         <section
             aria-labelledby="on-air-title"
-            className="relative overflow-hidden bg-oz-yellow text-oz-black"
+            // One screen tall (minus the header and the player bar's space),
+            // whatever the controls are doing: the layout never jumps.
+            className="relative flex min-h-[calc(100svh-8.5rem)] items-center overflow-hidden bg-oz-yellow text-oz-black"
         >
-            <div className="mx-auto grid max-w-7xl gap-10 px-4 pt-12 pb-14 sm:px-6 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16 lg:pb-20">
+            <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-16">
                 <div className="min-w-0">
                     <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-base font-semibold">
                         <span className="inline-flex items-center gap-2 rounded-full bg-oz-black px-3 py-1 text-sm font-bold text-oz-white">
@@ -86,40 +87,21 @@ export function OnAirHero({
                         </p>
                     )}
 
-                    <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
-                        <button
-                            type="button"
-                            onClick={player.toggle}
-                            className="inline-flex h-14 items-center gap-3 rounded-full bg-oz-black pr-7 pl-5 text-lg font-bold text-oz-white transition-transform hover:scale-[1.02] focus-visible:ring-4 focus-visible:ring-oz-black/40 focus-visible:ring-offset-2 focus-visible:ring-offset-oz-yellow focus-visible:outline-none active:scale-[0.98]"
-                        >
-                            {listening ? (
-                                <Pause className="size-6 fill-current" />
-                            ) : isVideo ? (
-                                <Video className="size-6" />
-                            ) : (
-                                <Play className="size-6 fill-current" />
-                            )}
-                            {listening
-                                ? isVideo
-                                    ? 'Close video'
-                                    : 'Pause'
-                                : isVideo
-                                  ? 'Watch live'
-                                  : 'Listen live'}
-                        </button>
-
-                        {hosts.length > 0 && (
-                            <div className="flex items-center gap-3">
-                                <AvatarStack announcers={hosts} />
-                                <p className="text-base leading-tight font-semibold">
-                                    with{' '}
-                                    {hosts
-                                        .map((host) => host.display_name)
-                                        .join(' & ')}
-                                </p>
-                            </div>
-                        )}
+                    <div className="mt-8">
+                        <TuneInControls />
                     </div>
+
+                    {hosts.length > 0 && (
+                        <div className="mt-6 flex items-center gap-3">
+                            <AvatarStack announcers={hosts} />
+                            <p className="text-base leading-tight font-semibold">
+                                with{' '}
+                                {hosts
+                                    .map((host) => host.display_name)
+                                    .join(' & ')}
+                            </p>
+                        </div>
+                    )}
 
                     {current && (
                         <div className="mt-10 max-w-2xl">

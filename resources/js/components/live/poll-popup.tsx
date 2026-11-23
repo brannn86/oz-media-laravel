@@ -110,7 +110,7 @@ export function PollPopup({ station }: { station: Station }) {
     return (
         <section
             aria-label={`${poll.type_label}: ${poll.question}`}
-            className="fixed bottom-[5.25rem] left-3 z-40 w-[min(24rem,calc(100vw-1.5rem))] rounded-3xl bg-oz-black p-5 font-oz text-oz-white shadow-2xl motion-safe:animate-in motion-safe:slide-in-from-bottom-4 sm:left-6"
+            className="fixed bottom-[calc(var(--oz-player-bar)+0.75rem)] left-3 z-40 w-[min(24rem,calc(100vw-1.5rem))] rounded-3xl bg-oz-black p-5 font-oz text-oz-white shadow-2xl motion-safe:animate-in motion-safe:slide-in-from-bottom-4 sm:left-6"
         >
             <div className="flex items-start justify-between gap-3">
                 <p className="inline-flex items-center gap-2 text-sm font-bold text-oz-yellow">
