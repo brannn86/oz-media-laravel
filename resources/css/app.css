@@ -7,6 +7,40 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* TangoSans, the OZ brand display face (self-hosted, bundled by Vite). */
+@font-face {
+    font-family: 'TangoSans';
+    src: url('../fonts/tango-sans/TangoSans.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'TangoSans';
+    src: url('../fonts/tango-sans/TangoSans_Italic.woff2') format('woff2');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+/* Bold also serves the heavier weights the headings ask for (800). */
+@font-face {
+    font-family: 'TangoSans';
+    src: url('../fonts/tango-sans/TangoSans_Bold.woff2') format('woff2');
+    font-weight: 700 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'TangoSans';
+    src: url('../fonts/tango-sans/TangoSans_BoldItalic.woff2') format('woff2');
+    font-weight: 700 900;
+    font-style: italic;
+    font-display: swap;
+}
+
 @theme {
     --font-sans:
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
@@ -15,9 +49,8 @@
 
     /*
      * OZ brand (Brand Guideline OZ Radio Bandung 2026).
-     * TangoSans is the primary display face; it is listed first so a
-     * self-hosted copy takes over automatically. Plus Jakarta Sans is the
-     * guideline's secondary face and the working fallback.
+     * TangoSans is the primary display face (self-hosted above). Plus Jakarta
+     * Sans is the guideline's secondary face: body text, and the fallback.
      */
     --font-oz: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
     --font-oz-display:

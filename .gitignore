@@ -47,3 +47,4 @@ yarn-error.log
 /opencode.json
 /opencode.jsonc
 /brand
+/.playwright-mcp
