@@ -263,10 +263,10 @@ The app sends two emails: the **password reset** link and the sign-up **email ve
 
 Locally, `MAIL_MAILER=log` writes emails to `storage/logs/laravel.log` instead of sending them.
 
-Production sends through SMTP as **OZ Radio <no-reply@ozmedianet.com>**:
+Production sends through SMTP as **OZ Media <no-reply@ozmedianet.com>**:
 
 ```dotenv
-APP_NAME="OZ Radio"                     # shown in the email header and sign-off
+APP_NAME="OZ Media"                     # shown in the email header and sign-off
 APP_URL=https://your-public-domain      # links in emails are built from this
 MAIL_MAILER=smtp
 MAIL_SCHEME=null                        # leave null: 587 uses STARTTLS, 465 uses SSL automatically
