@@ -1,5 +1,5 @@
 import { Minimize2, X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLive } from '@/components/live/live-context';
 import {
     ReactionButtons,
@@ -104,8 +104,15 @@ function VideoSurface({ source }: { source: VideoSource }) {
     );
 }
 
+/**
+ * HLS livestream. Browsers may refuse to start video *with sound* outside a
+ * tap; then it starts muted (always allowed) with a "Tap for sound" button.
+ * A dropped stream is retried with backoff.
+ */
 function HlsVideo({ src }: { src: string }) {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const [needsSound, setNeedsSound] = useState(false);
+    const [attempt, setAttempt] = useState(0);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -114,19 +121,61 @@ function HlsVideo({ src }: { src: string }) {
             return;
         }
 
-        const detach = attachStream(video, src, () => undefined);
-        void video.play().catch(() => undefined);
+        let retry: number | undefined;
+        const reconnect = () => {
+            retry = window.setTimeout(
+                () => setAttempt((n) => n + 1),
+                Math.min(30_000, 2000 * 2 ** Math.min(attempt, 4)),
+            );
+        };
 
-        return detach;
-    }, [src]);
+        const detach = attachStream(video, src, reconnect);
+
+        video.play().catch((error: unknown) => {
+            if (
+                error instanceof DOMException &&
+                error.name === 'NotAllowedError'
+            ) {
+                video.muted = true;
+                setNeedsSound(true);
+                void video.play().catch(() => undefined);
+            }
+        });
+
+        return () => {
+            window.clearTimeout(retry);
+            detach();
+        };
+    }, [src, attempt]);
 
     return (
-        <video
-            ref={videoRef}
-            className="size-full"
-            controls
-            playsInline
-            autoPlay
-        />
+        <>
+            <video
+                ref={videoRef}
+                className="size-full"
+                controls
+                playsInline
+                autoPlay
+                onEnded={() => setAttempt((n) => n + 1)}
+            />
+            {needsSound && (
+                <button
+                    type="button"
+                    onClick={() => {
+                        const video = videoRef.current;
+
+                        if (video) {
+                            video.muted = false;
+                            void video.play();
+                        }
+
+                        setNeedsSound(false);
+                    }}
+                    className="absolute top-3 left-3 rounded-full bg-oz-yellow px-4 py-2 text-sm font-bold text-oz-black shadow-lg focus-visible:ring-4 focus-visible:ring-oz-white focus-visible:outline-none"
+                >
+                    Tap for sound
+                </button>
+            )}
+        </>
     );
 }

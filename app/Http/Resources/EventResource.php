@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Models\Event;
-use App\Support\MediaUrl;
 use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -28,7 +27,7 @@ class EventResource extends JsonResource
             'starts_at' => $this->start_date->toIso8601String(),
             'ends_at' => $this->end_date?->toIso8601String(),
             'description' => $this->description ? RichContentRenderer::make($this->description)->toHtml() : null,
-            'poster_url' => MediaUrl::for($this->poster_image),
+            'poster_url' => $this->webpImageUrl('poster'),
             'ticket_url' => $this->ticket_url,
         ];
     }

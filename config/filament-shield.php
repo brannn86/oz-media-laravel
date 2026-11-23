@@ -4,6 +4,10 @@ declare(strict_types=1);
 use App\Filament\Pages\MutedListeners;
 use App\Filament\Resources\BlockedWords\BlockedWordResource;
 use App\Filament\Resources\Stations\StationResource;
+use App\Filament\Widgets\ListenersChart;
+use App\Filament\Widgets\StationStatsOverview;
+use App\Filament\Widgets\TopArticlesWidget;
+use App\Filament\Widgets\UmamiWidget;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
 use Filament\Pages\Dashboard;
 use Filament\Widgets\AccountWidget;
@@ -236,6 +240,11 @@ return [
         'exclude' => [
             AccountWidget::class,
             FilamentInfoWidget::class,
+            // Dashboard analytics are visible to every staff role.
+            StationStatsOverview::class,
+            ListenersChart::class,
+            TopArticlesWidget::class,
+            UmamiWidget::class,
         ],
     ],
 

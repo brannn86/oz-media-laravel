@@ -3,9 +3,9 @@
 namespace App\Actions\Polls;
 
 use App\Actions\Concerns\BroadcastsSafely;
-use App\Actions\Points\AwardPointsAction;
 use App\Enums\PointReason;
 use App\Events\Live\PollUpdated;
+use App\Jobs\AwardPoints;
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Models\PollVote;
@@ -21,8 +21,6 @@ use Illuminate\Validation\ValidationException;
 class CastPollVoteAction
 {
     use BroadcastsSafely;
-
-    public function __construct(private readonly AwardPointsAction $award) {}
 
     /**
      * @throws ValidationException when the poll is closed, the option is wrong, or you already voted
@@ -52,7 +50,9 @@ class CastPollVoteAction
                 $points = (int) config('oz.points.poll_vote');
 
                 if ($points > 0) {
-                    $this->award->handle($user, $points, PointReason::PollVote, $poll->station, ['poll_id' => $poll->id]);
+                    // Queued, and only once the vote is committed.
+                    AwardPoints::dispatch($user, $points, PointReason::PollVote, $poll->station, ['poll_id' => $poll->id])
+                        ->afterCommit();
                 }
             });
         } catch (UniqueConstraintViolationException) {

@@ -40,9 +40,22 @@ export function PlayerBar({ broadcast }: { broadcast: Broadcast }) {
             : 'Watch the livestream'
         : status === 'error'
           ? 'Retry the stream'
-          : active
-            ? 'Pause the radio'
-            : 'Play the radio live';
+          : status === 'blocked'
+            ? 'Tap to start the radio'
+            : active
+              ? 'Pause the radio'
+              : 'Play the radio live';
+
+    // What the second line says when the stream needs attention.
+    const notice = isVideo
+        ? null
+        : status === 'blocked'
+          ? 'Your browser paused the sound. Tap play to listen.'
+          : status === 'reconnecting'
+            ? 'Connection dropped. Reconnecting…'
+            : status === 'error'
+              ? 'The stream is not responding. Tap play to try again.'
+              : null;
 
     return (
         <div
@@ -78,12 +91,19 @@ export function PlayerBar({ broadcast }: { broadcast: Broadcast }) {
                     <p className="mt-1 truncate font-oz-display text-sm font-extrabold sm:text-base">
                         {current?.program.title ?? player.station.name}
                     </p>
-                    <p className="truncate text-xs text-oz-white/60">
-                        {status === 'error' && !isVideo
-                            ? 'The stream is not responding. Tap play to try again.'
-                            : hosts
-                              ? `With ${hosts}`
-                              : (player.station.tagline ?? 'Live radio')}
+                    <p
+                        className={cn(
+                            'truncate text-xs',
+                            notice
+                                ? 'font-semibold text-oz-yellow'
+                                : 'text-oz-white/60',
+                        )}
+                        aria-live="polite"
+                    >
+                        {notice ??
+                            (hosts
+                                ? `With ${hosts}`
+                                : (player.station.tagline ?? 'Live radio'))}
                     </p>
                 </div>
 
@@ -196,12 +216,17 @@ function PlayIcon({
         );
     }
 
-    if (status === 'loading') {
+    if (status === 'loading' || status === 'reconnecting') {
         return <LoaderCircle className="size-6 motion-safe:animate-spin" />;
     }
 
     if (status === 'error') {
         return <RotateCcw className="size-6" />;
+    }
+
+    if (status === 'blocked') {
+        // Needs one tap: show play, not pause.
+        return <Play className={cn(className, 'translate-x-0.5')} />;
     }
 
     return active ? (

@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Models\Reward;
-use App\Support\MediaUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -21,7 +20,7 @@ class RewardResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
-            'image_url' => MediaUrl::for($this->image),
+            'image_url' => $this->webpImageUrl('image'),
             'points_cost' => $this->points_cost,
             // Exact counts only when low, so listeners know to hurry.
             'stock_left' => $this->stock !== null && $this->stock <= 10 ? $this->stock : null,

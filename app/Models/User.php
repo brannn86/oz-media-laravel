@@ -48,6 +48,16 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Pas
     use HasApiTokens, HasFactory, HasRoles, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
+     * Match the column defaults so a freshly created user has them before a reload.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'points_balance' => 0,
+        'current_streak_days' => 0,
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

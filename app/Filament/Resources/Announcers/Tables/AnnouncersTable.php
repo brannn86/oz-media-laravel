@@ -6,7 +6,7 @@ use App\Filament\Support\StationFields;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\TernaryFilter;
@@ -20,7 +20,9 @@ class AnnouncersTable
             ->modifyQueryUsing(fn ($query) => $query->with('programs'))
             ->defaultSort('name')
             ->columns([
-                ImageColumn::make('avatar')
+                SpatieMediaLibraryImageColumn::make('avatar')
+                    ->collection('avatar')
+                    ->conversion('thumb')
                     ->label('')
                     ->circular(),
                 TextColumn::make('stage_name')

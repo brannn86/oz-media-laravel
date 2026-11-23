@@ -99,6 +99,56 @@ return [
         'per_seconds' => 2,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Background Queues (Horizon-ready)
+    |--------------------------------------------------------------------------
+    |
+    | Heavy or deferrable work runs on named queues so a Horizon supervisor (or
+    | separate `queue:work --queue=...` workers) can scale them independently:
+    | points (ledger writes), media (WebP conversions), analytics (article
+    | views), maintenance (chat archiving). `default` keeps everything else.
+    |
+    */
+
+    'queues' => [
+        'points' => env('QUEUE_POINTS', 'points'),
+        'media' => env('QUEUE_MEDIA', 'media'),
+        'analytics' => env('QUEUE_ANALYTICS', 'analytics'),
+        'maintenance' => env('QUEUE_MAINTENANCE', 'maintenance'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Retention
+    |--------------------------------------------------------------------------
+    */
+
+    'retention' => [
+        // Chat older than this moves to chat_message_archives.
+        'archive_chat_after_days' => 90,
+        // Moderated (deleted) chat is removed for good after this.
+        'purge_deleted_chat_after_days' => 30,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Web Analytics (self-hosted Umami)
+    |--------------------------------------------------------------------------
+    |
+    | script_url + website_id add the tracking script to the public site.
+    | share_url is a Umami "share" link shown inside the admin dashboard.
+    |
+    */
+
+    'analytics' => [
+        'umami' => [
+            'script_url' => env('UMAMI_SCRIPT_URL'),
+            'website_id' => env('UMAMI_WEBSITE_ID'),
+            'share_url' => env('UMAMI_SHARE_URL'),
+        ],
+    ],
+
     'network' => [
         'partners' => [
             [

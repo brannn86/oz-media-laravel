@@ -11,7 +11,19 @@ import type { ReactNode } from 'react';
 import { attachStream } from '@/components/player/attach-stream';
 import type { Broadcast, Station, StreamStatus } from '@/types';
 
-export type PlaybackStatus = 'idle' | 'loading' | 'playing' | 'error';
+/**
+ * - blocked: the browser refused to start sound without a tap (autoplay policy);
+ *   one more tap on play fixes it.
+ * - reconnecting: the stream dropped (network change, server hiccup) and the
+ *   player is retrying with backoff.
+ */
+export type PlaybackStatus =
+    | 'idle'
+    | 'loading'
+    | 'playing'
+    | 'blocked'
+    | 'reconnecting'
+    | 'error';
 export type VideoLayout = 'docked' | 'expanded';
 
 type PlayerApi = {
@@ -36,6 +48,10 @@ type PlayerApi = {
 const PlayerContext = createContext<PlayerApi | null>(null);
 
 const VOLUME_KEY = 'oz-player-volume';
+/** Give up retrying (and show "tap to retry") after this many attempts. */
+const MAX_RECONNECTS = 6;
+/** A stalled stream that hasn't recovered by then is reconnected. */
+const STALL_TIMEOUT_MS = 10_000;
 
 function storedVolume(): number {
     try {
@@ -58,6 +74,14 @@ function sameStream(a: StreamStatus, b: StreamStatus): boolean {
 /**
  * Owns the one <audio> element for the station site. Lives in StationLayout,
  * which Inertia keeps mounted between pages, so playback never restarts on navigation.
+ *
+ * Mobile-safe by design:
+ * - play() runs synchronously inside the tap handler (iOS Safari and Chrome
+ *   only allow sound from a user gesture);
+ * - a refused autoplay becomes "tap to play", not an error;
+ * - drops and stalls reconnect with exponential backoff, immediately when the
+ *   device comes back online;
+ * - lock screen / notification controls show the show, hosts and cover art.
  */
 export function PlayerProvider({
     station,
@@ -86,7 +110,6 @@ export function PlayerProvider({
     );
 
     const [active, setActive] = useState(false);
-    const [attempt, setAttempt] = useState(0);
     const [status, setStatus] = useState<PlaybackStatus>('idle');
     const [volume, setVolumeState] = useState(storedVolume);
     const [muted, setMuted] = useState(false);
@@ -95,73 +118,185 @@ export function PlayerProvider({
     const mode = stream.is_video_live && stream.video ? 'video' : 'audio';
     const audioUrl = stream.audio_url;
 
-    // Start/stop the audio stream. Stopping drops the connection, so pressing
-    // play again always joins the broadcast live rather than from a stale buffer.
-    useEffect(() => {
-        const audio = audioRef.current;
+    // Callbacks below run from media events and timers; refs keep them current.
+    const activeRef = useRef(false);
+    const modeRef = useRef(mode);
+    const urlRef = useRef(audioUrl);
+    const detachRef = useRef<(() => void) | null>(null);
+    const retryTimer = useRef<number | null>(null);
+    const stallTimer = useRef<number | null>(null);
+    const attempts = useRef(0);
 
-        if (!audio || !active || mode !== 'audio' || !audioUrl) {
+    useEffect(() => {
+        modeRef.current = mode;
+        urlRef.current = audioUrl;
+    }, [mode, audioUrl]);
+
+    const clearTimers = useCallback(() => {
+        for (const timer of [retryTimer, stallTimer]) {
+            if (timer.current !== null) {
+                window.clearTimeout(timer.current);
+                timer.current = null;
+            }
+        }
+    }, []);
+
+    const disconnect = useCallback(() => {
+        clearTimers();
+        detachRef.current?.();
+        detachRef.current = null;
+    }, [clearTimers]);
+
+    // Declared before connect() because they call each other through refs.
+    const scheduleReconnectRef = useRef<() => void>(() => undefined);
+
+    /**
+     * Opens the stream and starts playback. Called directly from tap handlers
+     * so that audio.play() happens inside the user gesture.
+     */
+    const connect = useCallback(() => {
+        const audio = audioRef.current;
+        const url = urlRef.current;
+
+        if (!audio || !url) {
+            setStatus('error');
+
             return;
         }
 
-        const detach = attachStream(audio, audioUrl, () => setStatus('error'));
+        disconnect();
+        setStatus(attempts.current > 0 ? 'reconnecting' : 'loading');
+
+        detachRef.current = attachStream(audio, url, () =>
+            scheduleReconnectRef.current(),
+        );
 
         audio.play().catch((error: unknown) => {
-            if (error instanceof DOMException && error.name === 'AbortError') {
+            if (!(error instanceof DOMException)) {
+                scheduleReconnectRef.current();
+
                 return;
             }
 
-            // Autoplay blocked or stream refused: hand control back to the listener.
-            setStatus('error');
-        });
+            if (error.name === 'AbortError') {
+                return; // Replaced by a newer connect() or a stop.
+            }
 
-        return detach;
-    }, [active, mode, audioUrl, attempt]);
+            if (error.name === 'NotAllowedError') {
+                // Autoplay policy: keep the intent, ask for one tap.
+                disconnect();
+                setStatus('blocked');
+
+                return;
+            }
+
+            scheduleReconnectRef.current();
+        });
+    }, [disconnect]);
 
     useEffect(() => {
-        const audio = audioRef.current;
+        scheduleReconnectRef.current = () => {
+            if (!activeRef.current || modeRef.current !== 'audio') {
+                return;
+            }
 
-        if (audio) {
-            audio.volume = volume;
-            audio.muted = muted;
-        }
-    }, [volume, muted]);
+            disconnect();
+            attempts.current += 1;
 
-    // Lock screen / headset controls.
-    useEffect(() => {
-        if (!('mediaSession' in navigator)) {
-            return;
-        }
+            if (attempts.current > MAX_RECONNECTS) {
+                setStatus('error');
 
-        navigator.mediaSession.metadata = new MediaMetadata({
-            title: broadcast.current?.program.title ?? station.name,
-            artist: station.name,
-            album: station.tagline ?? undefined,
-        });
-        navigator.mediaSession.setActionHandler('play', () => setActive(true));
-        navigator.mediaSession.setActionHandler('pause', () =>
-            setActive(false),
-        );
-    }, [broadcast.current?.program.title, station.name, station.tagline]);
+                return;
+            }
+
+            setStatus('reconnecting');
+            // 1s, 2s, 4s, … capped at 30s.
+            const delay = Math.min(30_000, 1000 * 2 ** (attempts.current - 1));
+            retryTimer.current = window.setTimeout(connect, delay);
+        };
+    }, [connect, disconnect]);
 
     const start = useCallback(() => {
-        setStatus('loading');
+        activeRef.current = true;
+        attempts.current = 0;
         setActive(true);
-        setAttempt((n) => n + 1);
-    }, []);
+
+        if (modeRef.current === 'audio') {
+            connect(); // Synchronous: still inside the tap.
+        }
+    }, [connect]);
 
     const stop = useCallback(() => {
+        activeRef.current = false;
+        attempts.current = 0;
+        disconnect();
         setActive(false);
         setStatus('idle');
-    }, []);
+    }, [disconnect]);
 
     const toggle = useCallback(() => {
-        if (active && status !== 'error') {
+        const needsTap =
+            status === 'error' ||
+            status === 'blocked' ||
+            status === 'reconnecting';
+
+        if (active && !needsTap) {
             stop();
         } else {
             start();
         }
     }, [active, status, start, stop]);
+
+    // The station switched between audio and video (or changed its audio URL)
+    // while the listener was tuned in: follow it.
+    const followRef = useRef({ mode, audioUrl });
+
+    useEffect(() => {
+        const previous = followRef.current;
+        followRef.current = { mode, audioUrl };
+
+        if (!activeRef.current) {
+            return;
+        }
+
+        if (mode === 'video') {
+            disconnect(); // The video panel takes over.
+        } else if (
+            previous.mode !== 'audio' ||
+            previous.audioUrl !== audioUrl
+        ) {
+            attempts.current = 0;
+            connect(); // Outside a tap, so this may end up "blocked".
+        }
+    }, [mode, audioUrl, connect, disconnect]);
+
+    // Back online after a drop: retry straight away instead of waiting out the backoff.
+    useEffect(() => {
+        const onOnline = () => {
+            if (activeRef.current && modeRef.current === 'audio') {
+                attempts.current = 0;
+                connect();
+            }
+        };
+
+        window.addEventListener('online', onOnline);
+
+        return () => window.removeEventListener('online', onOnline);
+    }, [connect]);
+
+    useEffect(() => disconnect, [disconnect]);
+
+    useEffect(() => {
+        const audio = audioRef.current;
+
+        if (audio) {
+            // Ignored by iOS (hardware volume only), which is why the slider is hidden on phones.
+            audio.volume = volume;
+            audio.muted = muted;
+        }
+    }, [volume, muted]);
+
+    useMediaSession({ station, broadcast, active, status, start, stop });
 
     const setVolume = useCallback((value: number) => {
         setVolumeState(value);
@@ -191,22 +326,131 @@ export function PlayerProvider({
         setVideoLayout,
     };
 
+    const armStallWatchdog = () => {
+        if (stallTimer.current !== null || !activeRef.current) {
+            return;
+        }
+
+        stallTimer.current = window.setTimeout(() => {
+            stallTimer.current = null;
+            scheduleReconnectRef.current();
+        }, STALL_TIMEOUT_MS);
+    };
+
+    const clearStallWatchdog = () => {
+        if (stallTimer.current !== null) {
+            window.clearTimeout(stallTimer.current);
+            stallTimer.current = null;
+        }
+    };
+
     return (
         <PlayerContext.Provider value={api}>
             {children}
             <audio
                 ref={audioRef}
                 preload="none"
-                onWaiting={() => setStatus('loading')}
-                onPlaying={() => setStatus('playing')}
+                onWaiting={() => {
+                    setStatus((current) =>
+                        current === 'reconnecting' ? current : 'loading',
+                    );
+                    armStallWatchdog();
+                }}
+                onStalled={armStallWatchdog}
+                onPlaying={() => {
+                    clearStallWatchdog();
+                    attempts.current = 0;
+                    setStatus('playing');
+                }}
+                // A live stream never "ends": it dropped.
+                onEnded={() => scheduleReconnectRef.current()}
                 onError={(event) => {
                     if (event.currentTarget.getAttribute('src')) {
-                        setStatus('error');
+                        scheduleReconnectRef.current();
                     }
                 }}
             />
         </PlayerContext.Provider>
     );
+}
+
+/**
+ * Lock screen, notification shade, headphones and car controls.
+ */
+function useMediaSession({
+    station,
+    broadcast,
+    active,
+    status,
+    start,
+    stop,
+}: {
+    station: Station;
+    broadcast: Broadcast;
+    active: boolean;
+    status: PlaybackStatus;
+    start: () => void;
+    stop: () => void;
+}) {
+    const program = broadcast.current?.program;
+    const hosts = program?.announcers ?? [];
+    const hostNames = hosts.map((host) => host.display_name).join(' & ');
+    const cover =
+        program?.cover_image_url ??
+        hosts.find((h) => h.avatar_url)?.avatar_url ??
+        null;
+
+    useEffect(() => {
+        if (!('mediaSession' in navigator)) {
+            return;
+        }
+
+        const origin = window.location.origin;
+        const artwork = [
+            ...(cover
+                ? [{ src: new URL(cover, origin).href, sizes: '512x512' }]
+                : []),
+            {
+                src: `${origin}/apple-touch-icon.png`,
+                sizes: '180x180',
+                type: 'image/png',
+            },
+        ];
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: program?.title ?? `${station.name} live`,
+            artist: hostNames ? `with ${hostNames}` : station.name,
+            album: station.name,
+            artwork,
+        });
+    }, [program?.title, hostNames, cover, station.name]);
+
+    useEffect(() => {
+        if (!('mediaSession' in navigator)) {
+            return;
+        }
+
+        // A lock-screen tap is a user gesture, so start() may play straight away.
+        navigator.mediaSession.setActionHandler('play', start);
+        navigator.mediaSession.setActionHandler('pause', stop);
+        navigator.mediaSession.setActionHandler('stop', stop);
+
+        return () => {
+            for (const action of ['play', 'pause', 'stop'] as const) {
+                navigator.mediaSession.setActionHandler(action, null);
+            }
+        };
+    }, [start, stop]);
+
+    useEffect(() => {
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = !active
+                ? 'none'
+                : status === 'playing'
+                  ? 'playing'
+                  : 'paused';
+        }
+    }, [active, status]);
 }
 
 export function usePlayer(): PlayerApi {

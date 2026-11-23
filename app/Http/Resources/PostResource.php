@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use App\Models\Post;
-use App\Support\MediaUrl;
 use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -34,7 +33,7 @@ class PostResource extends JsonResource
             'slug' => $this->slug,
             'title' => $this->title,
             'excerpt' => $this->excerpt,
-            'image_url' => MediaUrl::for($this->featured_image),
+            'image_url' => $this->webpImageUrl('featured'),
             'published_at' => $this->published_at?->toIso8601String(),
             'author' => $this->whenLoaded('author', fn () => $this->author?->name),
             'station' => $this->whenLoaded('station', fn () => ['slug' => $this->station->slug, 'name' => $this->station->name]),

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToStation;
 use App\Models\Concerns\HasUniqueSlug;
+use App\Models\Concerns\HasWebpImages;
 use Carbon\CarbonImmutable;
 use Database\Factories\AnnouncerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * @property int $id
@@ -26,10 +28,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['station_id', 'name', 'stage_name', 'slug', 'bio', 'avatar', 'social_links', 'is_active'])]
-class Announcer extends Model
+class Announcer extends Model implements HasMedia
 {
     /** @use HasFactory<AnnouncerFactory> */
-    use BelongsToStation, HasFactory, HasUniqueSlug;
+    use BelongsToStation, HasFactory, HasUniqueSlug, HasWebpImages;
 
     protected function casts(): array
     {
@@ -63,5 +65,15 @@ class Announcer extends Model
     public function displayName(): string
     {
         return $this->stage_name ?: $this->name;
+    }
+
+    /**
+     * Announcer portrait: WebP up to 800x1000, falling back to the old `avatar` column.
+     *
+     * @return array<string, array{0: int, 1: int, 2: string|null}>
+     */
+    protected function webpImageCollections(): array
+    {
+        return ['avatar' => [800, 1000, 'avatar']];
     }
 }

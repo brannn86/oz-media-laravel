@@ -40,7 +40,8 @@ class PollController extends Controller
         return PollResource::make($poll)
             ->additional([
                 'my_vote' => (int) $data['option_id'],
-                'points_balance' => $user->points_balance,
+                // Includes this vote's points, which the `points` queue is writing now.
+                'points_balance' => $user->points_balance + (int) config('oz.points.poll_vote'),
             ])
             ->response();
     }

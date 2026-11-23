@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use App\Models\Announcer;
 use App\Models\Program;
-use App\Support\MediaUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -24,7 +23,7 @@ class AnnouncerResource extends JsonResource
             'name' => $this->name,
             'display_name' => $this->displayName(),
             'bio' => $this->bio,
-            'avatar_url' => MediaUrl::for($this->avatar),
+            'avatar_url' => $this->webpImageUrl('avatar'),
             'social' => array_filter($this->social_links ?? [], filled(...)),
             'programs' => $this->whenLoaded('programs', fn () => $this->programs
                 ->map(fn (Program $program): array => ['id' => $program->id, 'title' => $program->title])

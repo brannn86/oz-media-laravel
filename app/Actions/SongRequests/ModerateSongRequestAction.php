@@ -3,10 +3,10 @@
 namespace App\Actions\SongRequests;
 
 use App\Actions\Concerns\BroadcastsSafely;
-use App\Actions\Points\AwardPointsAction;
 use App\Enums\PointReason;
 use App\Enums\SongRequestStatus;
 use App\Events\Live\SongRequestUpdated;
+use App\Jobs\AwardPoints;
 use App\Models\SongRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -22,8 +22,6 @@ class ModerateSongRequestAction
 {
     use BroadcastsSafely;
 
-    public function __construct(private readonly AwardPointsAction $award) {}
-
     public function approve(SongRequest $request): SongRequest
     {
         DB::transaction(function () use ($request): void {
@@ -32,9 +30,10 @@ class ModerateSongRequestAction
             $points = (int) config('oz.points.song_request_approved');
 
             if ($points > 0) {
-                $this->award->handle($request->user, $points, PointReason::SongRequestApproved, $request->station, [
+                // Queued, and only once the approval is committed.
+                AwardPoints::dispatch($request->user, $points, PointReason::SongRequestApproved, $request->station, [
                     'song_request_id' => $request->id,
-                ]);
+                ])->afterCommit();
             }
         });
 

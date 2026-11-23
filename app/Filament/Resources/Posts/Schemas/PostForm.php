@@ -5,9 +5,9 @@ namespace App\Filament\Resources\Posts\Schemas;
 use App\Enums\PostStatus;
 use App\Filament\Support\StationFields;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
@@ -81,12 +81,12 @@ class PostForm
                                     ]),
                                 Section::make('Featured image')
                                     ->schema([
-                                        FileUpload::make('featured_image')
+                                        SpatieMediaLibraryFileUpload::make('featured')
+                                            ->collection('featured')
                                             ->hiddenLabel()
                                             ->image()
                                             ->imageEditor()
                                             ->imageAspectRatio('16:9')
-                                            ->directory('posts')
                                             ->maxSize(4096),
                                     ]),
                             ]),

@@ -17,6 +17,7 @@ use App\Models\Reward;
 use App\Models\Station;
 use App\Models\User;
 use App\Support\PageMeta;
+use App\Support\StationCache;
 use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -25,6 +26,9 @@ use Inertia\Response;
 
 class StationController extends Controller
 {
+    /** Lists whose contents change with the clock (scheduled posts, upcoming events). */
+    private const TIME_SENSITIVE_TTL = 120;
+
     public function home(Request $request, Station $station): Response
     {
         return Inertia::render('station/home', [
@@ -32,35 +36,36 @@ class StationController extends Controller
                 "{$station->name} | {$station->tagline}",
                 strip_tags((string) $station->about_content),
             ),
-            'news' => PostResource::collection(
+            // Short TTL: scheduled posts and events go live by the clock, not by an edit.
+            'news' => StationCache::remember($station, 'home-news', fn (): array => PostResource::collection(
                 $station->posts()->published()->with('author')->latest('published_at')->limit(3)->get()
-            )->resolve($request),
-            'events' => EventResource::collection(
+            )->resolve($request), ttl: self::TIME_SENSITIVE_TTL),
+            'events' => StationCache::remember($station, 'home-events', fn (): array => EventResource::collection(
                 $station->events()->upcoming()->limit(3)->get()
-            )->resolve($request),
-            'highlights' => SocialHighlightResource::collection(
+            )->resolve($request), ttl: self::TIME_SENSITIVE_TTL),
+            'highlights' => StationCache::remember($station, 'home-highlights', fn (): array => SocialHighlightResource::collection(
                 $station->socialHighlights()->featured()->ordered()->limit(6)->get()
-            )->resolve($request),
+            )->resolve($request)),
         ]);
     }
 
     public function programs(Request $request, Station $station): Response
     {
-        $slots = ProgramSchedule::query()
-            ->forStation($station)
-            ->whereHas('program', fn (Builder $query) => $query->where('is_active', true))
-            ->with(['program.announcers' => fn ($query) => $query->where('is_active', true)])
-            ->orderBy('day_of_week')
-            ->orderBy('start_time')
-            ->get();
-
         return Inertia::render('station/programs', [
             'meta' => PageMeta::make("Programs | {$station->name}", "The weekly {$station->name} schedule, every show and every host."),
             'days' => collect(DayOfWeek::cases())->map(fn (DayOfWeek $day): array => [
                 'value' => $day->value,
                 'label' => $day->getLabel(),
             ]),
-            'slots' => ScheduleSlotResource::collection($slots)->resolve($request),
+            'slots' => StationCache::remember($station, 'programs-page', fn (): array => ScheduleSlotResource::collection(
+                ProgramSchedule::query()
+                    ->forStation($station)
+                    ->whereHas('program', fn (Builder $query) => $query->where('is_active', true))
+                    ->with(['program.announcers' => fn ($query) => $query->where('is_active', true)])
+                    ->orderBy('day_of_week')
+                    ->orderBy('start_time')
+                    ->get()
+            )->resolve($request)),
         ]);
     }
 
@@ -68,9 +73,9 @@ class StationController extends Controller
     {
         return Inertia::render('station/announcers', [
             'meta' => PageMeta::make("Announcers | {$station->name}", "Meet the voices of {$station->name}."),
-            'announcers' => AnnouncerResource::collection(
+            'announcers' => StationCache::remember($station, 'announcers-page', fn (): array => AnnouncerResource::collection(
                 $station->announcers()->active()->with(['programs' => fn ($query) => $query->active()])->orderBy('name')->get()
-            )->resolve($request),
+            )->resolve($request)),
         ]);
     }
 

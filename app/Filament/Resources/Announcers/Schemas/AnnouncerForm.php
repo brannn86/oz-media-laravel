@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\Announcers\Schemas;
 
 use App\Filament\Support\StationFields;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -55,12 +55,12 @@ class AnnouncerForm
                             ->schema([
                                 Section::make()
                                     ->schema([
-                                        FileUpload::make('avatar')
+                                        SpatieMediaLibraryFileUpload::make('avatar')
+                                            ->collection('avatar')
                                             ->image()
                                             ->avatar()
                                             ->imageEditor()
                                             ->circleCropper()
-                                            ->directory('announcers')
                                             ->maxSize(2048),
                                         Toggle::make('is_active')
                                             ->label('Active')

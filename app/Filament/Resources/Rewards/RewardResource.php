@@ -8,15 +8,15 @@ use App\Models\Reward;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
@@ -67,10 +67,10 @@ class RewardResource extends Resource
                 TextInput::make('sort_order')
                     ->numeric()
                     ->default(0),
-                FileUpload::make('image')
+                SpatieMediaLibraryFileUpload::make('image')
+                    ->collection('image')
                     ->image()
                     ->imageEditor()
-                    ->directory('rewards')
                     ->maxSize(4096),
                 Toggle::make('is_active')
                     ->label('Available to redeem')
@@ -84,7 +84,9 @@ class RewardResource extends Resource
             ->reorderable('sort_order')
             ->defaultSort('sort_order')
             ->columns([
-                ImageColumn::make('image')->label('')->square()->imageSize(48),
+                SpatieMediaLibraryImageColumn::make('image')
+                    ->collection('image')
+                    ->conversion('thumb')->label('')->square()->imageSize(48),
                 TextColumn::make('name')->searchable()->weight('medium'),
                 TextColumn::make('points_cost')->label('Cost')->suffix(' poin')->sortable(),
                 TextColumn::make('stock')->placeholder('Unlimited')->sortable(),

@@ -13,7 +13,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -26,7 +26,9 @@ class PostsTable
             ->modifyQueryUsing(fn ($query) => $query->with(['author', 'station']))
             ->defaultSort('created_at', 'desc')
             ->columns([
-                ImageColumn::make('featured_image')
+                SpatieMediaLibraryImageColumn::make('featured')
+                    ->collection('featured')
+                    ->conversion('thumb')
                     ->label('')
                     ->imageWidth(80)
                     ->imageHeight(45),

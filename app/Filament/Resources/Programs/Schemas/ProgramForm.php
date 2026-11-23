@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\Programs\Schemas;
 
 use App\Filament\Support\StationFields;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
@@ -51,10 +51,10 @@ class ProgramForm
                                     ->label('Active')
                                     ->helperText('Inactive programs are hidden from the public schedule.')
                                     ->default(true),
-                                FileUpload::make('cover_image')
+                                SpatieMediaLibraryFileUpload::make('cover')
+                                    ->collection('cover')
                                     ->image()
                                     ->imageEditor()
-                                    ->directory('programs')
                                     ->maxSize(4096),
                             ]),
                     ]),

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasWebpImages;
 use Carbon\CarbonImmutable;
 use Database\Factories\RewardFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * Merch, tickets and other prizes listeners buy with OZ Poin.
@@ -27,10 +29,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['station_id', 'name', 'description', 'image', 'points_cost', 'stock', 'is_active', 'sort_order'])]
-class Reward extends Model
+class Reward extends Model implements HasMedia
 {
     /** @use HasFactory<RewardFactory> */
-    use HasFactory;
+    use HasFactory, HasWebpImages;
 
     protected function casts(): array
     {
@@ -74,5 +76,15 @@ class Reward extends Model
     public function isInStock(): bool
     {
         return $this->stock === null || $this->stock > 0;
+    }
+
+    /**
+     * Reward photo: WebP up to 1200x1200, falling back to the old `image` column.
+     *
+     * @return array<string, array{0: int, 1: int, 2: string|null}>
+     */
+    protected function webpImageCollections(): array
+    {
+        return ['image' => [1200, 1200, 'image']];
     }
 }

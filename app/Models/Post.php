@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PostStatus;
 use App\Models\Concerns\BelongsToStation;
 use App\Models\Concerns\HasUniqueSlug;
+use App\Models\Concerns\HasWebpImages;
 use Carbon\CarbonImmutable;
 use Database\Factories\PostFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * An OZ News article.
@@ -35,10 +38,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'station_id', 'author_id', 'title', 'slug', 'excerpt', 'body', 'featured_image',
     'status', 'published_at', 'meta_title', 'meta_description',
 ])]
-class Post extends Model
+class Post extends Model implements HasMedia
 {
     /** @use HasFactory<PostFactory> */
-    use BelongsToStation, HasFactory, HasUniqueSlug;
+    use BelongsToStation, HasFactory, HasUniqueSlug, HasWebpImages;
 
     protected $attributes = [
         'status' => 'draft',
@@ -60,6 +63,14 @@ class Post extends Model
             'status' => PostStatus::class,
             'published_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return HasMany<PostView, $this>
+     */
+    public function dailyViews(): HasMany
+    {
+        return $this->hasMany(PostView::class);
     }
 
     /**
@@ -85,5 +96,15 @@ class Post extends Model
     {
         return $this->status === PostStatus::Published
             && $this->published_at?->isPast() === true;
+    }
+
+    /**
+     * Article featured image: WebP up to 1920x1080, falling back to the old `featured_image` column.
+     *
+     * @return array<string, array{0: int, 1: int, 2: string|null}>
+     */
+    protected function webpImageCollections(): array
+    {
+        return ['featured' => [1920, 1080, 'featured_image']];
     }
 }

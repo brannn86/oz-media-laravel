@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToStation;
 use App\Models\Concerns\HasUniqueSlug;
+use App\Models\Concerns\HasWebpImages;
 use Carbon\CarbonImmutable;
 use Database\Factories\ProgramFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * @property int $id
@@ -25,10 +27,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['station_id', 'title', 'slug', 'description', 'cover_image', 'is_active'])]
-class Program extends Model
+class Program extends Model implements HasMedia
 {
     /** @use HasFactory<ProgramFactory> */
-    use BelongsToStation, HasFactory, HasUniqueSlug;
+    use BelongsToStation, HasFactory, HasUniqueSlug, HasWebpImages;
 
     protected function casts(): array
     {
@@ -61,5 +63,15 @@ class Program extends Model
     public function scopeActive(Builder $query): void
     {
         $query->where('is_active', true);
+    }
+
+    /**
+     * Program cover art: WebP up to 1600x1600, falling back to the old `cover_image` column.
+     *
+     * @return array<string, array{0: int, 1: int, 2: string|null}>
+     */
+    protected function webpImageCollections(): array
+    {
+        return ['cover' => [1600, 1600, 'cover_image']];
     }
 }

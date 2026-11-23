@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use App\Enums\SocialPlatform;
 use App\Models\SocialHighlight;
-use App\Support\MediaUrl;
 use App\Support\VideoStream;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -25,7 +24,7 @@ class SocialHighlightResource extends JsonResource
             'platform_label' => $this->platform->getLabel(),
             'url' => $this->post_url,
             'title' => $this->title,
-            'thumbnail_url' => MediaUrl::for($this->custom_thumbnail) ?? $this->platformThumbnail(),
+            'thumbnail_url' => $this->webpImageUrl('thumbnail') ?? $this->platformThumbnail(),
         ];
     }
 

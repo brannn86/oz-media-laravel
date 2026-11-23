@@ -2,8 +2,11 @@
 
 namespace App\Actions\Broadcast;
 
+use App\Models\Announcer;
+use App\Models\Program;
 use App\Models\ProgramSchedule;
 use App\Models\Station;
+use App\Support\StationCache;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -58,6 +61,33 @@ class GetCurrentBroadcastAction
      * @return Collection<int, ProgramSchedule>
      */
     private function slots(Station $station): Collection
+    {
+        // The week's grid changes rarely and is read on every page view and
+        // player refresh: cached per station, flushed by StationContentObserver.
+        // Stored as plain arrays: the cache (Redis) deliberately refuses to
+        // unserialize PHP objects (config cache.serializable_classes = false).
+        $rows = StationCache::remember($station, 'schedule-slots:v2', fn (): array => $this->loadSlots($station)
+            ->map(fn (ProgramSchedule $slot): array => [
+                'slot' => $slot->getAttributes(),
+                'program' => $slot->program->getAttributes(),
+                'announcers' => $slot->program->announcers->map(fn (Announcer $host): array => $host->getAttributes())->all(),
+            ])
+            ->all());
+
+        return collect($rows)->map(function (array $row): ProgramSchedule {
+            $program = (new Program)->newFromBuilder($row['program']);
+            $program->setRelation('announcers', (new Announcer)->newCollection(
+                array_map(fn (array $host): Announcer => (new Announcer)->newFromBuilder($host), $row['announcers']),
+            ));
+
+            return (new ProgramSchedule)->newFromBuilder($row['slot'])->setRelation('program', $program);
+        });
+    }
+
+    /**
+     * @return Collection<int, ProgramSchedule>
+     */
+    private function loadSlots(Station $station): Collection
     {
         return ProgramSchedule::query()
             ->whereHas('program', fn (Builder $query) => $query

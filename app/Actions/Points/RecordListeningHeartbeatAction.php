@@ -3,31 +3,29 @@
 namespace App\Actions\Points;
 
 use App\Enums\PointReason;
-use App\Models\PointTransaction;
+use App\Jobs\AwardPoints;
 use App\Models\Station;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Rewards a minute of listening. Players call it every 60 seconds while
  * audio or video is actually playing (POST /api/v1/stations/{slug}/heartbeat).
  *
+ * Built for traffic spikes: the request path only touches Redis plus one
+ * small user-row update on the first listen of the day. Ledger writes go to
+ * the `points` queue (AwardPoints job).
+ *
  * Anti-farming:
  * - A cache lock keyed by *account* (not tab, device or station) admits one
  *   heartbeat per interval, so extra tabs earn nothing extra. On Redis the
  *   lock is atomic across all web servers.
- * - Listening points stop at a daily cap (WIB day).
- *
- * The first accepted heartbeat of a WIB day also advances the listening
- * streak and pays the streak bonus.
+ * - A per-account Redis counter caps listening points per WIB day.
  */
 class RecordListeningHeartbeatAction
 {
     public const TIMEZONE = 'Asia/Jakarta';
-
-    public function __construct(private readonly AwardPointsAction $award) {}
 
     public function handle(User $user, Station $station): HeartbeatResult
     {
@@ -46,31 +44,39 @@ class RecordListeningHeartbeatAction
             );
         }
 
-        return DB::transaction(function () use ($user, $station, $interval): HeartbeatResult {
-            $today = CarbonImmutable::now(self::TIMEZONE)->startOfDay();
+        $now = CarbonImmutable::now(self::TIMEZONE);
+        $today = $now->startOfDay();
+        // Day keys live until shortly after the WIB day ends.
+        $dayTtl = (int) $now->diffInSeconds($today->addDay(), true) + 3600;
 
-            $streakBonus = $this->advanceStreak($user, $station, $today);
-            [$listening, $capReached] = $this->awardListening($user, $station, $today);
+        $streakBonus = $this->advanceStreak($user, $station, $today, $dayTtl);
+        [$listening, $capReached] = $this->awardListening($user, $station, $today, $dayTtl);
 
-            return new HeartbeatResult(
-                accepted: true,
-                listeningPoints: $listening,
-                streakBonus: $streakBonus,
-                streakDays: $user->current_streak_days,
-                balance: $user->points_balance,
-                dailyCapReached: $capReached,
-                nextInSeconds: $interval,
-            );
-        });
+        return new HeartbeatResult(
+            accepted: true,
+            listeningPoints: $listening,
+            streakBonus: $streakBonus,
+            streakDays: $user->current_streak_days,
+            // Includes this heartbeat's points, which the queue is writing now.
+            balance: $user->points_balance + $listening + $streakBonus,
+            dailyCapReached: $capReached,
+            nextInSeconds: $interval,
+        );
     }
 
     /**
      * @return int The streak bonus paid (0 if already counted today).
      */
-    private function advanceStreak(User $user, Station $station, CarbonImmutable $today): int
+    private function advanceStreak(User $user, Station $station, CarbonImmutable $today, int $ttl): int
     {
+        // Only the first heartbeat of the WIB day continues the streak.
+        if (! Cache::add("listened:user:{$user->id}:{$today->toDateString()}", true, $ttl)) {
+            return 0;
+        }
+
         $last = $user->last_listened_date;
 
+        // Redis was flushed mid-day: the database still knows today counted.
         if ($last !== null && $last->isSameDay($today)) {
             return 0;
         }
@@ -86,7 +92,7 @@ class RecordListeningHeartbeatAction
             * min($user->current_streak_days, (int) config('oz.points.streak_bonus_max_days'));
 
         if ($bonus > 0) {
-            $this->award->handle($user, $bonus, PointReason::StreakBonus, $station, [
+            AwardPoints::dispatch($user, $bonus, PointReason::StreakBonus, $station, [
                 'streak_days' => $user->current_streak_days,
             ]);
         }
@@ -97,22 +103,22 @@ class RecordListeningHeartbeatAction
     /**
      * @return array{0: int, 1: bool} Points awarded, and whether today's cap is now reached.
      */
-    private function awardListening(User $user, Station $station, CarbonImmutable $today): array
+    private function awardListening(User $user, Station $station, CarbonImmutable $today, int $ttl): array
     {
         $cap = (int) config('oz.points.daily_listening_cap');
+        $per = (int) config('oz.points.per_heartbeat');
+        $key = "listening:user:{$user->id}:{$today->toDateString()}";
 
-        $earnedToday = (int) PointTransaction::query()
-            ->where('user_id', $user->id)
-            ->where('reason', PointReason::Listening)
-            ->where('created_at', '>=', $today->setTimezone(config('app.timezone')))
-            ->sum('points');
+        Cache::add($key, 0, $ttl);
+        $total = (int) Cache::increment($key, $per);
 
-        $points = max(0, min((int) config('oz.points.per_heartbeat'), $cap - $earnedToday));
+        // Only the part of this minute that still fits under the cap.
+        $points = max(0, min($per, $cap - ($total - $per)));
 
         if ($points > 0) {
-            $this->award->handle($user, $points, PointReason::Listening, $station);
+            AwardPoints::dispatch($user, $points, PointReason::Listening, $station);
         }
 
-        return [$points, $earnedToday + $points >= $cap];
+        return [$points, $total >= $cap];
     }
 }

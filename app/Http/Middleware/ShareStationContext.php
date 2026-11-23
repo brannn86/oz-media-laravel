@@ -10,6 +10,7 @@ use App\Http\Resources\ChatSettingsResource;
 use App\Http\Resources\StationResource;
 use App\Models\Station;
 use App\Models\User;
+use App\Support\StationCache;
 use Closure;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -33,7 +34,8 @@ class ShareStationContext
         abort_unless($station instanceof Station && $station->is_active, 404);
 
         Inertia::share([
-            'station' => fn () => StationResource::make($station)->resolve($request),
+            // Station settings rarely change; cached until they do (StationContentObserver).
+            'station' => fn () => StationCache::remember($station, 'station-resource', fn (): array => StationResource::make($station)->resolve($request)),
             'broadcast' => fn () => BroadcastResource::make($this->getCurrentBroadcast->handle($station))->resolve($request),
             'chat' => fn () => [
                 'settings' => ChatSettingsResource::make($station)->resolve($request),

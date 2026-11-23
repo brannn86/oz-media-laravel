@@ -59,6 +59,12 @@
             <link rel="canonical" href="{{ $meta['url'] ?? request()->url() }}">
         @endif
 
+        @php($umami = config('oz.analytics.umami'))
+        @if (filled($umami['script_url'] ?? null) && filled($umami['website_id'] ?? null) && str($page['component'] ?? '')->startsWith(['station/', 'corporate/']))
+            {{-- Self-hosted Umami: cookieless page analytics for the public site only. --}}
+            <script defer src="{{ $umami['script_url'] }}" data-website-id="{{ $umami['website_id'] }}"></script>
+        @endif
+
         @fonts
 
         @viteReactRefresh

@@ -3,10 +3,20 @@
 namespace App\Providers;
 
 use App\Enums\AdminRole;
+use App\Models\Announcer;
+use App\Models\Event;
+use App\Models\Post;
+use App\Models\Program;
+use App\Models\ProgramSchedule;
+use App\Models\SocialHighlight;
+use App\Models\Station;
+use App\Models\User;
+use App\Observers\StationContentObserver;
 use App\Support\ProfanityFilter;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -30,6 +40,20 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->protectAdminRoles();
+        $this->invalidateStationCaches();
+
+        // Laravel Pulse (/pulse): server health, queues, Reverb load. Developers only.
+        Gate::define('viewPulse', fn (User $user): bool => $user->isDev());
+    }
+
+    /**
+     * Anything the public site shows for a station flushes that station's cache.
+     */
+    protected function invalidateStationCaches(): void
+    {
+        foreach ([Station::class, Program::class, ProgramSchedule::class, Announcer::class, Post::class, Event::class, SocialHighlight::class] as $model) {
+            $model::observe(StationContentObserver::class);
+        }
     }
 
     /**

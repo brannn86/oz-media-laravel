@@ -6,7 +6,7 @@ use App\Filament\Support\StationFields;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\TernaryFilter;
@@ -20,7 +20,9 @@ class ProgramsTable
             ->modifyQueryUsing(fn ($query) => $query->with('announcers')->withCount('schedules'))
             ->defaultSort('title')
             ->columns([
-                ImageColumn::make('cover_image')
+                SpatieMediaLibraryImageColumn::make('cover')
+                    ->collection('cover')
+                    ->conversion('thumb')
                     ->label('')
                     ->square()
                     ->imageSize(48),

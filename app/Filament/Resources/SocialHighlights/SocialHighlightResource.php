@@ -14,8 +14,8 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
@@ -24,7 +24,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -80,10 +80,10 @@ class SocialHighlightResource extends Resource
                 TextInput::make('title')
                     ->required()
                     ->maxLength(255),
-                FileUpload::make('custom_thumbnail')
+                SpatieMediaLibraryFileUpload::make('thumbnail')
+                    ->collection('thumbnail')
                     ->image()
                     ->imageEditor()
-                    ->directory('social-highlights')
                     ->maxSize(2048)
                     ->helperText('Optional. Overrides the platform thumbnail.'),
                 Grid::make(1)->schema([
@@ -103,7 +103,9 @@ class SocialHighlightResource extends Resource
             ->reorderable('sort_order')
             ->defaultSort('sort_order')
             ->columns([
-                ImageColumn::make('custom_thumbnail')
+                SpatieMediaLibraryImageColumn::make('thumbnail')
+                    ->collection('thumbnail')
+                    ->conversion('thumb')
                     ->label('')
                     ->imageWidth(64)
                     ->imageHeight(64),

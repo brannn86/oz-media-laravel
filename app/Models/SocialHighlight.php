@@ -4,12 +4,14 @@ namespace App\Models;
 
 use App\Enums\SocialPlatform;
 use App\Models\Concerns\BelongsToStation;
+use App\Models\Concerns\HasWebpImages;
 use Carbon\CarbonImmutable;
 use Database\Factories\SocialHighlightFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
 
 /**
  * @property int $id
@@ -24,10 +26,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property CarbonImmutable|null $updated_at
  */
 #[Fillable(['station_id', 'platform', 'post_url', 'title', 'custom_thumbnail', 'is_featured', 'sort_order'])]
-class SocialHighlight extends Model
+class SocialHighlight extends Model implements HasMedia
 {
     /** @use HasFactory<SocialHighlightFactory> */
-    use BelongsToStation, HasFactory;
+    use BelongsToStation, HasFactory, HasWebpImages;
 
     protected function casts(): array
     {
@@ -52,5 +54,15 @@ class SocialHighlight extends Model
     public function scopeOrdered(Builder $query): void
     {
         $query->orderBy('sort_order')->orderByDesc('id');
+    }
+
+    /**
+     * Custom thumbnail: WebP up to 800x1000, falling back to the old `custom_thumbnail` column.
+     *
+     * @return array<string, array{0: int, 1: int, 2: string|null}>
+     */
+    protected function webpImageCollections(): array
+    {
+        return ['thumbnail' => [800, 1000, 'custom_thumbnail']];
     }
 }
