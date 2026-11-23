@@ -1,5 +1,12 @@
-import { MapPin, Ticket } from 'lucide-react';
-import { STATION_TIMEZONE, formatTime } from '@/lib/wib';
+import { CalendarClock, Info, MapPin, Ticket, Users } from 'lucide-react';
+import { useState } from 'react';
+import { OzDialog } from '@/components/station/oz-dialog';
+import {
+    STATION_TIMEZONE,
+    formatDate,
+    formatTime,
+    formatWeekday,
+} from '@/lib/wib';
 import { cn } from '@/lib/utils';
 import type { StationEvent } from '@/types';
 
@@ -29,6 +36,7 @@ export function EventRow({
     muted?: boolean;
 }) {
     const start = new Date(event.starts_at);
+    const [open, setOpen] = useState(false);
 
     return (
         <article
@@ -90,17 +98,118 @@ export function EventRow({
                 )}
             </div>
 
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                aria-haspopup="dialog"
+                className="col-start-2 inline-flex items-center gap-2 justify-self-start rounded-full border-2 border-oz-black px-5 py-2 text-sm font-bold transition-colors hover:bg-oz-black hover:text-oz-yellow focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none sm:col-start-3"
+            >
+                <Info className="size-4" aria-hidden />
+                Details
+                <span className="sr-only">: {event.title}</span>
+            </button>
+
+            <EventDialog event={event} open={open} onOpenChange={setOpen} />
+        </article>
+    );
+}
+
+function EventDialog({
+    event,
+    open,
+    onOpenChange,
+}: {
+    event: StationEvent;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const start = new Date(event.starts_at);
+
+    return (
+        <OzDialog
+            open={open}
+            onOpenChange={onOpenChange}
+            title={event.title}
+            description={event.is_oz_event ? 'An OZ event' : undefined}
+            media={
+                event.poster_url ? (
+                    <img
+                        src={event.poster_url}
+                        alt={`Poster for ${event.title}`}
+                        className="absolute inset-0 size-full object-cover"
+                    />
+                ) : (
+                    <span
+                        aria-hidden
+                        className="absolute bottom-4 left-6 font-oz-display leading-none font-extrabold text-oz-black"
+                    >
+                        <span className="block text-8xl tracking-tight">
+                            {dayFormat.format(start)}
+                        </span>
+                        <span className="block text-3xl">
+                            {monthFormat.format(start)}
+                        </span>
+                    </span>
+                )
+            }
+        >
+            <dl className="mt-5 space-y-3">
+                <div className="flex gap-3">
+                    <dt className="pt-0.5">
+                        <CalendarClock className="size-5" aria-hidden />
+                        <span className="sr-only">When</span>
+                    </dt>
+                    <dd className="font-semibold">
+                        {formatWeekday(event.starts_at)},{' '}
+                        {formatDate(event.starts_at)}
+                        <span className="block font-normal text-oz-ink">
+                            {formatTime(event.starts_at)}
+                            {event.ends_at &&
+                                ` – ${formatTime(event.ends_at)}`}{' '}
+                            WIB
+                        </span>
+                    </dd>
+                </div>
+                {event.location && (
+                    <div className="flex gap-3">
+                        <dt className="pt-0.5">
+                            <MapPin className="size-5" aria-hidden />
+                            <span className="sr-only">Where</span>
+                        </dt>
+                        <dd className="font-semibold">{event.location}</dd>
+                    </div>
+                )}
+                {event.organizer && !event.is_oz_event && (
+                    <div className="flex gap-3">
+                        <dt className="pt-0.5">
+                            <Users className="size-5" aria-hidden />
+                            <span className="sr-only">Organiser</span>
+                        </dt>
+                        <dd className="font-semibold">
+                            Organised by {event.organizer}
+                        </dd>
+                    </div>
+                )}
+            </dl>
+
+            {event.description && (
+                <div
+                    className="oz-prose mt-6 text-base"
+                    dangerouslySetInnerHTML={{ __html: event.description }}
+                />
+            )}
+
             {event.ticket_url && (
                 <a
                     href={event.ticket_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="col-start-2 inline-flex items-center gap-2 justify-self-start rounded-full border-2 border-oz-black px-5 py-2 text-sm font-bold transition-colors hover:bg-oz-black hover:text-oz-yellow focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none sm:col-start-3"
+                    className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-oz-black px-6 font-bold text-oz-white transition-transform hover:scale-[1.02] focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none"
                 >
-                    <Ticket className="size-4" aria-hidden />
+                    <Ticket className="size-5" aria-hidden />
                     Get tickets
                 </a>
             )}
-        </article>
+        </OzDialog>
     );
 }
