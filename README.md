@@ -61,13 +61,13 @@ composer dev
 
 This runs everything in one terminal:
 
-| Process   | Command                                                                       |
-| --------- | ----------------------------------------------------------------------------- |
-| server    | `php artisan serve` (skip it if Herd/Valet serves the site)                   |
-| vite      | `npm run dev`                                                                 |
-| reverb    | `php artisan reverb:start` (WebSockets on port 8080)                          |
-| queue     | `php artisan queue:listen --queue=points,media,analytics,maintenance,default` |
-| scheduler | `php artisan schedule:work` (now-playing sync, listener sampling, cleanup)    |
+| Process   | Command                                                                            |
+| --------- | ---------------------------------------------------------------------------------- |
+| server    | `php artisan serve` (skip it if Herd/Valet serves the site)                        |
+| vite      | `npm run dev`                                                                      |
+| reverb    | `php artisan reverb:start` (WebSockets on port 8080)                               |
+| queue     | `php artisan queue:listen --queue=mail,points,media,analytics,maintenance,default` |
+| scheduler | `php artisan schedule:work` (now-playing sync, listener sampling, cleanup)         |
 
 Then open:
 
@@ -114,6 +114,7 @@ If a page 500s with _"Unable to locate file in Vite manifest"_ or TypeScript say
 | `oz:sample-listeners`                   | every minute    | Stores each station's daily peak listener count for the dashboard                                                                                         |
 | `oz:prune-redis-keys`                   | hourly          | Deletes heartbeat keys in Redis that lost their TTL                                                                                                       |
 | `oz:archive-chat [--now]`               | daily 03:30 WIB | Moves chat older than 90 days to `chat_message_archives`, purges deleted chat after 30 days                                                               |
+| `oz:mail-test {to}`                     | manual          | Sends one test email right away with the current mail settings and shows the SMTP error if it fails                                                       |
 
 ## Project layout
 
@@ -244,17 +245,48 @@ Broadcasting fails safe: if Reverb is down, the action still succeeds and the ev
 
 Beyond the standard Laravel keys in `.env.example`:
 
-| Key                                                                   | Purpose                                                                           |
-| --------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD`                                       | First `dev` admin created by the seeder                                           |
-| `REVERB_*`, `VITE_REVERB_*`                                           | WebSocket server and the client's connection to it                                |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`     | "Continue with Google" (hidden when unset)                                        |
-| `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID`                                | Adds the Umami tracking script to station sites                                   |
-| `UMAMI_SHARE_URL`                                                     | Umami share link embedded in the admin dashboard                                  |
-| `OZ_BALI_URL`                                                         | Link to the OZ Bali partner site (shown as "coming soon" when empty)              |
-| `QUEUE_POINTS`, `QUEUE_MEDIA`, `QUEUE_ANALYTICS`, `QUEUE_MAINTENANCE` | Rename the named queues (defaults: `points`, `media`, `analytics`, `maintenance`) |
+| Key                                                                                 | Purpose                                                                                   |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD`                                                     | First `dev` admin created by the seeder                                                   |
+| `REVERB_*`, `VITE_REVERB_*`                                                         | WebSocket server and the client's connection to it                                        |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`                   | "Continue with Google" (hidden when unset)                                                |
+| `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID`                                              | Adds the Umami tracking script to station sites                                           |
+| `UMAMI_SHARE_URL`                                                                   | Umami share link embedded in the admin dashboard                                          |
+| `OZ_BALI_URL`                                                                       | Link to the OZ Bali partner site (shown as "coming soon" when empty)                      |
+| `QUEUE_MAIL`, `QUEUE_POINTS`, `QUEUE_MEDIA`, `QUEUE_ANALYTICS`, `QUEUE_MAINTENANCE` | Rename the named queues (defaults: `mail`, `points`, `media`, `analytics`, `maintenance`) |
 
 App-level tuning (chat limits, blocked words seed, points, request limits, retention) lives in `config/oz.php`.
+
+## Email
+
+The app sends two emails: the **password reset** link and the sign-up **email verification**. Both are queued on the `mail` queue, so a slow or unreachable mail server never blocks sign-up or "forgot password". They only go out when a queue worker is running. A reset requested from a station page links back to that page (`?return=`).
+
+Locally, `MAIL_MAILER=log` writes emails to `storage/logs/laravel.log` instead of sending them.
+
+Production sends through SMTP as **OZ Radio <no-reply@ozmedianet.com>**:
+
+```dotenv
+APP_NAME="OZ Radio"                     # shown in the email header and sign-off
+APP_URL=https://your-public-domain      # links in emails are built from this
+MAIL_MAILER=smtp
+MAIL_SCHEME=null                        # leave null: 587 uses STARTTLS, 465 uses SSL automatically
+MAIL_HOST=smtp.your-provider.com
+MAIL_PORT=587
+MAIL_USERNAME=...
+MAIL_PASSWORD=...
+MAIL_FROM_ADDRESS="no-reply@ozmedianet.com"
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+Then check it from the server: `php artisan oz:mail-test you@example.com`.
+
+So emails land in the inbox rather than spam, `ozmedianet.com` needs these DNS records (your SMTP provider gives you the exact values):
+
+- **SPF**: a TXT record authorizing the SMTP server to send for the domain
+- **DKIM**: the signing key TXT record from the provider
+- **DMARC**: e.g. `_dmarc.ozmedianet.com TXT "v=DMARC1; p=none; rua=mailto:postmaster@ozmedianet.com"` to start, tightened to `quarantine` once reports look clean
+
+`APP_NAME` is also part of the Redis cache and session key prefixes, so changing it on a running server signs everyone out once and starts with a cold cache.
 
 ## Testing
 
@@ -281,10 +313,10 @@ php artisan queue:restart
 
 Keep these processes running (Supervisor, systemd or Forge daemons):
 
-| Process       | Command                                                                                                                           |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Queue workers | `php artisan queue:work --queue=points,media,analytics,maintenance,default` (or one worker per queue to scale them independently) |
-| WebSockets    | `php artisan reverb:start` behind your web server's proxy                                                                         |
-| Scheduler     | cron: `* * * * * php /path/to/artisan schedule:run` (it stays up for the minute to run the 15-second now-playing sync)            |
+| Process       | Command                                                                                                                                |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Queue workers | `php artisan queue:work --queue=mail,points,media,analytics,maintenance,default` (or one worker per queue to scale them independently) |
+| WebSockets    | `php artisan reverb:start` behind your web server's proxy                                                                              |
+| Scheduler     | cron: `* * * * * php /path/to/artisan schedule:run` (it stays up for the minute to run the 15-second now-playing sync)                 |
 
-Production `.env` checklist: `APP_ENV=production`, `APP_DEBUG=false`, `CACHE_STORE=redis`, `SESSION_DRIVER=redis`, `QUEUE_CONNECTION=redis`, real `MAIL_*`, `ADMIN_PASSWORD` for the first seed, and `REVERB_HOST`/`REVERB_SCHEME` set to the public WebSocket host. Run `php artisan storage:link` once.
+Production `.env` checklist: `APP_ENV=production`, `APP_DEBUG=false`, `CACHE_STORE=redis`, `SESSION_DRIVER=redis`, `QUEUE_CONNECTION=redis`, SMTP mail (see [Email](#email)), `ADMIN_PASSWORD` for the first seed, and `REVERB_HOST`/`REVERB_SCHEME` set to the public WebSocket host. Run `php artisan storage:link` once.

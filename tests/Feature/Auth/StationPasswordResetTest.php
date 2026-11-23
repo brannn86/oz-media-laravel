@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\Auth\ResetPasswordNotification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 
@@ -15,7 +15,7 @@ it('sends a reset link from the station popup that leads back to the station', f
         ->assertSessionHasNoErrors()
         ->assertSessionHas('status');
 
-    Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $notification) use ($user) {
+    Notification::assertSentTo($user, ResetPasswordNotification::class, function (ResetPasswordNotification $notification) use ($user) {
         $url = $notification->toMail($user)->actionUrl;
 
         expect($url)
@@ -33,7 +33,7 @@ it('drops unsafe return paths from the reset link', function () {
 
     $this->post(route('password.email'), ['email' => $user->email, 'return' => '//evil.example']);
 
-    Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $notification) use ($user) {
+    Notification::assertSentTo($user, ResetPasswordNotification::class, function (ResetPasswordNotification $notification) use ($user) {
         expect($notification->toMail($user)->actionUrl)->not->toContain('return=');
 
         return true;
@@ -71,7 +71,7 @@ it('lands back on the station after resetting and logging in', function () {
 
     $this->post(route('password.email'), ['email' => $user->email, 'return' => '/oz-bandung/events']);
 
-    Notification::assertSentTo($user, ResetPassword::class, function (ResetPassword $notification) use ($user) {
+    Notification::assertSentTo($user, ResetPasswordNotification::class, function (ResetPasswordNotification $notification) use ($user) {
         $this->get($notification->toMail($user)->actionUrl)->assertOk();
 
         $this->post(route('password.update'), [

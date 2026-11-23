@@ -7,10 +7,7 @@ use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Responses\FailedPasswordResetLinkRequestResponse;
 use App\Http\Responses\LogoutResponse;
-use App\Support\ReturnPath;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -51,17 +48,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
 
-        // A reset requested from a station page links back with ?return=, so after
-        // resetting and logging in the listener lands on that station again.
-        ResetPassword::createUrlUsing(function (CanResetPassword $user, string $token): string {
-            $return = request()->input('return');
-
-            return route('password.reset', array_filter([
-                'token' => $token,
-                'email' => $user->getEmailForPasswordReset(),
-                'return' => is_string($return) && ReturnPath::isSafe($return) ? $return : null,
-            ]));
-        });
+        // The reset email's ?return= link is built by App\Notifications\Auth\ResetPasswordNotification.
     }
 
     /**

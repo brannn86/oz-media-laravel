@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Enums\AdminRole;
+use App\Notifications\Auth\ResetPasswordNotification;
+use App\Notifications\Auth\VerifyEmailNotification;
+use App\Support\ReturnPath;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
@@ -123,6 +126,21 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Pas
     public function isDev(): bool
     {
         return $this->hasRole(AdminRole::Dev->value);
+    }
+
+    /**
+     * Queued, and remembers the station page the reset was requested from.
+     *
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token, ReturnPath::from(request())));
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification);
     }
 
     /**

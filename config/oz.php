@@ -106,12 +106,14 @@ return [
     |
     | Heavy or deferrable work runs on named queues so a Horizon supervisor (or
     | separate `queue:work --queue=...` workers) can scale them independently:
-    | points (ledger writes), media (WebP conversions), analytics (article
-    | views), maintenance (chat archiving). `default` keeps everything else.
+    | mail (password reset and verification emails), points (ledger writes),
+    | media (WebP conversions), analytics (article views), maintenance (chat
+    | archiving). `default` keeps everything else. Listed in priority order.
     |
     */
 
     'queues' => [
+        'mail' => env('QUEUE_MAIL', 'mail'),
         'points' => env('QUEUE_POINTS', 'points'),
         'media' => env('QUEUE_MEDIA', 'media'),
         'analytics' => env('QUEUE_ANALYTICS', 'analytics'),
