@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\StreamTitleFormat;
 use App\Filament\Actions\ToggleStreamModeAction;
 use App\Filament\NavigationGroup;
 use App\Models\Station;
@@ -10,6 +11,7 @@ use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -113,7 +115,13 @@ class StationSettings extends Page
                                     ->url()
                                     ->maxLength(255)
                                     ->placeholder('https://stream.example.com/oz-bandung.mp3')
-                                    ->helperText('Icecast / Shoutcast / HLS audio endpoint used in Audio Only mode.'),
+                                    ->helperText('Icecast / Shoutcast / HLS audio endpoint used in Audio Only mode. For an Icecast mount, the song on air is read from the server\'s status page.'),
+                                Select::make('stream_title_format')
+                                    ->label('Song title format')
+                                    ->options(StreamTitleFormat::class)
+                                    ->required()
+                                    ->selectablePlaceholder(false)
+                                    ->helperText('How the automation system writes the stream title, e.g. "Hatchu!! - Salma Salsabil" is Title - Artist.'),
                                 TextInput::make('stream_video_url')
                                     ->label('Video stream URL')
                                     ->url()

@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Pause, Play, Video } from 'lucide-react';
+import { Music, Pause, Play, Video } from 'lucide-react';
 import { usePlayer } from '@/components/player/player-context';
 import { AvatarStack } from '@/components/station/announcer-avatar';
 import { useNow } from '@/hooks/use-now';
@@ -60,6 +60,25 @@ export function OnAirHero({
                     >
                         {current?.program.title ?? station.name}
                     </h1>
+
+                    {player.nowPlaying.track && (
+                        <p
+                            className="mt-6 inline-flex max-w-full items-center gap-3 rounded-full bg-oz-black/10 py-2 pr-5 pl-3 text-base font-semibold"
+                            aria-live="polite"
+                        >
+                            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-oz-black text-oz-yellow">
+                                <Music className="size-4" aria-hidden />
+                            </span>
+                            <span className="min-w-0 truncate">
+                                <span className="sr-only">Now playing: </span>
+                                <span className="font-extrabold">
+                                    {player.nowPlaying.track.title}
+                                </span>
+                                {player.nowPlaying.track.artist &&
+                                    ` · ${player.nowPlaying.track.artist}`}
+                            </span>
+                        </p>
+                    )}
 
                     {current?.program.description && (
                         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-oz-black/80 sm:text-xl">

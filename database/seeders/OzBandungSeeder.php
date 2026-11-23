@@ -44,7 +44,8 @@ class OzBandungSeeder extends Seeder
         return Station::query()->updateOrCreate(['slug' => 'oz-bandung'], [
             'name' => 'OZ Bandung',
             'tagline' => 'Bandung\'s No.1 Hit Music Station',
-            'stream_audio_url' => 'https://stream.ozmedianet.com/oz-bandung/audio.mp3',
+            'stream_audio_url' => 'https://streaming.ozradio.id:8443/ozbandung',
+            'stream_title_format' => 'title_artist',
             'stream_video_url' => 'https://www.youtube.com/embed/live_stream?channel=OZ_BANDUNG_CHANNEL_ID',
             'is_video_live' => false,
             'contact_info' => [

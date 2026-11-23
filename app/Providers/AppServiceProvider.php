@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Observers\StationContentObserver;
 use App\Support\ProfanityFilter;
 use Carbon\CarbonImmutable;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -41,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->protectAdminRoles();
         $this->invalidateStationCaches();
+        $this->registerDevCommands();
 
         // Laravel Pulse (/pulse): server health, queues, Reverb load. Developers only.
         Gate::define('viewPulse', fn (User $user): bool => $user->isDev());
@@ -53,6 +55,17 @@ class AppServiceProvider extends ServiceProvider
     {
         foreach ([Station::class, Program::class, ProgramSchedule::class, Announcer::class, Post::class, Event::class, SocialHighlight::class] as $model) {
             $model::observe(StationContentObserver::class);
+        }
+    }
+
+    /**
+     * `composer dev` / `php artisan dev` also runs the scheduler, so the
+     * Icecast now-playing sync works locally (Reverb registers itself).
+     */
+    protected function registerDevCommands(): void
+    {
+        if ($this->app->runningInConsole() && class_exists(DevCommands::class)) {
+            DevCommands::artisan('schedule:work', 'scheduler');
         }
     }
 

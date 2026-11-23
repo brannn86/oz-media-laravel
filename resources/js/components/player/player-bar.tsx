@@ -27,6 +27,7 @@ export function PlayerBar({ broadcast }: { broadcast: Broadcast }) {
     const { mode, active, status } = player;
 
     const current = broadcast.current;
+    const track = player.nowPlaying.track;
     const hosts = current?.program.announcers
         ?.map((announcer) => announcer.display_name)
         .join(' & ');
@@ -101,9 +102,21 @@ export function PlayerBar({ broadcast }: { broadcast: Broadcast }) {
                         aria-live="polite"
                     >
                         {notice ??
-                            (hosts
-                                ? `With ${hosts}`
-                                : (player.station.tagline ?? 'Live radio'))}
+                            (track ? (
+                                <>
+                                    <span className="sr-only">
+                                        Now playing:{' '}
+                                    </span>
+                                    <span className="font-semibold text-oz-white/85">
+                                        {track.title}
+                                    </span>
+                                    {track.artist && ` · ${track.artist}`}
+                                </>
+                            ) : hosts ? (
+                                `With ${hosts}`
+                            ) : (
+                                (player.station.tagline ?? 'Live radio')
+                            ))}
                     </p>
                 </div>
 

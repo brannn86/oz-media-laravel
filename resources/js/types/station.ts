@@ -65,6 +65,22 @@ export type Broadcast = {
     next: (ScheduleSlot & { starts_at: string }) | null;
 };
 
+/** A song as reported by the station's Icecast stream (times in WIB). */
+export type Track = {
+    id: number;
+    title: string;
+    artist: string | null;
+    started_at: string;
+    ended_at: string | null;
+};
+
+export type NowPlaying = {
+    /** Null between songs or when the stream is off. */
+    track: Track | null;
+    /** Newest first. */
+    recent: Track[];
+};
+
 export type Post = {
     id: number;
     slug: string;
@@ -127,6 +143,7 @@ export type Paginated<T> = {
 export type StationPageProps = {
     station: Station;
     broadcast: Broadcast;
+    now_playing: NowPlaying;
     chat: SharedChatProps;
     /** The signed-in listener, or null for guests. */
     account: Account | null;

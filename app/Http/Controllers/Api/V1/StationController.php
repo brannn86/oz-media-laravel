@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Broadcast\GetCurrentBroadcastAction;
+use App\Actions\NowPlaying\GetNowPlayingAction;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BroadcastResource;
 use App\Http\Resources\ChatSettingsResource;
+use App\Http\Resources\NowPlayingResource;
 use App\Http\Resources\StationResource;
 use App\Models\Station;
 use Illuminate\Http\JsonResponse;
@@ -27,8 +29,12 @@ class StationController extends Controller
         ]);
     }
 
-    public function nowPlaying(Request $request, Station $station, GetCurrentBroadcastAction $getCurrentBroadcast): BroadcastResource
+    /**
+     * The program on air (data) plus the song on air and recently played (now_playing).
+     */
+    public function nowPlaying(Request $request, Station $station, GetCurrentBroadcastAction $getCurrentBroadcast, GetNowPlayingAction $getNowPlaying): BroadcastResource
     {
-        return BroadcastResource::make($getCurrentBroadcast->handle($station));
+        return BroadcastResource::make($getCurrentBroadcast->handle($station))
+            ->additional(['now_playing' => NowPlayingResource::make($getNowPlaying->handle($station))->resolve($request)]);
     }
 }

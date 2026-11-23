@@ -4,6 +4,7 @@ import { EventRow } from '@/components/station/event-row';
 import { HighlightTile } from '@/components/station/highlight-tile';
 import { LeadStory, StoryItem } from '@/components/station/news-items';
 import { OnAirHero } from '@/components/station/on-air-hero';
+import { RecentlyPlayed } from '@/components/station/recently-played';
 import { SectionHeading } from '@/components/station/page-heading';
 import stationRoutes from '@/routes/station';
 import type {
@@ -33,6 +34,8 @@ export default function StationHome() {
             <Head title={meta.title} />
 
             <OnAirHero station={station} broadcast={broadcast} />
+
+            <RecentlyPlayed />
 
             {lead && (
                 <section
