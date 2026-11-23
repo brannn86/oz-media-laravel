@@ -20,32 +20,48 @@ const paths = args.filter((a) => !a.startsWith('--'));
 if (paths.length === 0) paths.push('/');
 
 const baseUrl = process.env.BASE_URL ?? 'http://localhost:8000';
-const executablePath = process.env.BRAVE_PATH ?? '/opt/brave.com/brave-origin/brave';
+const executablePath =
+    process.env.BRAVE_PATH ?? '/opt/brave.com/brave-origin/brave';
 
 mkdirSync(outDir, { recursive: true });
 
 // launch() uses a fresh temporary profile, so the user's real Brave profile is never touched.
 const browser = await chromium.launch({ executablePath, headless: true });
-const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+});
 const page = await context.newPage();
 
 const problems = [];
-page.on('console', (m) => m.type() === 'error' && problems.push(`console: ${m.text()}`));
+page.on(
+    'console',
+    (m) => m.type() === 'error' && problems.push(`console: ${m.text()}`),
+);
 page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
-page.on('response', (r) => r.status() >= 400 && problems.push(`HTTP ${r.status()} ${r.url()}`));
+page.on(
+    'response',
+    (r) => r.status() >= 400 && problems.push(`HTTP ${r.status()} ${r.url()}`),
+);
 
 console.log(`Browser: ${browser.version()} (${executablePath})`);
 
-const slug = (p) => p.replace(/^\/+|\/+$/g, '').replace(/[^a-z0-9]+/gi, '-') || 'home';
+const slug = (p) =>
+    p.replace(/^\/+|\/+$/g, '').replace(/[^a-z0-9]+/gi, '-') || 'home';
 
 if (adminLogin) {
     const { ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
-    if (!ADMIN_EMAIL || !ADMIN_PASSWORD) throw new Error('Set ADMIN_EMAIL and ADMIN_PASSWORD');
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD)
+        throw new Error('Set ADMIN_EMAIL and ADMIN_PASSWORD');
     await page.goto(`${baseUrl}/admin/login`, { waitUntil: 'networkidle' });
     await page.getByLabel('Email address').fill(ADMIN_EMAIL);
-    await page.getByLabel('Password', { exact: false }).first().fill(ADMIN_PASSWORD);
+    await page
+        .getByLabel('Password', { exact: false })
+        .first()
+        .fill(ADMIN_PASSWORD);
     await page.getByRole('button', { name: /sign in/i }).click();
-    await page.waitForURL((u) => !u.pathname.endsWith('/login'), { timeout: 15000 });
+    await page.waitForURL((u) => !u.pathname.endsWith('/login'), {
+        timeout: 15000,
+    });
     console.log(`Admin login OK -> ${page.url()}`);
 }
 

@@ -60,12 +60,16 @@ class AppServiceProvider extends ServiceProvider
 
     /**
      * `composer dev` / `php artisan dev` also runs the scheduler, so the
-     * Icecast now-playing sync works locally (Reverb registers itself).
+     * Icecast now-playing sync works locally (Reverb registers itself), and
+     * its queue worker covers the named queues, not only `default`.
      */
     protected function registerDevCommands(): void
     {
         if ($this->app->runningInConsole() && class_exists(DevCommands::class)) {
             DevCommands::artisan('schedule:work', 'scheduler');
+
+            $queues = implode(',', [...array_values(config('oz.queues')), 'default']);
+            DevCommands::artisan("queue:listen --queue={$queues} --tries=1 --timeout=0", 'queue');
         }
     }
 
