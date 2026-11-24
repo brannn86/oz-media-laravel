@@ -3,6 +3,8 @@
 namespace App\Filament\Pages\Analytics;
 
 use App\Filament\Analytics\AnalyticsPage;
+use App\Filament\Analytics\Widgets\ListenersByHourChart;
+use App\Filament\Analytics\Widgets\ListeningChart;
 use App\Filament\Analytics\Widgets\RadioListenersChart;
 use App\Filament\Analytics\Widgets\RadioStats;
 use App\Filament\Analytics\Widgets\TopSongsTable;
@@ -28,6 +30,8 @@ class RadioAnalytics extends AnalyticsPage
     {
         return [
             RadioStats::class,
+            ListeningChart::class,
+            ListenersByHourChart::class,
             RadioListenersChart::class,
             TopSongsTable::class,
         ];

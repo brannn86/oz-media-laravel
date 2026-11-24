@@ -5,11 +5,12 @@ namespace App\Filament\Pages\Analytics;
 use App\Filament\Analytics\AnalyticsPage;
 use App\Filament\Analytics\Widgets\ReactionsChart;
 use App\Filament\Analytics\Widgets\VideoStats;
+use App\Filament\Analytics\Widgets\WatchingChart;
 use BackedEnum;
 use Filament\Support\Icons\Heroicon;
 
 /**
- * The video livestream: which stations offer it, and live reactions.
+ * The video livestream: viewers, watch time, peak viewers and live reactions.
  */
 class VideoAnalytics extends AnalyticsPage
 {
@@ -27,6 +28,7 @@ class VideoAnalytics extends AnalyticsPage
     {
         return [
             VideoStats::class,
+            WatchingChart::class,
             ReactionsChart::class,
         ];
     }

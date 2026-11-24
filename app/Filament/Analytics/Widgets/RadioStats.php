@@ -4,6 +4,7 @@ namespace App\Filament\Analytics\Widgets;
 
 use App\Actions\Analytics\AnalyticsMetrics;
 use App\Actions\Analytics\DashboardMetrics;
+use App\Enums\AudienceMode;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -22,7 +23,6 @@ class RadioStats extends StatsOverviewWidget
         $metrics = app(AnalyticsMetrics::class);
         $icecast = $dashboard->icecastAudience();
         $website = $dashboard->liveListeners();
-        $minutes = $metrics->listeningMinutes(7);
         $requests = $metrics->songRequests(7);
 
         return [
@@ -31,11 +31,11 @@ class RadioStats extends StatsOverviewWidget
                 ->descriptionIcon(Heroicon::Radio)
                 ->color($icecast === null ? 'gray' : 'success'),
             Stat::make('Website listeners now', $website === null ? '–' : number_format($website))
-                ->description('Peak today: '.number_format($dashboard->peakListenersOn($dashboard->today())))
+                ->description('Most at once, 7 days: '.number_format($metrics->peakConcurrent(AudienceMode::Audio, 7)))
                 ->descriptionIcon(Heroicon::Signal)
                 ->color($website === null ? 'gray' : 'success'),
-            Stat::make('Listening time, 7 days', number_format(intdiv($minutes, 60)).' h')
-                ->description('Signed-in listeners; '.number_format(intdiv($metrics->listeningMinutes(1), 60)).' h today')
+            Stat::make('Listening time on the site, 7 days', number_format($metrics->audienceHours(AudienceMode::Audio, 7), 1).' h')
+                ->description(number_format($metrics->uniqueAudience(AudienceMode::Audio, 7)).' different listeners; '.number_format(intdiv($metrics->listeningMinutes(7), 60)).' h by signed-in ones')
                 ->descriptionIcon(Heroicon::Clock)
                 ->color('primary'),
             Stat::make('Song requests, 7 days', number_format($requests['submitted']))

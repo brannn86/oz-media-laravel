@@ -13,7 +13,7 @@ class AudienceStats extends StatsOverviewWidget
 
     protected ?string $pollingInterval = null;
 
-    protected ?string $description = 'Signed-in listeners only. Active means at least a minute of radio (the OZ Poin heartbeat).';
+    protected ?string $description = 'Accounts and active listeners count signed-in listeners (active: a minute of radio, the OZ Poin heartbeat). Tuned in counts everyone with the site\'s player on, guests included.';
 
     protected function getStats(): array
     {
@@ -29,6 +29,10 @@ class AudienceStats extends StatsOverviewWidget
             Stat::make('Active listeners, 7 days', number_format($metrics->activeListeners(7)))
                 ->description(number_format($metrics->activeListeners(1)).' today, '.number_format($metrics->activeListeners(30)).' in 30 days')
                 ->descriptionIcon(Heroicon::Signal)
+                ->color('success'),
+            Stat::make('Tuned in on the site, 7 days', number_format($metrics->uniqueAudience(null, 7)))
+                ->description(number_format($metrics->uniqueAudience(null, 1)).' today, guests included')
+                ->descriptionIcon(Heroicon::GlobeAlt)
                 ->color('success'),
             Stat::make('On a listening streak', number_format($metrics->listenersOnStreak()))
                 ->description('Listened today or yesterday')

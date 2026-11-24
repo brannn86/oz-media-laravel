@@ -303,11 +303,13 @@ class AnalyticsMetrics
             ->sum('listeners') / 60, 1));
     }
 
-    /** Different people (devices) who listened or watched, guests included. */
-    public function uniqueAudience(AudienceMode $mode, int $days): int
+    /** Different people (devices) who listened or watched (null: either), guests included. */
+    public function uniqueAudience(?AudienceMode $mode, int $days): int
     {
-        return $this->remember("audience-pings:unique:{$mode->value}:{$days}", fn (): int => DB::table('audience_visitors')
-            ->where('mode', $mode->value)
+        $key = $mode->value ?? 'any';
+
+        return $this->remember("audience-pings:unique:{$key}:{$days}", fn (): int => DB::table('audience_visitors')
+            ->when($mode, fn ($query, AudienceMode $mode) => $query->where('mode', $mode->value))
             ->whereBetween('date', $this->lastDates($days))
             ->distinct()
             ->count('visitor'));
