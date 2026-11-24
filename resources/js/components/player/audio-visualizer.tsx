@@ -1,8 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
-/** Bars across the full width; the spectrum is mirrored, bass in the middle. */
-const BARS = 40;
+/**
+ * One bar per this many px of width (within MIN_BARS..MAX_BARS): ~73 on the
+ * desktop player, 32 on a phone. Mirrored, bass in the middle.
+ */
+const BAR_SLOT_PX = 12;
+const MIN_BARS = 32;
+const MAX_BARS = 96;
 /**
  * Bins spread logarithmically from the lowest to about 7 kHz (bin width is
  * sampleRate / fftSize, ~190 Hz at fftSize 256): music lives low, and a
@@ -55,7 +60,8 @@ export function AudioVisualizer({
         ).matches;
 
         const bins = new Uint8Array(analyser?.frequencyBinCount ?? 0);
-        const heights = new Float32Array(BARS);
+        const heights = new Float32Array(MAX_BARS);
+        let bars = MIN_BARS;
         let frame = 0;
         let width = 0;
         let height = 0;
@@ -67,6 +73,10 @@ export function AudioVisualizer({
             canvas.width = Math.round(width * ratio);
             canvas.height = Math.round(height * ratio);
             context.setTransform(ratio, 0, 0, ratio, 0, 0);
+            bars = Math.min(
+                MAX_BARS,
+                Math.max(MIN_BARS, Math.round(width / BAR_SLOT_PX)),
+            );
         };
 
         const observer = new ResizeObserver(resize);
@@ -76,7 +86,7 @@ export function AudioVisualizer({
         /** Target height (0–1) of bar i right now. */
         const target = (i: number, time: number): number => {
             // Mirror: distance from the centre picks the frequency bin.
-            const fromCentre = Math.abs(i - (BARS - 1) / 2) / (BARS / 2);
+            const fromCentre = Math.abs(i - (bars - 1) / 2) / (bars / 2);
 
             if (!playingRef.current) {
                 return 0.06;
@@ -97,11 +107,13 @@ export function AudioVisualizer({
                 return 0.55 - fromCentre * 0.35;
             }
 
-            // Decorative: overlapping slow waves, tallest in the middle.
+            // Decorative: overlapping slow waves, tallest in the middle,
+            // spaced by position (not bar index) so any bar count looks alike.
+            const x = (i / bars) * 40;
             const wave =
-                Math.sin(time / 380 + i * 0.55) * 0.5 +
-                Math.sin(time / 610 - i * 0.31) * 0.35 +
-                Math.sin(time / 230 + i * 1.7) * 0.15;
+                Math.sin(time / 380 + x * 0.55) * 0.5 +
+                Math.sin(time / 610 - x * 0.31) * 0.35 +
+                Math.sin(time / 230 + x * 1.7) * 0.15;
 
             return Math.max(
                 0.08,
@@ -122,11 +134,11 @@ export function AudioVisualizer({
             gradient.addColorStop(1, '#fffbe0');
             context.fillStyle = gradient;
 
-            const slot = width / BARS;
+            const slot = width / bars;
             const barWidth = slot * (1 - GAP);
             const radius = Math.min(barWidth / 2, 6);
 
-            for (let i = 0; i < BARS; i++) {
+            for (let i = 0; i < bars; i++) {
                 // Ease towards the target: smooth rise and fall.
                 heights[i] += (target(i, time) - heights[i]) * 0.25;
 
