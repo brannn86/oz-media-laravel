@@ -1,4 +1,5 @@
 import { Play } from 'lucide-react';
+import { BrandIcon } from '@/components/station/brand-icon';
 import { cn } from '@/lib/utils';
 import type { SocialHighlight } from '@/types';
 
@@ -61,7 +62,11 @@ export function HighlightTile({ highlight }: { highlight: SocialHighlight }) {
                         {highlight.title}
                     </p>
                 )}
-                <span className="absolute top-4 left-4 rounded-full bg-oz-white px-3 py-1 text-xs font-bold text-oz-black">
+                <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-oz-white px-3 py-1 text-xs font-bold text-oz-black">
+                    <BrandIcon
+                        brand={highlight.platform}
+                        className="size-3.5"
+                    />
                     {highlight.platform_label}
                 </span>
                 <span className="absolute top-4 right-4 grid size-9 place-items-center rounded-full bg-oz-yellow text-oz-black">

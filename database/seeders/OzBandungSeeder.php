@@ -56,10 +56,10 @@ class OzBandungSeeder extends Seeder
                 'whatsapp' => '+6281200000000',
             ],
             'social_links' => [
-                'youtube' => 'https://www.youtube.com/@ozradiobandung',
-                'tiktok' => 'https://www.tiktok.com/@ozradiobandung',
                 'instagram' => 'https://www.instagram.com/ozradiobandung',
-                'x' => 'https://x.com/ozradiobandung',
+                'tiktok' => 'https://www.tiktok.com/@ozradiobandung',
+                'youtube' => 'https://www.youtube.com/@ozradiobandung',
+                'threads' => 'https://www.threads.com/@ozradiobandung',
             ],
             'about_content' => <<<'HTML'
                 <p>OZ Bandung is the flagship station of OZ Media, broadcasting the biggest hits, the freshest local music and the stories that matter to Bandung's young urban listeners.</p>

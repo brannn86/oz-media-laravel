@@ -29,10 +29,10 @@ class StationFactory extends Factory
                 'whatsapp' => fake()->e164PhoneNumber(),
             ],
             'social_links' => [
-                'youtube' => null,
-                'tiktok' => null,
                 'instagram' => null,
-                'x' => null,
+                'tiktok' => null,
+                'youtube' => null,
+                'threads' => null,
             ],
             'about_content' => fake()->paragraphs(3, true),
             'privacy_policy_content' => fake()->paragraphs(4, true),

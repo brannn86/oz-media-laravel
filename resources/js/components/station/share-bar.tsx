@@ -1,5 +1,7 @@
 import { Check, Link2, Share2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { BrandIcon } from '@/components/station/brand-icon';
+import type { Brand } from '@/components/station/brand-icon';
 import { cn } from '@/lib/utils';
 
 const pill =
@@ -7,8 +9,7 @@ const pill =
 
 /**
  * Share tools for an article: the device's own share sheet where there is
- * one, copy link, and the networks OZ listeners actually use. Text pills,
- * like SocialLinks: lucide ships no brand icons.
+ * one, copy link, and the networks OZ listeners actually use.
  */
 export function ShareBar({
     url,
@@ -48,20 +49,24 @@ export function ShareBar({
 
     const encodedUrl = encodeURIComponent(url);
     const encodedText = encodeURIComponent(title);
-    const networks = [
+    const networks: { brand: Brand; label: string; href: string }[] = [
         {
+            brand: 'whatsapp',
             label: 'WhatsApp',
             href: `https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}`,
         },
         {
+            brand: 'facebook',
             label: 'Facebook',
             href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
         },
         {
+            brand: 'x',
             label: 'X',
             href: `https://x.com/intent/post?url=${encodedUrl}&text=${encodedText}`,
         },
         {
+            brand: 'telegram',
             label: 'Telegram',
             href: `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`,
         },
@@ -109,6 +114,7 @@ export function ShareBar({
                         rel="noopener noreferrer"
                         className={pill}
                     >
+                        <BrandIcon brand={network.brand} />
                         {network.label}
                         <span className="sr-only"> (opens in a new tab)</span>
                     </a>

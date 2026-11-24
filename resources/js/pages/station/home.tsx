@@ -1,6 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { MessageCircle } from 'lucide-react';
 import { AnnouncerCarousel } from '@/components/station/announcer-carousel';
+import { BrandIcon } from '@/components/station/brand-icon';
 import { EventRow } from '@/components/station/event-row';
 import { HighlightTile } from '@/components/station/highlight-tile';
 import { LeadStory, StoryItem } from '@/components/station/news-items';
@@ -202,7 +202,10 @@ export default function StationHome() {
                                 rel="noopener noreferrer"
                                 className="mt-8 inline-flex h-14 items-center gap-3 rounded-full bg-oz-black px-7 text-lg font-bold text-oz-white transition-transform hover:scale-[1.02] focus-visible:ring-4 focus-visible:ring-oz-black/30 focus-visible:outline-none"
                             >
-                                <MessageCircle className="size-6" />
+                                <BrandIcon
+                                    brand="whatsapp"
+                                    className="size-6"
+                                />
                                 Message us on WhatsApp
                             </a>
                         )}

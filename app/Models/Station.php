@@ -26,7 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * @property bool $is_video_live
  * @property int $chat_slow_mode_seconds Minimum seconds between messages per listener (0 = off).
  * @property array{email?: string|null, phone?: string|null, address?: string|null, whatsapp?: string|null}|null $contact_info
- * @property array{youtube?: string|null, tiktok?: string|null, instagram?: string|null, x?: string|null}|null $social_links
+ * @property array{instagram?: string|null, tiktok?: string|null, youtube?: string|null, threads?: string|null}|null $social_links
  * @property string|null $about_content
  * @property string|null $privacy_policy_content
  * @property bool $is_active

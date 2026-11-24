@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { BrandIcon } from '@/components/station/brand-icon';
 import { OzMark } from '@/components/station/oz-mark';
 import { SocialLinks } from '@/components/station/social-links';
 import { stationNavigation } from '@/components/station/station-header';
@@ -26,6 +27,7 @@ export function StationFooter({ station }: { station: Station }) {
                         social={station.social}
                         className="mt-8"
                         tone="dark"
+                        variant="icons"
                     />
                 </div>
 
@@ -56,10 +58,11 @@ export function StationFooter({ station }: { station: Station }) {
                             <li>
                                 <a
                                     href={`https://wa.me/${contact.whatsapp.replace(/\D/g, '')}`}
-                                    className="font-semibold hover:text-oz-yellow"
+                                    className="inline-flex items-center gap-2 font-semibold hover:text-oz-yellow"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
+                                    <BrandIcon brand="whatsapp" />
                                     WhatsApp {contact.whatsapp}
                                 </a>
                             </li>

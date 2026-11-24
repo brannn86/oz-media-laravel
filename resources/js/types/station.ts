@@ -23,7 +23,10 @@ export type Station = {
     contact: Partial<
         Record<'email' | 'phone' | 'address' | 'whatsapp', string>
     >;
-    social: Partial<Record<'youtube' | 'tiktok' | 'instagram' | 'x', string>>;
+    /** In footer order: Instagram, TikTok, YouTube, Threads. */
+    social: Partial<
+        Record<'instagram' | 'tiktok' | 'youtube' | 'threads', string>
+    >;
     channel: string;
     stream: StreamStatus;
 };

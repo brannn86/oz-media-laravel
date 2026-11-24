@@ -155,10 +155,10 @@ class StationSettings extends Page
                             ->icon(Heroicon::OutlinedShare)
                             ->columns(2)
                             ->schema([
-                                TextInput::make('social_links.youtube')->label('YouTube')->url()->placeholder('https://www.youtube.com/@…'),
-                                TextInput::make('social_links.tiktok')->label('TikTok')->url()->placeholder('https://www.tiktok.com/@…'),
                                 TextInput::make('social_links.instagram')->label('Instagram')->url()->placeholder('https://www.instagram.com/…'),
-                                TextInput::make('social_links.x')->label('X')->url()->placeholder('https://x.com/…'),
+                                TextInput::make('social_links.tiktok')->label('TikTok')->url()->placeholder('https://www.tiktok.com/@…'),
+                                TextInput::make('social_links.youtube')->label('YouTube')->url()->placeholder('https://www.youtube.com/@…'),
+                                TextInput::make('social_links.threads')->label('Threads')->url()->placeholder('https://www.threads.com/@…'),
                             ]),
                         Tab::make('About')
                             ->icon(Heroicon::OutlinedInformationCircle)
