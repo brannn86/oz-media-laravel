@@ -4,6 +4,7 @@ namespace App\Actions\Live;
 
 use App\Enums\ReactionType;
 use App\Events\Live\StudioReactionSent;
+use App\Jobs\RecordReaction;
 use App\Models\Station;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\RateLimiter;
@@ -13,9 +14,9 @@ use Throwable;
 /**
  * Floating fire / clap / heart over the video livestream.
  *
- * Only while the station is in Video Livestream mode, throttled per viewer,
- * and not echoed back to the sender's own socket (the client shows its own
- * reaction instantly).
+ * Only while the station offers video, throttled per viewer, and not echoed
+ * back to the sender's own socket (the client shows its own reaction
+ * instantly). Each one is counted per day for Analytics > Video.
  */
 class SendReactionAction
 {
@@ -36,6 +37,8 @@ class SendReactionAction
         if (! RateLimiter::attempt($key, (int) config('oz.reactions.max'), fn () => true, (int) config('oz.reactions.per_seconds'))) {
             throw new ThrottleRequestsException('Easy there!', null, ['Retry-After' => RateLimiter::availableIn($key)]);
         }
+
+        RecordReaction::dispatch($station->id, $type->value, now('Asia/Jakarta')->toDateString());
 
         try {
             // Skip the sender's socket (X-Socket-ID header): their player already shows it.
