@@ -58,6 +58,7 @@ enum AdminRole: string implements HasColor, HasLabel
                 ...self::resource('Announcer'),
                 ...self::resource('Post'),
                 ...self::studio(),
+                ...self::analytics(),
             ],
             self::SocialMedia => [
                 ...self::resource('SocialHighlight'),
@@ -68,6 +69,7 @@ enum AdminRole: string implements HasColor, HasLabel
                 ...self::resource('Reward'),
                 ...self::resource('RewardRedemption'),
                 ...self::studio(),
+                ...self::analytics(),
             ],
         };
     }
@@ -89,6 +91,7 @@ enum AdminRole: string implements HasColor, HasLabel
             'ToggleVideoLive:Station',
             'View:StationSettings',
             ...self::studio(),
+            ...self::analytics(),
         ];
     }
 
@@ -101,6 +104,20 @@ enum AdminRole: string implements HasColor, HasLabel
     private static function studio(): array
     {
         return ['View:StudioMode', 'Moderate:ChatMessage', 'Host:StudioMode'];
+    }
+
+    /**
+     * Analytics pages: read-only, aggregated figures. Every admin role gets them,
+     * like the dashboard.
+     *
+     * @return list<string>
+     */
+    public static function analytics(): array
+    {
+        return array_map(
+            fn (string $page): string => "View:{$page}Analytics",
+            ['Audience', 'Radio', 'Video', 'News', 'Engagement'],
+        );
     }
 
     /**
