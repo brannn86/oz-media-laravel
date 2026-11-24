@@ -22,6 +22,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Event as EventFacade;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -97,6 +98,8 @@ it('shows each station as Audio, or Audio and Video when it has a video URL', fu
 });
 
 it('uploads an intermission video in station settings and tells open players', function () {
+    Storage::fake('public');
+    Storage::fake('local');
     EventFacade::fake([StationStreamStatusUpdated::class]);
 
     Livewire::test(StationSettings::class, ['stationSlug' => 'oz-bandung'])
@@ -104,7 +107,12 @@ it('uploads an intermission video in station settings and tells open players', f
         ->call('save')
         ->assertHasNoFormErrors();
 
-    expect($this->station->refresh()->intermissionVideoUrl())->toEndWith('.mp4');
+    $media = $this->station->refresh()->getFirstMedia('intermission');
+
+    // On the public disk: the private `local` disk answers 403 to the site.
+    expect($media->disk)->toBe('public')
+        ->and($this->station->intermissionVideoUrl())->toEndWith('.mp4');
+    Storage::disk('public')->assertExists($media->getPathRelativeToRoot());
     EventFacade::assertDispatched(StationStreamStatusUpdated::class);
 });
 

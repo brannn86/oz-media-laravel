@@ -13,6 +13,7 @@ use App\Models\Station;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event as EventFacade;
+use Illuminate\Support\Facades\Storage;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileUnacceptableForCollection;
 
 describe('stream mode', function () {
@@ -29,6 +30,7 @@ describe('stream mode', function () {
     });
 
     it('keeps one intermission clip per station and only accepts video', function () {
+        Storage::fake(config('media-library.disk_name'));
         $station = Station::factory()->create();
 
         $station->addMedia(fakeMp4('first.mp4'))->toMediaCollection('intermission');

@@ -41,9 +41,13 @@ return [
     | This is the storage disk Filament will use to store files. You may use
     | any of the disks defined in the `config/filesystems.php`.
     |
+    | Everything uploaded in the admin (images, intermission videos, article
+    | attachments) is shown on the public site, so it goes on the public disk,
+    | not FILESYSTEM_DISK (the private `local` disk, which answers 403).
+    |
     */
 
-    'default_filesystem_disk' => env('FILESYSTEM_DISK', 'local'),
+    'default_filesystem_disk' => env('FILAMENT_FILESYSTEM_DISK', 'public'),
 
     /*
     |--------------------------------------------------------------------------

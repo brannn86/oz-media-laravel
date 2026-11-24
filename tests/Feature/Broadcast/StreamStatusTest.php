@@ -6,6 +6,7 @@ use App\Models\Station;
 use App\Support\VideoStream;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 
 it('broadcasts when a stream URL changes', function (array $changes) {
     Event::fake([StationStreamStatusUpdated::class]);
@@ -56,6 +57,7 @@ it('broadcasts a new video URL on the station channel with the player payload', 
 });
 
 it('offers video, with the intermission clip, only while a video URL is set', function () {
+    Storage::fake(config('media-library.disk_name'));
     $station = Station::factory()->create(['stream_video_url' => 'https://www.youtube.com/embed/live_stream?channel=UC123']);
     $station->addMedia(fakeMp4())->toMediaCollection('intermission');
 
