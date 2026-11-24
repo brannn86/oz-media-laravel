@@ -89,6 +89,8 @@ export type NowPlaying = {
     track: Track | null;
     /** Newest first. */
     recent: Track[];
+    /** Listening right now according to Icecast; null when unknown. */
+    listeners: number | null;
 };
 
 export type PostCategory = { value: string; label: string };

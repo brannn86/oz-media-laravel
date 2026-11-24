@@ -47,6 +47,20 @@ type PlayerApi = {
     volume: number;
     muted: boolean;
     videoLayout: VideoLayout;
+    /**
+     * Frequency data of the radio for the visualizer: set once the stream
+     * plays (CORS allowing). Null on Apple devices, where routing a live
+     * stream through Web Audio can mute it on the lock screen.
+     */
+    analyser: AnalyserNode | null;
+    /** Whether a real analyser can ever exist here (else: decorative bars). */
+    canAnalyse: boolean;
+    /**
+     * The home hero is on screen and shows the video itself; the floating
+     * video dock stays out of the way meanwhile (else it would play twice).
+     */
+    videoInHero: boolean;
+    setVideoInHero: (inHero: boolean) => void;
     toggle: () => void;
     start: () => void;
     /** Tune in to (or switch to) audio or video. Call it from a tap. */
@@ -84,6 +98,24 @@ function sameStream(a: StreamStatus, b: StreamStatus): boolean {
     );
 }
 
+/**
+ * Web Audio can tap the stream here. Not on Apple WebKit (Safari, and every
+ * iOS browser): a live stream routed through it may go silent when the
+ * screen locks, and the radio must keep playing in the background.
+ */
+function supportsAnalyser(): boolean {
+    if (typeof window === 'undefined' || !('AudioContext' in window)) {
+        return false;
+    }
+
+    const ua = navigator.userAgent;
+    const ios = /iP(hone|ad|od)/.test(ua);
+    const safari =
+        /Safari/.test(ua) && !/Chrome|Chromium|Edg|OPR|Android/.test(ua);
+
+    return !ios && !safari;
+}
+
 const RECENT_LIMIT = 10;
 
 function nowPlayingKey(value: NowPlaying): string {
@@ -101,6 +133,7 @@ function advance(prev: NowPlaying, track: NowPlaying['track']): NowPlaying {
         : [];
 
     return {
+        ...prev,
         track,
         recent: [...ended, ...prev.recent]
             .filter((played) => played.id !== track?.id)
@@ -165,13 +198,36 @@ export function PlayerProvider({
         (payload) => setNowPlaying((prev) => advance(prev, payload.track)),
     );
 
+    useEchoPublic<Pick<NowPlaying, 'listeners'>>(
+        station.channel,
+        '.listeners.updated',
+        (payload) =>
+            setNowPlaying((prev) => ({
+                ...prev,
+                listeners: payload.listeners,
+            })),
+    );
+
     const [active, setActive] = useState(false);
     const [hasStarted, setHasStarted] = useState(false);
     const [status, setStatus] = useState<PlaybackStatus>('idle');
     const [volume, setVolumeState] = useState(storedVolume);
     const [muted, setMuted] = useState(false);
     const [videoLayout, setVideoLayout] = useState<VideoLayout>('docked');
+    const [videoInHero, setVideoInHero] = useState(false);
     const [preferredMode, setPreferredMode] = useState<StreamMode>('audio');
+
+    // Visualizer: an AudioContext is woken inside the tune-in tap; the
+    // analyser is attached once the stream really plays with CORS, so a
+    // stream without CORS headers never ends up routed (and silenced).
+    const [canAnalyse, setCanAnalyse] = useState(false);
+    const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const everPlayedRef = useRef(false);
+    /** createMediaElementSource() works once per element. */
+    const tappedRef = useRef(false);
+
+    useEffect(() => setCanAnalyse(supportsAnalyser()), []);
 
     const videoAvailable = Boolean(stream.is_video_live && stream.video);
     const audioAvailable = Boolean(stream.audio_url);
@@ -284,6 +340,12 @@ export function PlayerProvider({
         setHasStarted(true);
 
         if (modeRef.current === 'audio') {
+            // Inside the tap, so the browser lets the AudioContext run.
+            if (audioRef.current?.crossOrigin === 'anonymous') {
+                audioContextRef.current ??= new AudioContext();
+                void audioContextRef.current.resume().catch(() => undefined);
+            }
+
             connect(); // Synchronous: still inside the tap.
         } else {
             disconnect(); // The video panel takes over.
@@ -410,6 +472,10 @@ export function PlayerProvider({
         volume,
         muted,
         videoLayout,
+        analyser,
+        canAnalyse,
+        videoInHero,
+        setVideoInHero,
         toggle,
         start,
         play,
@@ -443,6 +509,7 @@ export function PlayerProvider({
             <audio
                 ref={audioRef}
                 preload="none"
+                crossOrigin={canAnalyse ? 'anonymous' : undefined}
                 onWaiting={() => {
                     setStatus((current) =>
                         current === 'reconnecting' ? current : 'loading',
@@ -450,17 +517,62 @@ export function PlayerProvider({
                     armStallWatchdog();
                 }}
                 onStalled={armStallWatchdog}
-                onPlaying={() => {
+                onPlaying={(event) => {
                     clearStallWatchdog();
                     attempts.current = 0;
+                    everPlayedRef.current = true;
                     setStatus('playing');
+
+                    const context = audioContextRef.current;
+
+                    // Playing with crossorigin set proves CORS: safe to tap.
+                    if (
+                        context &&
+                        !tappedRef.current &&
+                        event.currentTarget.crossOrigin === 'anonymous'
+                    ) {
+                        tappedRef.current = true;
+                        const node = context.createAnalyser();
+                        node.fftSize = 256;
+                        node.minDecibels = -90;
+                        node.maxDecibels = -15;
+                        node.smoothingTimeConstant = 0.82;
+                        context
+                            .createMediaElementSource(event.currentTarget)
+                            .connect(node);
+                        node.connect(context.destination);
+                        setAnalyser(node);
+                    }
                 }}
                 // A live stream never "ends": it dropped.
                 onEnded={() => scheduleReconnectRef.current()}
                 onError={(event) => {
-                    if (event.currentTarget.getAttribute('src')) {
-                        scheduleReconnectRef.current();
+                    const audio = event.currentTarget;
+
+                    if (!audio.getAttribute('src')) {
+                        return;
                     }
+
+                    // Refused before it ever played with crossorigin set: the
+                    // stream sends no CORS headers (a CORS refusal surfaces as
+                    // "source not supported"; a dropped connection doesn't).
+                    // Play it plainly, with decorative bars instead.
+                    if (
+                        audio.crossOrigin === 'anonymous' &&
+                        audio.error?.code ===
+                            MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED &&
+                        !everPlayedRef.current &&
+                        !tappedRef.current
+                    ) {
+                        setCanAnalyse(false);
+                        audio.removeAttribute('crossorigin');
+                        attempts.current = 0;
+                        connect();
+
+                        return;
+                    }
+
+                    scheduleReconnectRef.current();
                 }}
             />
         </PlayerContext.Provider>

@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import type { VideoSource } from '@/types';
 
 /** connecting: just opened; live: the feed is playing; offline: it isn't. */
-type FeedStatus = 'connecting' | 'live' | 'offline';
+export type FeedStatus = 'connecting' | 'live' | 'offline';
 
 /** How long a feed may take to start before the intermission shows. */
 const CONNECT_GRACE_MS = 10_000;
@@ -40,27 +40,11 @@ export function VideoDock() {
     const drawerOpen = useLive().drawerOpen;
     const reactions = useReactions(player.station.slug);
     const { stream, mode, active, videoLayout } = player;
-    const [status, setStatus] = useState<FeedStatus>('connecting');
     const source = stream.video;
-    const showing = mode === 'video' && active && source !== null;
-
-    // A new feed (or reopening the panel) starts over.
-    useEffect(() => {
-        setStatus(source?.type === 'embed' ? 'live' : 'connecting');
-    }, [source?.src, source?.type, showing]);
-
-    useEffect(() => {
-        if (status !== 'connecting') {
-            return;
-        }
-
-        const timer = window.setTimeout(
-            () => setStatus('offline'),
-            CONNECT_GRACE_MS,
-        );
-
-        return () => window.clearTimeout(timer);
-    }, [status]);
+    // On the home page the hero shows the video itself.
+    const showing =
+        mode === 'video' && active && source !== null && !player.videoInHero;
+    const [status, setStatus] = useFeedStatus(source, showing);
 
     if (!showing || !source) {
         return null;
@@ -102,12 +86,7 @@ export function VideoDock() {
                             )}
                         />
                         <span className="truncate">
-                            {player.station.name}{' '}
-                            {live
-                                ? 'live'
-                                : status === 'connecting'
-                                  ? '· connecting…'
-                                  : '· back soon'}
+                            {player.station.name} {feedLabel(status)}
                         </span>
                     </p>
                     <div className="flex items-center gap-1">
@@ -133,31 +112,98 @@ export function VideoDock() {
                     </div>
                 </div>
                 <div className="relative aspect-video w-full bg-oz-black">
-                    {/* The feed stays mounted under the intermission so it can take over. */}
-                    <div
-                        className={cn(
-                            'absolute inset-0',
-                            !live && 'pointer-events-none opacity-0',
-                        )}
-                        aria-hidden={!live || undefined}
-                    >
-                        <VideoFeed
-                            key={source.src}
-                            source={source}
-                            live={live}
-                            onStatus={setStatus}
-                        />
-                    </div>
-                    {!live && (
-                        <Intermission
-                            src={stream.intermission_url}
-                            connecting={status === 'connecting'}
-                            onListen={() => player.play('audio')}
-                        />
-                    )}
+                    <VideoStage
+                        source={source}
+                        status={status}
+                        onStatus={setStatus}
+                    />
                     <ReactionOverlay floaters={reactions.floaters} />
                 </div>
             </section>
+        </>
+    );
+}
+
+/**
+ * Where a video feed stands: connecting when it (re)opens, then live once it
+ * plays, offline if it doesn't within the grace period or stops.
+ */
+export function useFeedStatus(
+    source: VideoSource | null,
+    showing: boolean,
+): [FeedStatus, (status: 'live' | 'offline') => void] {
+    const [status, setStatus] = useState<FeedStatus>('connecting');
+
+    // A new feed (or reopening it) starts over.
+    useEffect(() => {
+        setStatus(source?.type === 'embed' ? 'live' : 'connecting');
+    }, [source?.src, source?.type, showing]);
+
+    useEffect(() => {
+        if (status !== 'connecting') {
+            return;
+        }
+
+        const timer = window.setTimeout(
+            () => setStatus('offline'),
+            CONNECT_GRACE_MS,
+        );
+
+        return () => window.clearTimeout(timer);
+    }, [status]);
+
+    return [status, setStatus];
+}
+
+/** "live", "· connecting…" or "· back soon", after the station name. */
+export function feedLabel(status: FeedStatus): string {
+    return status === 'live'
+        ? 'live'
+        : status === 'connecting'
+          ? '· connecting…'
+          : '· back soon';
+}
+
+/**
+ * The video feed with the station's intermission over it while the feed is
+ * off. Fills its (positioned) parent. The feed stays mounted under the
+ * intermission so it can take over as soon as it's live.
+ */
+export function VideoStage({
+    source,
+    status,
+    onStatus,
+}: {
+    source: VideoSource;
+    status: FeedStatus;
+    onStatus: (status: 'live' | 'offline') => void;
+}) {
+    const player = usePlayer();
+    const live = status === 'live';
+
+    return (
+        <>
+            <div
+                className={cn(
+                    'absolute inset-0',
+                    !live && 'pointer-events-none opacity-0',
+                )}
+                aria-hidden={!live || undefined}
+            >
+                <VideoFeed
+                    key={source.src}
+                    source={source}
+                    live={live}
+                    onStatus={onStatus}
+                />
+            </div>
+            {!live && (
+                <Intermission
+                    src={player.stream.intermission_url}
+                    connecting={status === 'connecting'}
+                    onListen={() => player.play('audio')}
+                />
+            )}
         </>
     );
 }
