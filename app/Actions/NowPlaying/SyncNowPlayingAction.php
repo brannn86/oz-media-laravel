@@ -63,7 +63,7 @@ class SyncNowPlayingAction
 
         Cache::forget($this->outageKey($station));
 
-        if (ListenerCount::put($station, $source?->listeners)) {
+        if (ListenerCount::put($station, $source)) {
             $this->broadcastSafely(new ListenerCountUpdated($station, $source?->listeners));
         }
 

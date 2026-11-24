@@ -2,9 +2,11 @@
 
 namespace App\Support\Icecast;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 use UnexpectedValueException;
 
 /**
@@ -44,10 +46,25 @@ class IcecastClient
                 title: is_scalar($title) && trim((string) $title) !== '' ? trim((string) $title) : null,
                 listeners: (int) ($source['listeners'] ?? 0),
                 bitrate: isset($source['bitrate']) ? (int) $source['bitrate'] : null,
+                listenerPeak: isset($source['listener_peak']) ? (int) $source['listener_peak'] : null,
+                streamStartedAt: $this->time($source['stream_start_iso8601'] ?? null),
             );
         }
 
         return null;
+    }
+
+    private function time(mixed $value): ?CarbonImmutable
+    {
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        try {
+            return CarbonImmutable::parse($value);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /**

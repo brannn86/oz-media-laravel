@@ -11,7 +11,6 @@ use App\Models\SongRequest;
 use App\Models\Station;
 use App\Models\TrackPlay;
 use App\Support\Icecast\ListenerCount;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -243,9 +242,13 @@ it('includes the listener count in the now-playing payload', function () {
         ->and($payload['track']['title'])->toBe('Hatchu!!');
 });
 
-it('reads the listener count back from stores that return numbers as strings', function () {
-    // Redis keeps plain numbers unserialized: they come back as "16".
-    Cache::put("icecast:listeners:{$this->station->id}", '16', 60);
+it('keeps the Icecast peak and when the stream started', function () {
+    icecastReturns([[...mount('Hatchu!! - Salma Salsabil', listeners: 16), 'listener_peak' => 22, 'stream_start_iso8601' => '2026-11-24T13:50:46+0800']]);
+    sync();
 
-    expect(ListenerCount::get($this->station))->toBe(16);
+    expect(ListenerCount::stats($this->station))->toBe([
+        'listeners' => 16,
+        'peak' => 22,
+        'since' => '2026-11-24T13:50:46+08:00',
+    ]);
 });

@@ -8,6 +8,7 @@ use App\Enums\SongRequestStatus;
 use App\Models\PointTransaction;
 use App\Models\SongRequest;
 use App\Models\Station;
+use App\Support\Icecast\ListenerCount;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -46,6 +47,36 @@ class DashboardMetrics
         }
 
         return $total;
+    }
+
+    /**
+     * Stream listeners according to Icecast (every player, not only the
+     * site), per active station: now, and the peak since that stream
+     * (re)started. Null when no station's Icecast is reporting.
+     *
+     * @return array{listeners: int, peak: int, stations: list<array{name: string, listeners: int, peak: int|null, since: string|null}>}|null
+     */
+    public function icecastAudience(): ?array
+    {
+        $stations = [];
+
+        foreach (Station::query()->active()->orderBy('name')->get() as $station) {
+            $stats = ListenerCount::stats($station);
+
+            if ($stats !== null) {
+                $stations[] = ['name' => $station->name, ...$stats];
+            }
+        }
+
+        if ($stations === []) {
+            return null;
+        }
+
+        return [
+            'listeners' => array_sum(array_column($stations, 'listeners')),
+            'peak' => array_sum(array_map(fn (array $station): int => $station['peak'] ?? $station['listeners'], $stations)),
+            'stations' => $stations,
+        ];
     }
 
     public function signedInListenersOn(CarbonImmutable $day): int

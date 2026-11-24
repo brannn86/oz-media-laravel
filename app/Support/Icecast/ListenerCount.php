@@ -6,9 +6,13 @@ use App\Models\Station;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * How many people Icecast says are listening to a station's mount right now,
- * as last read by the now-playing sync (every 15 seconds). It expires on its
- * own if the sync stops, so the site never shows a stale count for long.
+ * What Icecast says about a station's audience right now, as last read by
+ * the now-playing sync (every 15 seconds): listeners on the mount, and its
+ * peak since the stream (re)started. It expires on its own if the sync
+ * stops, so nothing shows a stale count for long.
+ *
+ * These are stream listeners (every player: the site, apps, smart
+ * speakers), not the site's own presence count.
  */
 class ListenerCount
 {
@@ -16,25 +20,44 @@ class ListenerCount
 
     public static function get(Station $station): ?int
     {
-        $count = Cache::get(self::key($station));
-
-        // Redis stores plain numbers unserialized, so they come back as strings.
-        return is_numeric($count) ? (int) $count : null;
+        return self::stats($station)['listeners'] ?? null;
     }
 
     /**
-     * Stores the count (null: mount offline or Icecast unreadable).
-     *
-     * @return bool Whether it changed.
+     * @return array{listeners: int, peak: int|null, since: string|null}|null
      */
-    public static function put(Station $station, ?int $count): bool
+    public static function stats(Station $station): ?array
     {
-        $changed = self::get($station) !== $count;
+        $stats = Cache::get(self::key($station));
 
-        if ($count === null) {
+        if (! is_array($stats) || ! is_numeric($stats['listeners'] ?? null)) {
+            return null;
+        }
+
+        return [
+            'listeners' => (int) $stats['listeners'],
+            'peak' => is_numeric($stats['peak'] ?? null) ? (int) $stats['peak'] : null,
+            'since' => is_string($stats['since'] ?? null) ? $stats['since'] : null,
+        ];
+    }
+
+    /**
+     * Stores what the mount reports (null: mount offline or Icecast unreadable).
+     *
+     * @return bool Whether the listener count changed.
+     */
+    public static function put(Station $station, ?IcecastSource $source): bool
+    {
+        $changed = self::get($station) !== $source?->listeners;
+
+        if ($source === null) {
             Cache::forget(self::key($station));
         } else {
-            Cache::put(self::key($station), $count, self::TTL_SECONDS);
+            Cache::put(self::key($station), [
+                'listeners' => $source->listeners,
+                'peak' => $source->listenerPeak,
+                'since' => $source->streamStartedAt?->toIso8601String(),
+            ], self::TTL_SECONDS);
         }
 
         return $changed;

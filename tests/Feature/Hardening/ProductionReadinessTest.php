@@ -17,6 +17,9 @@ use App\Models\ProgramSchedule;
 use App\Models\Reward;
 use App\Models\Station;
 use App\Models\User;
+use App\Support\Icecast\IcecastSource;
+use App\Support\Icecast\ListenerCount;
+use Carbon\CarbonImmutable;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -159,6 +162,26 @@ describe('dashboard', function () {
         Livewire::test(TopArticlesWidget::class)->assertSee('Top OZ News');
         Livewire::test(UmamiWidget::class)->assertSee('UMAMI_SHARE_URL');
     })->with([AdminRole::Dev, AdminRole::Editorial, AdminRole::SocialMedia]);
+
+    it('shows the Icecast listeners and peak, apart from the site presence count', function () {
+        $this->actingAs(User::factory()->create()->assignRole(AdminRole::Dev->value));
+
+        Livewire::test(StationStatsOverview::class)
+            ->assertSee('Listeners (Icecast)')
+            ->assertSee('Icecast is not reporting');
+
+        ListenerCount::put($this->station, new IcecastSource(
+            title: 'Hatchu!! - Salma Salsabil',
+            listeners: 16,
+            bitrate: 96,
+            listenerPeak: 22,
+            streamStartedAt: CarbonImmutable::parse('2026-11-24T13:50:46+08:00'),
+        ));
+
+        Livewire::test(StationStatsOverview::class)
+            ->assertSeeInOrder(['Listeners (Icecast)', '16', "{$this->station->name} 16"])
+            ->assertSeeInOrder(['Peak listeners (Icecast)', '22', 'Since the stream started 24 Nov, 12:50 WIB']);
+    });
 
     it('ranks the most-read articles of the last week', function () {
         $this->actingAs(User::factory()->create()->assignRole(AdminRole::Dev->value));
