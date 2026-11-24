@@ -39,14 +39,14 @@ export function AnnouncerCarousel({ announcers }: { announcers: Announcer[] }) {
                 }
             >
                 {[...loop, ...loop].map((announcer, index) => {
-                    // Only the first copy is reachable by keyboard and screen readers.
+                    // Only the first copy is reachable by keyboard and screen
+                    // readers; the repeats still take the mouse (no `inert`).
                     const copy = index >= announcers.length;
 
                     return (
                         <li
                             key={`${announcer.id}-${index}`}
                             aria-hidden={copy || undefined}
-                            inert={copy}
                             className={cn(
                                 'w-60 shrink-0 pr-5',
                                 // Without motion, the copies would just repeat the row.
@@ -58,6 +58,7 @@ export function AnnouncerCarousel({ announcers }: { announcers: Announcer[] }) {
                                 onClick={() => openAnnouncer(announcer.id)}
                                 aria-haspopup="dialog"
                                 tabIndex={copy ? -1 : undefined}
+                                aria-label={announcer.display_name}
                                 className="group/card block w-full text-left focus-visible:outline-none"
                             >
                                 {/* Black card: the strip sits on the yellow section. */}
@@ -77,18 +78,16 @@ export function AnnouncerCarousel({ announcers }: { announcers: Announcer[] }) {
                                             {initials(announcer.display_name)}
                                         </span>
                                     )}
-                                </span>
-                                <span className="mt-3 block font-oz-display text-xl leading-tight font-extrabold tracking-tight">
-                                    {announcer.display_name}
-                                </span>
-                                {announcer.programs &&
-                                    announcer.programs.length > 0 && (
-                                        <span className="mt-0.5 block truncate text-sm text-oz-ink">
-                                            {announcer.programs
-                                                .map((p) => p.title)
-                                                .join(', ')}
+                                    {/* Stage name, revealed on hover or keyboard focus. */}
+                                    <span
+                                        aria-hidden
+                                        className="absolute inset-0 flex items-end bg-gradient-to-t from-oz-black/85 via-oz-black/30 to-transparent p-5 opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 group-focus-visible/card:opacity-100"
+                                    >
+                                        <span className="font-oz-display text-2xl leading-tight font-extrabold tracking-tight text-oz-white">
+                                            {announcer.display_name}
                                         </span>
-                                    )}
+                                    </span>
+                                </span>
                             </button>
                         </li>
                     );
