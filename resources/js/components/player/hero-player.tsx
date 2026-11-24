@@ -23,6 +23,7 @@ import {
     feedLabel,
     useFeedStatus,
 } from '@/components/player/video-dock';
+import { Marquee } from '@/components/station/marquee';
 import { cn } from '@/lib/utils';
 import type { Broadcast } from '@/types';
 
@@ -268,15 +269,21 @@ function HeroRadio({ broadcast }: { broadcast: Broadcast }) {
                     )}
                 </button>
                 <div className="min-w-0" aria-live="polite">
-                    <p className="truncate font-oz-display text-lg leading-tight font-extrabold sm:text-3xl">
-                        {track?.title ?? program?.title ?? player.station.name}
+                    <p className="font-oz-display text-lg leading-tight font-extrabold sm:text-3xl">
+                        <Marquee>
+                            {track?.title ??
+                                program?.title ??
+                                player.station.name}
+                        </Marquee>
                     </p>
-                    <p className="truncate text-sm text-oz-white/75 sm:text-lg">
-                        {track
-                            ? (track.artist ?? player.station.name)
-                            : hosts
-                              ? `with ${hosts}`
-                              : 'Live radio'}
+                    <p className="text-sm text-oz-white/75 sm:text-lg">
+                        <Marquee>
+                            {track
+                                ? (track.artist ?? player.station.name)
+                                : hosts
+                                  ? `with ${hosts}`
+                                  : 'Live radio'}
+                        </Marquee>
                     </p>
                     {status === 'error' && (
                         <p className="text-xs font-semibold text-oz-yellow sm:text-sm">

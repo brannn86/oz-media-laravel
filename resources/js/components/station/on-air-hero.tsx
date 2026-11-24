@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { HeroPlayer } from '@/components/player/hero-player';
 import { AvatarStack } from '@/components/station/announcer-avatar';
+import { Marquee } from '@/components/station/marquee';
 import { useNow } from '@/hooks/use-now';
 import { formatTime, formatWeekday } from '@/lib/wib';
 import stationRoutes from '@/routes/station';
@@ -98,7 +99,7 @@ function OnAirCard({
                     {current ? 'On air' : 'Off air'}
                 </h2>
                 <p className="mt-1 font-oz-display text-2xl leading-tight font-extrabold">
-                    {program?.title ?? station.name}
+                    <Marquee>{program?.title ?? station.name}</Marquee>
                 </p>
                 {hosts.length > 0 && (
                     <div className="mt-3 flex items-center gap-2 lg:mt-2 xl:mt-3">
@@ -150,7 +151,7 @@ function UpNextCard({
             {next ? (
                 <>
                     <p className="mt-2 font-oz-display text-xl leading-tight font-extrabold">
-                        {next.program.title}
+                        <Marquee>{next.program.title}</Marquee>
                     </p>
                     <p className="mt-1.5 text-sm text-oz-white/70">
                         {nextLabel(next.starts_at)}
