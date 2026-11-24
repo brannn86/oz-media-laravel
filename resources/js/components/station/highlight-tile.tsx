@@ -10,9 +10,10 @@ const PLATFORM_STYLE: Record<SocialHighlight['platform'], string> = {
 };
 
 /**
- * A clip from OZ's socials, opening on the platform. Every tile is a 16:9
- * box: long-form videos fill it, vertical ones (Shorts, TikTok, Reels) sit
- * in a portrait frame in the middle over a blurred copy of themselves.
+ * A clip from OZ's socials, opening on the platform, in the shape it was
+ * shot: long-form YouTube videos in a 16:9 box, Shorts, TikToks and Reels
+ * in a 9:16 box. Widths are set so every tile in the row is the same
+ * height (12rem, 18rem from `sm`).
  */
 export function HighlightTile({ highlight }: { highlight: SocialHighlight }) {
     const portrait = highlight.orientation === 'portrait';
@@ -22,59 +23,58 @@ export function HighlightTile({ highlight }: { highlight: SocialHighlight }) {
             href={highlight.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative block w-72 shrink-0 snap-start focus-visible:outline-none sm:w-96"
+            className={cn(
+                'group relative block shrink-0 snap-start focus-visible:outline-none',
+                portrait
+                    ? 'w-[6.75rem] sm:w-[10.125rem]'
+                    : 'w-[21.333rem] sm:w-[32rem]',
+            )}
         >
             <div
                 className={cn(
-                    'relative aspect-video overflow-hidden rounded-3xl ring-oz-black transition group-focus-visible:ring-4',
+                    'relative overflow-hidden ring-oz-black transition group-focus-visible:ring-4',
+                    portrait
+                        ? 'aspect-[9/16] rounded-2xl'
+                        : 'aspect-video rounded-3xl',
                     PLATFORM_STYLE[highlight.platform],
                 )}
             >
                 {highlight.thumbnail_url ? (
-                    <>
-                        {portrait && (
-                            <img
-                                src={highlight.thumbnail_url}
-                                alt=""
-                                aria-hidden
-                                loading="lazy"
-                                className="absolute inset-0 size-full scale-125 object-cover opacity-80 blur-2xl"
-                            />
-                        )}
-                        <div
-                            className={cn(
-                                'absolute inset-y-0 overflow-hidden',
-                                portrait
-                                    ? 'left-1/2 aspect-[9/16] -translate-x-1/2'
-                                    : 'inset-x-0',
-                            )}
-                        >
-                            <img
-                                src={highlight.thumbnail_url}
-                                alt=""
-                                loading="lazy"
-                                className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                        </div>
-                    </>
+                    <img
+                        src={highlight.thumbnail_url}
+                        alt=""
+                        loading="lazy"
+                        className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
                 ) : (
-                    <p className="absolute inset-x-5 bottom-5 font-oz-display text-2xl leading-[1] font-extrabold tracking-tight">
+                    <p
+                        className={cn(
+                            'absolute inset-x-3 bottom-3 font-oz-display leading-[1] font-extrabold tracking-tight sm:inset-x-5 sm:bottom-5',
+                            portrait ? 'text-base sm:text-xl' : 'text-2xl',
+                        )}
+                    >
                         {highlight.title}
                     </p>
                 )}
-                <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-oz-white px-3 py-1 text-xs font-bold text-oz-black">
-                    <BrandIcon
-                        brand={highlight.platform}
-                        className="size-3.5"
-                    />
-                    {highlight.platform_label}
+                <span
+                    title={highlight.platform_label}
+                    className="absolute top-3 left-3 grid size-8 place-items-center rounded-full bg-oz-white text-oz-black sm:top-4 sm:left-4"
+                >
+                    <BrandIcon brand={highlight.platform} />
                 </span>
-                <span className="absolute top-4 right-4 grid size-9 place-items-center rounded-full bg-oz-yellow text-oz-black">
-                    <Play className="size-4 translate-x-px fill-current" />
+                <span className="absolute top-3 right-3 grid size-8 place-items-center rounded-full bg-oz-yellow text-oz-black sm:top-4 sm:right-4">
+                    <Play className="size-3.5 translate-x-px fill-current" />
                 </span>
             </div>
             {highlight.thumbnail_url && (
-                <p className="mt-3 line-clamp-2 font-semibold group-hover:underline">
+                <p
+                    className={cn(
+                        'mt-3 font-semibold group-hover:underline',
+                        portrait
+                            ? 'line-clamp-3 text-sm leading-snug'
+                            : 'line-clamp-2',
+                    )}
+                >
                     {highlight.title}
                 </p>
             )}
