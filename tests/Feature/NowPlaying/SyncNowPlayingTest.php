@@ -11,6 +11,8 @@ use App\Models\SongRequest;
 use App\Models\Station;
 use App\Models\TrackPlay;
 use App\Support\Icecast\ListenerCount;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -251,4 +253,18 @@ it('keeps the Icecast peak and when the stream started', function () {
         'peak' => 22,
         'since' => '2026-11-24T13:50:46+08:00',
     ]);
+});
+
+it('samples the Icecast count once every quarter hour', function () {
+    $this->travelTo(Carbon::parse('2026-11-24 10:01:00'));
+    icecastReturns([mount('Hatchu!! - Salma Salsabil', listeners: 14)]);
+    sync();
+    sync();
+
+    $this->travelTo(Carbon::parse('2026-11-24 10:16:00'));
+    icecastReturns([mount('Hatchu!! - Salma Salsabil', listeners: 20)]);
+    sync();
+
+    expect(DB::table('icecast_samples')->orderBy('sampled_at')->pluck('listeners')->all())->toBe([14, 20])
+        ->and(Carbon::parse(DB::table('icecast_samples')->min('sampled_at'))->format('H:i'))->toBe('10:00');
 });

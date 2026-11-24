@@ -12,6 +12,7 @@ use App\Models\Station;
 use App\Models\TrackPlay;
 use App\Support\Icecast\IcecastClient;
 use App\Support\Icecast\ListenerCount;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -65,6 +66,10 @@ class SyncNowPlayingAction
 
         if (ListenerCount::put($station, $source)) {
             $this->broadcastSafely(new ListenerCountUpdated($station, $source?->listeners));
+        }
+
+        if ($source !== null) {
+            $this->sampleListeners($station, $source->listeners);
         }
 
         $raw = $source?->title;
@@ -132,6 +137,24 @@ class SyncNowPlayingAction
         }
 
         return $current;
+    }
+
+    /**
+     * Keeps Icecast's count once per quarter hour (the first sync in it), for
+     * the listeners-by-hour chart and true daily peaks in Analytics.
+     */
+    private function sampleListeners(Station $station, int $listeners): void
+    {
+        $quarter = CarbonImmutable::now()->startOfMinute();
+        $quarter = $quarter->subMinutes($quarter->minute % 15);
+
+        if (Cache::add("icecast:sample:{$station->id}:{$quarter->getTimestamp()}", true, 1800)) {
+            DB::table('icecast_samples')->insertOrIgnore([
+                'station_id' => $station->id,
+                'sampled_at' => $quarter,
+                'listeners' => $listeners,
+            ]);
+        }
     }
 
     private function close(TrackPlay $play): void

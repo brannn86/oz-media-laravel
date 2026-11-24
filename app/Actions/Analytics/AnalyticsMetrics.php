@@ -2,6 +2,7 @@
 
 namespace App\Actions\Analytics;
 
+use App\Enums\AudienceMode;
 use App\Enums\PointReason;
 use App\Enums\PostCategory;
 use App\Enums\RedemptionStatus;
@@ -289,6 +290,102 @@ class AnalyticsMetrics
             ->pluck('total', 'type')
             ->map(fn (mixed $total): int => (int) $total)
             ->all()));
+    }
+
+    /* ------------------------------------------- Website audience (player pings) */
+
+    /** Hours listened (audio) or watched (video) on the site, guests included. */
+    public function audienceHours(AudienceMode $mode, int $days): float
+    {
+        return $this->remember("audience-pings:hours:{$mode->value}:{$days}", fn (): float => round((int) DB::table('audience_minutes')
+            ->where('mode', $mode->value)
+            ->whereBetween('minute_at', $this->lastDays($days))
+            ->sum('listeners') / 60, 1));
+    }
+
+    /** Different people (devices) who listened or watched, guests included. */
+    public function uniqueAudience(AudienceMode $mode, int $days): int
+    {
+        return $this->remember("audience-pings:unique:{$mode->value}:{$days}", fn (): int => DB::table('audience_visitors')
+            ->where('mode', $mode->value)
+            ->whereBetween('date', $this->lastDates($days))
+            ->distinct()
+            ->count('visitor'));
+    }
+
+    /** Most people listening or watching at once, all stations together. */
+    public function peakConcurrent(AudienceMode $mode, int $days): int
+    {
+        return $this->remember("audience-pings:peak:{$mode->value}:{$days}", fn (): int => (int) DB::query()
+            ->fromSub(DB::table('audience_minutes')
+                ->where('mode', $mode->value)
+                ->whereBetween('minute_at', $this->lastDays($days))
+                ->groupBy('minute_at')
+                ->select(DB::raw('SUM(listeners) as total')), 'minutes')
+            ->max('total'));
+    }
+
+    /**
+     * Hours and unique people per day, for radio and video.
+     *
+     * @return list<array{audio_hours: float, video_hours: float, audio_people: int, video_people: int}>
+     */
+    public function playerSeries(int $days = 14): array
+    {
+        return $this->remember("audience-pings:series:{$days}", fn (): array => $this->eachDay($days, function (array $range, CarbonImmutable $day): array {
+            $hours = fn (AudienceMode $mode): float => round((int) DB::table('audience_minutes')
+                ->where('mode', $mode->value)
+                ->whereBetween('minute_at', $range)
+                ->sum('listeners') / 60, 1);
+            $people = fn (AudienceMode $mode): int => DB::table('audience_visitors')
+                ->where('mode', $mode->value)
+                ->where('date', $day->toDateString())
+                ->count();
+
+            return [
+                'audio_hours' => $hours(AudienceMode::Audio),
+                'video_hours' => $hours(AudienceMode::Video),
+                'audio_people' => $people(AudienceMode::Audio),
+                'video_people' => $people(AudienceMode::Video),
+            ];
+        }));
+    }
+
+    /**
+     * Average listeners by WIB hour of day over the last N days: Icecast (from
+     * the 15-minute samples) and the site's radio players (from the pings).
+     *
+     * @return array{icecast: list<float|null>, website: list<float>}
+     */
+    public function listenersByHour(int $days = 7): array
+    {
+        return $this->remember("audience-pings:by-hour:{$days}", function () use ($days): array {
+            $range = $this->lastDays($days);
+            $hourOf = fn (mixed $at): int => (int) CarbonImmutable::parse((string) $at, config('app.timezone'))
+                ->setTimezone(DashboardMetrics::TIMEZONE)
+                ->format('G');
+
+            // Icecast: all stations summed per sample time, then averaged per hour.
+            $icecast = array_fill(0, 24, []);
+
+            foreach (DB::table('icecast_samples')->whereBetween('sampled_at', $range)->groupBy('sampled_at')
+                ->select('sampled_at', DB::raw('SUM(listeners) as total'))->get() as $sample) {
+                $icecast[$hourOf($sample->sampled_at)][] = (int) $sample->total;
+            }
+
+            // Website: listener-minutes per hour over the minutes in that hour.
+            $website = array_fill(0, 24, 0);
+
+            foreach (DB::table('audience_minutes')->where('mode', AudienceMode::Audio->value)->whereBetween('minute_at', $range)
+                ->groupBy('minute_at')->select('minute_at', DB::raw('SUM(listeners) as total'))->get() as $minute) {
+                $website[$hourOf($minute->minute_at)] += (int) $minute->total;
+            }
+
+            return [
+                'icecast' => array_map(fn (array $totals): ?float => $totals === [] ? null : round(array_sum($totals) / count($totals), 1), $icecast),
+                'website' => array_map(fn (int $minutes): float => round($minutes / ($days * 60), 1), $website),
+            ];
+        });
     }
 
     /* ----------------------------------------------------------------- Helpers */

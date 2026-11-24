@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AudienceController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ChatController;
 use App\Http\Controllers\Api\V1\HeartbeatController;
@@ -68,6 +69,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
                     ->middleware(['auth:sanctum', 'throttle:20,1'])
                     ->name('polls.vote');
             });
+
+            // Analytics: every player, guests included, once a minute while on.
+            Route::post('audience', AudienceController::class)
+                ->middleware('throttle:12,1')
+                ->name('audience');
 
             Route::post('reactions', ReactionController::class)
                 ->middleware('throttle:120,1')

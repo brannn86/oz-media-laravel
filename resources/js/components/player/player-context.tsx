@@ -9,6 +9,7 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { attachStream } from '@/components/player/attach-stream';
+import { apiFetch } from '@/lib/api';
 import type { Broadcast, NowPlaying, Station, StreamStatus } from '@/types';
 
 /**
@@ -114,6 +115,56 @@ function supportsAnalyser(): boolean {
         /Safari/.test(ua) && !/Chrome|Chromium|Edg|OPR|Android/.test(ua);
 
     return !ios && !safari;
+}
+
+const VISITOR_KEY = 'oz-visitor-id';
+/** How often a playing player says "still here" (the server counts per minute). */
+const AUDIENCE_PING_MS = 60_000;
+
+/** A random id for this browser, so analytics can count unique visitors. */
+function visitorId(): string | null {
+    try {
+        let id = window.localStorage.getItem(VISITOR_KEY);
+
+        if (!id) {
+            id =
+                typeof crypto.randomUUID === 'function'
+                    ? crypto.randomUUID()
+                    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+            window.localStorage.setItem(VISITOR_KEY, id);
+        }
+
+        return id;
+    } catch {
+        return null; // Storage blocked: the server falls back to the session.
+    }
+}
+
+/**
+ * Counts this player in Analytics (guests included): a ping now and once a
+ * minute while the radio is actually playing or the video is open.
+ */
+function useAudiencePing(stationSlug: string, mode: StreamMode | null) {
+    useEffect(() => {
+        if (!mode) {
+            return;
+        }
+
+        const ping = () => {
+            const id = visitorId();
+
+            apiFetch(`/api/v1/stations/${stationSlug}/audience`, {
+                method: 'POST',
+                body: { mode },
+                headers: id ? { 'X-Listener-Id': id } : undefined,
+            }).catch(() => undefined);
+        };
+
+        ping();
+        const timer = window.setInterval(ping, AUDIENCE_PING_MS);
+
+        return () => window.clearInterval(timer);
+    }, [stationSlug, mode]);
 }
 
 const RECENT_LIMIT = 10;
@@ -437,6 +488,17 @@ export function PlayerProvider({
             audio.muted = muted;
         }
     }, [volume, muted]);
+
+    useAudiencePing(
+        station.slug,
+        !active
+            ? null
+            : mode === 'video'
+              ? 'video'
+              : status === 'playing'
+                ? 'audio'
+                : null,
+    );
 
     useMediaSession({
         station,

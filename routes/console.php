@@ -24,6 +24,12 @@ Schedule::command('oz:sample-listeners')
     ->withoutOverlapping()
     ->onOneServer();
 
+// Website listeners and viewers per minute (from the player pings), for Analytics.
+Schedule::command('analytics:flush-audience')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->onOneServer();
+
 // Safety net for listening-heartbeat keys that lost their TTL.
 Schedule::command('oz:prune-redis-keys')
     ->hourly()
