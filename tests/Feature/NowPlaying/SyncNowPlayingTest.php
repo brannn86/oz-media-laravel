@@ -1,12 +1,16 @@
 <?php
 
+use App\Actions\NowPlaying\GetNowPlayingAction;
 use App\Actions\NowPlaying\SyncNowPlayingAction;
 use App\Enums\SongRequestStatus;
+use App\Events\ListenerCountUpdated;
 use App\Events\Live\SongRequestUpdated;
 use App\Events\NowPlayingUpdated;
+use App\Http\Resources\NowPlayingResource;
 use App\Models\SongRequest;
 use App\Models\Station;
 use App\Models\TrackPlay;
+use App\Support\Icecast\ListenerCount;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +22,7 @@ beforeEach(function () {
     // Later Http::fake() calls don't replace a stub, so one stub serves whatever the test set last.
     $this->icecast = Http::response('not set', 500);
     Http::fake([STATUS_URL => fn () => test()->icecast]);
-    Event::fake([NowPlayingUpdated::class, SongRequestUpdated::class]);
+    Event::fake([NowPlayingUpdated::class, SongRequestUpdated::class, ListenerCountUpdated::class]);
 
     $this->station = Station::factory()->create([
         'slug' => 'oz-bandung',
@@ -191,4 +195,49 @@ it('syncs every active station from the scheduled command', function () {
         ->assertSuccessful();
 
     Http::assertSentCount(1);
+});
+
+it('keeps the Icecast listener count and pushes it only when it changes', function () {
+    icecastReturns([mount('Hatchu!! - Salma Salsabil', listeners: 14)]);
+    sync();
+    sync();
+
+    expect(ListenerCount::get($this->station))->toBe(14);
+    Event::assertDispatchedTimes(ListenerCountUpdated::class, 1);
+
+    icecastReturns([mount('Hatchu!! - Salma Salsabil', listeners: 16)]);
+    sync();
+
+    expect(ListenerCount::get($this->station))->toBe(16);
+    Event::assertDispatched(ListenerCountUpdated::class, fn (ListenerCountUpdated $event): bool => $event->broadcastWith() === ['listeners' => 16]
+        && $event->broadcastAs() === 'listeners.updated');
+});
+
+it('forgets the listener count when the mount goes offline or Icecast stays down', function () {
+    icecastReturns([mount('Hatchu!! - Salma Salsabil', listeners: 14)]);
+    sync();
+
+    icecastReturns([]);
+    sync();
+    expect(ListenerCount::get($this->station))->toBeNull();
+
+    icecastReturns([mount('Hatchu!! - Salma Salsabil', listeners: 9)]);
+    sync();
+    test()->icecast = Http::response('down', 503);
+    sync();
+    expect(ListenerCount::get($this->station))->toBe(9);
+
+    $this->travel(SyncNowPlayingAction::OUTAGE_GRACE_SECONDS + 1)->seconds();
+    sync();
+    expect(ListenerCount::get($this->station))->toBeNull();
+});
+
+it('includes the listener count in the now-playing payload', function () {
+    icecastReturns([mount('Hatchu!! - Salma Salsabil', listeners: 21)]);
+    sync();
+
+    $payload = NowPlayingResource::make(app(GetNowPlayingAction::class)->handle($this->station))->resolve();
+
+    expect($payload['listeners'])->toBe(21)
+        ->and($payload['track']['title'])->toBe('Hatchu!!');
 });

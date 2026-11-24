@@ -5,11 +5,13 @@ namespace App\Actions\NowPlaying;
 use App\Actions\Concerns\BroadcastsSafely;
 use App\Actions\SongRequests\ModerateSongRequestAction;
 use App\Enums\SongRequestStatus;
+use App\Events\ListenerCountUpdated;
 use App\Events\NowPlayingUpdated;
 use App\Models\SongRequest;
 use App\Models\Station;
 use App\Models\TrackPlay;
 use App\Support\Icecast\IcecastClient;
+use App\Support\Icecast\ListenerCount;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -24,6 +26,9 @@ use Throwable;
  * Reverb, and marks open song requests for that song as played. An unreachable
  * server is logged once per outage; if it stays down past the grace period the
  * open play is closed, so the site never shows a stale song for long.
+ *
+ * Every read also refreshes the station's listener count, pushed to players
+ * whenever it changes.
  */
 class SyncNowPlayingAction
 {
@@ -57,6 +62,10 @@ class SyncNowPlayingAction
         }
 
         Cache::forget($this->outageKey($station));
+
+        if (ListenerCount::put($station, $source?->listeners)) {
+            $this->broadcastSafely(new ListenerCountUpdated($station, $source?->listeners));
+        }
 
         $raw = $source?->title;
 
@@ -107,7 +116,15 @@ class SyncNowPlayingAction
             return $current;
         }
 
-        if ($current && now()->getTimestamp() - (int) $since >= self::OUTAGE_GRACE_SECONDS) {
+        if (now()->getTimestamp() - (int) $since < self::OUTAGE_GRACE_SECONDS) {
+            return $current;
+        }
+
+        if (ListenerCount::put($station, null)) {
+            $this->broadcastSafely(new ListenerCountUpdated($station, null));
+        }
+
+        if ($current) {
             $this->close($current);
             $this->broadcastSafely(new NowPlayingUpdated($station, null));
 
