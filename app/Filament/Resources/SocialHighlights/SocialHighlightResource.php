@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SocialHighlights;
 
 use App\Enums\SocialPlatform;
+use App\Enums\VideoOrientation;
 use App\Filament\NavigationGroup;
 use App\Filament\Resources\SocialHighlights\Pages\ManageSocialHighlights;
 use App\Filament\Support\StationFields;
@@ -64,8 +65,7 @@ class SocialHighlightResource extends Resource
                         }
                     })
                     ->rule(fn (Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get): void {
-                        $platform = $get('platform');
-                        $platform = $platform instanceof SocialPlatform ? $platform : SocialPlatform::tryFrom((string) $platform);
+                        $platform = self::platform($get('platform'));
 
                         if ($platform && SocialPlatform::detectFromUrl($value) !== $platform) {
                             $fail("This doesn't look like a {$platform->getLabel()} link.");
@@ -80,6 +80,16 @@ class SocialHighlightResource extends Resource
                 TextInput::make('title')
                     ->required()
                     ->maxLength(255),
+                Select::make('orientation')
+                    ->label('Video format')
+                    ->options(VideoOrientation::class)
+                    ->native(false)
+                    ->placeholder(fn (Get $get): string => 'Auto: '.SocialHighlight::detectOrientation(
+                        self::platform($get('platform')),
+                        $get('post_url'),
+                    )->getLabel())
+                    ->helperText('Leave on Auto: YouTube Shorts links, TikTok and Instagram show as portrait, other YouTube videos as landscape.')
+                    ->columnSpanFull(),
                 SpatieMediaLibraryFileUpload::make('thumbnail')
                     ->collection('thumbnail')
                     ->image()
@@ -116,6 +126,11 @@ class SocialHighlightResource extends Resource
                     ->url(fn (SocialHighlight $record): string => $record->post_url, shouldOpenInNewTab: true),
                 TextColumn::make('platform')
                     ->badge(),
+                TextColumn::make('orientation')
+                    ->label('Format')
+                    ->state(fn (SocialHighlight $record): string => $record->resolvedOrientation() === VideoOrientation::Landscape ? 'Landscape' : 'Portrait')
+                    ->description(fn (SocialHighlight $record): ?string => $record->orientation === null ? 'Auto' : null)
+                    ->toggleable(),
                 ToggleColumn::make('is_featured')
                     ->label('Featured'),
                 StationFields::column(),
@@ -148,6 +163,14 @@ class SocialHighlightResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * The form's platform state, which is an enum or its raw value.
+     */
+    private static function platform(mixed $state): ?SocialPlatform
+    {
+        return $state instanceof SocialPlatform ? $state : SocialPlatform::tryFrom((string) $state);
     }
 
     public static function getPages(): array

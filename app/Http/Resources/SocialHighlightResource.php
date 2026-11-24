@@ -24,6 +24,7 @@ class SocialHighlightResource extends JsonResource
             'platform_label' => $this->platform->getLabel(),
             'url' => $this->post_url,
             'title' => $this->title,
+            'orientation' => $this->resolvedOrientation()->value,
             'thumbnail_url' => $this->webpImageUrl('thumbnail') ?? $this->platformThumbnail(),
         ];
     }

@@ -125,6 +125,7 @@ export type SocialHighlight = {
     platform_label: string;
     url: string;
     title: string;
+    orientation: 'landscape' | 'portrait';
     thumbnail_url: string | null;
 };
 

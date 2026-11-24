@@ -8,28 +8,54 @@ const PLATFORM_STYLE: Record<SocialHighlight['platform'], string> = {
     instagram: 'bg-oz-butter text-oz-black',
 };
 
-/** A clip from OZ's socials, opening on the platform. */
+/**
+ * A clip from OZ's socials, opening on the platform. Every tile is a 16:9
+ * box: long-form videos fill it, vertical ones (Shorts, TikTok, Reels) sit
+ * in a portrait frame in the middle over a blurred copy of themselves.
+ */
 export function HighlightTile({ highlight }: { highlight: SocialHighlight }) {
+    const portrait = highlight.orientation === 'portrait';
+
     return (
         <a
             href={highlight.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative block w-56 shrink-0 snap-start focus-visible:outline-none sm:w-64"
+            className="group relative block w-72 shrink-0 snap-start focus-visible:outline-none sm:w-96"
         >
             <div
                 className={cn(
-                    'relative aspect-[4/5] overflow-hidden rounded-3xl ring-oz-black transition group-focus-visible:ring-4',
+                    'relative aspect-video overflow-hidden rounded-3xl ring-oz-black transition group-focus-visible:ring-4',
                     PLATFORM_STYLE[highlight.platform],
                 )}
             >
                 {highlight.thumbnail_url ? (
-                    <img
-                        src={highlight.thumbnail_url}
-                        alt=""
-                        loading="lazy"
-                        className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
+                    <>
+                        {portrait && (
+                            <img
+                                src={highlight.thumbnail_url}
+                                alt=""
+                                aria-hidden
+                                loading="lazy"
+                                className="absolute inset-0 size-full scale-125 object-cover opacity-80 blur-2xl"
+                            />
+                        )}
+                        <div
+                            className={cn(
+                                'absolute inset-y-0 overflow-hidden',
+                                portrait
+                                    ? 'left-1/2 aspect-[9/16] -translate-x-1/2'
+                                    : 'inset-x-0',
+                            )}
+                        >
+                            <img
+                                src={highlight.thumbnail_url}
+                                alt=""
+                                loading="lazy"
+                                className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                        </div>
+                    </>
                 ) : (
                     <p className="absolute inset-x-5 bottom-5 font-oz-display text-2xl leading-[1] font-extrabold tracking-tight">
                         {highlight.title}
