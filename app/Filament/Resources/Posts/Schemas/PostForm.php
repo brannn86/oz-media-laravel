@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Posts\Schemas;
 
+use App\Enums\PostCategory;
 use App\Enums\PostStatus;
 use App\Filament\Support\StationFields;
 use Filament\Forms\Components\DateTimePicker;
@@ -40,6 +41,24 @@ class PostForm
                                             ->fileAttachmentsDirectory('posts/attachments')
                                             ->extraInputAttributes(['style' => 'min-height: 24rem']),
                                     ]),
+                                Section::make('Source')
+                                    ->description('Optional. Shown at the end of the article, e.g. when a story comes from a press release or another outlet.')
+                                    ->collapsible()
+                                    ->columns(2)
+                                    ->schema([
+                                        TextInput::make('source_name')
+                                            ->label('Source name')
+                                            ->maxLength(255)
+                                            ->placeholder('e.g. Pemkot Bandung')
+                                            ->requiredWith('source_url')
+                                            ->validationMessages(['required_with' => 'Name the source the link points to.']),
+                                        TextInput::make('source_url')
+                                            ->label('Source link')
+                                            ->url()
+                                            ->rule('url:http,https')
+                                            ->maxLength(2048)
+                                            ->placeholder('https://'),
+                                    ]),
                                 Section::make('SEO')
                                     ->description('Optional. Falls back to the title and excerpt.')
                                     ->collapsible()
@@ -72,12 +91,18 @@ class PostForm
                                             ->helperText('Leave empty to publish now. A future date schedules the article.')
                                             ->visible(fn (Get $get): bool => self::isPublished($get('status'))),
                                         StationFields::select(),
+                                        Select::make('category')
+                                            ->options(PostCategory::class)
+                                            ->required()
+                                            ->searchable()
+                                            ->native(false),
                                         Select::make('author_id')
                                             ->label('Author')
                                             ->relationship('author', 'name')
                                             ->default(fn (): ?int => auth()->user()?->id)
                                             ->searchable()
-                                            ->preload(),
+                                            ->preload()
+                                            ->helperText('Shown in the byline. Left empty, it becomes whoever publishes the article.'),
                                     ]),
                                 Section::make('Featured image')
                                     ->schema([
@@ -88,6 +113,17 @@ class PostForm
                                             ->imageEditor()
                                             ->imageAspectRatio('16:9')
                                             ->maxSize(4096),
+                                        Textarea::make('image_caption')
+                                            ->label('Caption')
+                                            ->rows(2)
+                                            ->maxLength(500)
+                                            ->helperText('What is happening in the picture.'),
+                                        TextInput::make('image_credit')
+                                            ->label('Credit')
+                                            ->maxLength(255)
+                                            ->placeholder('e.g. OZ Bandung/Raka Pratama')
+                                            ->required(fn (Get $get): bool => filled($get('featured')))
+                                            ->validationMessages(['required' => 'Every image needs a credit: who took it or where it comes from.']),
                                     ]),
                             ]),
                     ]),

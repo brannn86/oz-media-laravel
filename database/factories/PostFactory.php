@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PostCategory;
 use App\Enums\PostStatus;
 use App\Models\Post;
 use App\Models\Station;
@@ -21,6 +22,7 @@ class PostFactory extends Factory
             'station_id' => Station::factory(),
             'author_id' => User::factory(),
             'title' => $title,
+            'category' => fake()->randomElement(PostCategory::cases()),
             'excerpt' => fake()->sentence(20),
             'body' => collect(range(1, 5))->map(fn (): string => '<p>'.fake()->paragraph().'</p>')->implode("\n"),
             'featured_image' => null,

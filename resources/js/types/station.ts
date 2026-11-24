@@ -85,15 +85,23 @@ export type NowPlaying = {
     recent: Track[];
 };
 
+export type PostCategory = { value: string; label: string };
+
 export type Post = {
     id: number;
     slug: string;
     title: string;
+    category: PostCategory | null;
     excerpt: string | null;
     image_url: string | null;
     published_at: string | null;
     author?: string | null;
     station?: { slug: string; name: string };
+    // Detail page only:
+    updated_at?: string | null;
+    image_caption?: string | null;
+    image_credit?: string | null;
+    source?: { name: string | null; url: string | null } | null;
     body?: string;
 };
 

@@ -1,17 +1,29 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { LeadStory, StoryItem } from '@/components/station/news-items';
+import {
+    LeadStory,
+    StoryItem,
+    categoryHref,
+} from '@/components/station/news-items';
 import { PageHeading } from '@/components/station/page-heading';
-import type { Paginated, Post, StationPageProps } from '@/types';
+import { cn } from '@/lib/utils';
+import stationRoutes from '@/routes/station';
+import type { Paginated, Post, PostCategory, StationPageProps } from '@/types';
 
 type Props = StationPageProps & {
     posts: Paginated<Post>;
+    category: PostCategory | null;
+    categories: PostCategory[];
 };
+
+const sectionLink =
+    'inline-flex shrink-0 rounded-full px-4 py-1.5 text-sm font-bold whitespace-nowrap transition-colors focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none';
 
 const pagerLink =
     'rounded-full border-2 border-oz-black px-5 py-2 text-sm font-bold transition-colors hover:bg-oz-black hover:text-oz-yellow focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none';
 
 export default function StationNewsIndex() {
-    const { station, meta, posts } = usePage<Props>().props;
+    const { station, meta, posts, category, categories } =
+        usePage<Props>().props;
     const firstPage = posts.meta.current_page === 1;
     const [lead, ...rest] = firstPage ? posts.data : [null, ...posts.data];
 
@@ -19,14 +31,58 @@ export default function StationNewsIndex() {
         <>
             <Head title={meta.title} />
             <PageHeading
-                title="OZ News"
-                intro={`Stories, music and what's happening around ${station.name}.`}
-            />
+                title={category ? category.label : 'OZ News'}
+                intro={
+                    category
+                        ? `The latest ${category.label.toLowerCase()} stories from OZ News.`
+                        : `Stories, music and what's happening around ${station.name}.`
+                }
+            >
+                <nav aria-label="News sections" className="-mx-4 mt-8 sm:-mx-6">
+                    <ul className="flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:px-6 [&::-webkit-scrollbar]:hidden">
+                        {[null, ...categories].map((section) => {
+                            const active =
+                                (section?.value ?? null) ===
+                                (category?.value ?? null);
+
+                            return (
+                                <li key={section?.value ?? 'all'}>
+                                    <Link
+                                        href={
+                                            section
+                                                ? categoryHref(
+                                                      station.slug,
+                                                      section,
+                                                  )
+                                                : stationRoutes.news.index(
+                                                      station.slug,
+                                                  )
+                                        }
+                                        aria-current={
+                                            active ? 'page' : undefined
+                                        }
+                                        className={cn(
+                                            sectionLink,
+                                            active
+                                                ? 'bg-oz-black text-oz-yellow'
+                                                : 'bg-oz-paper hover:bg-oz-yellow',
+                                        )}
+                                    >
+                                        {section?.label ?? 'All'}
+                                    </Link>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </nav>
+            </PageHeading>
 
             <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
                 {posts.data.length === 0 ? (
                     <p className="text-lg text-oz-ink">
-                        No stories yet. Check back soon.
+                        {category
+                            ? `No ${category.label.toLowerCase()} stories yet. Check back soon.`
+                            : 'No stories yet. Check back soon.'}
                     </p>
                 ) : (
                     <>

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\DayOfWeek;
+use App\Enums\PostCategory;
 use App\Enums\PostStatus;
 use App\Enums\SocialPlatform;
 use App\Models\Announcer;
@@ -190,18 +191,19 @@ class OzBandungSeeder extends Seeder
         $author = User::query()->where('email', config('oz.admin.email'))->first();
 
         $posts = [
-            ['OZ Bandung Luncurkan Platform Digital Baru', 'Website baru OZ Bandung kini hadir dengan live streaming audio dan video, jadwal siaran, dan berita terkini.', 2],
-            ['5 Band Indie Bandung yang Wajib Kamu Dengar Bulan Ini', 'Dari shoegaze sampai pop-punk, ini rekomendasi musisi lokal pilihan tim Night Session.', 5],
-            ['Tangga Lagu OZ Top 40: Pendatang Baru Langsung Masuk 10 Besar', 'Minggu ini tiga lagu baru langsung menembus sepuluh besar OZ Top 40 Countdown.', 7],
-            ['Tips Menghindari Macet di Jalur Pasteur Saat Libur Panjang', 'Tim Drive Time merangkum jalur alternatif dan jam terbaik untuk berangkat.', 12],
-            ['Di Balik Layar: Sehari Bersama Tim OZ Breakfast Club', 'Mulai jam 4 pagi, beginilah persiapan siaran pagi favorit Bandung.', 18],
-            ['OZ Bandung Gelar Konser Amal untuk Pendidikan Anak', 'Seluruh hasil penjualan tiket akan disalurkan untuk beasiswa pelajar di Jawa Barat.', 25],
+            ['OZ Bandung Luncurkan Platform Digital Baru', 'Website baru OZ Bandung kini hadir dengan live streaming audio dan video, jadwal siaran, dan berita terkini.', 2, PostCategory::Media],
+            ['5 Band Indie Bandung yang Wajib Kamu Dengar Bulan Ini', 'Dari shoegaze sampai pop-punk, ini rekomendasi musisi lokal pilihan tim Night Session.', 5, PostCategory::ArtsAndCulture],
+            ['Tangga Lagu OZ Top 40: Pendatang Baru Langsung Masuk 10 Besar', 'Minggu ini tiga lagu baru langsung menembus sepuluh besar OZ Top 40 Countdown.', 7, PostCategory::Entertainment],
+            ['Tips Menghindari Macet di Jalur Pasteur Saat Libur Panjang', 'Tim Drive Time merangkum jalur alternatif dan jam terbaik untuk berangkat.', 12, PostCategory::Environment],
+            ['Di Balik Layar: Sehari Bersama Tim OZ Breakfast Club', 'Mulai jam 4 pagi, beginilah persiapan siaran pagi favorit Bandung.', 18, PostCategory::Media],
+            ['OZ Bandung Gelar Konser Amal untuk Pendidikan Anak', 'Seluruh hasil penjualan tiket akan disalurkan untuk beasiswa pelajar di Jawa Barat.', 25, PostCategory::Education],
         ];
 
-        foreach ($posts as [$title, $excerpt, $daysAgo]) {
+        foreach ($posts as [$title, $excerpt, $daysAgo, $category]) {
             $station->posts()->create([
                 'author_id' => $author?->id,
                 'title' => $title,
+                'category' => $category,
                 'excerpt' => $excerpt,
                 'body' => $this->articleBody($excerpt),
                 'status' => PostStatus::Published,
@@ -213,6 +215,7 @@ class OzBandungSeeder extends Seeder
         $station->posts()->create([
             'author_id' => $author?->id,
             'title' => 'Jadwal Siaran Spesial Akhir Tahun',
+            'category' => PostCategory::Entertainment,
             'excerpt' => 'Program spesial OZ Bandung untuk menemani malam pergantian tahun.',
             'body' => $this->articleBody('Program spesial OZ Bandung untuk menemani malam pergantian tahun.'),
             'status' => PostStatus::Published,

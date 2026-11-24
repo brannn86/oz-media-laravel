@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Posts\Tables;
 
 use App\Actions\Posts\PublishPost;
+use App\Enums\PostCategory;
 use App\Enums\PostStatus;
 use App\Filament\Support\StationFields;
 use App\Models\Post;
@@ -38,6 +39,11 @@ class PostsTable
                     ->wrap()
                     ->weight('medium')
                     ->description(fn (Post $record): ?string => str($record->excerpt)->limit(80)->toString() ?: null),
+                TextColumn::make('category')
+                    ->badge()
+                    ->color('gray')
+                    ->placeholder('No category')
+                    ->sortable(),
                 TextColumn::make('status')
                     ->badge()
                     ->description(fn (Post $record): ?string => $record->status === PostStatus::Published && $record->published_at?->isFuture()
@@ -59,6 +65,7 @@ class PostsTable
             ])
             ->filters([
                 SelectFilter::make('status')->options(PostStatus::class),
+                SelectFilter::make('category')->options(PostCategory::class),
                 SelectFilter::make('author')->relationship('author', 'name'),
                 StationFields::filter(),
             ])
