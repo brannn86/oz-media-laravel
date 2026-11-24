@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Observers\StationContentObserver;
 use App\Support\ProfanityFilter;
 use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
         $this->protectAdminRoles();
         $this->invalidateStationCaches();
         $this->registerDevCommands();
+        $this->letServeFindTempFolder();
 
         // Laravel Pulse (/pulse): server health, queues, Reverb load. Developers only.
         Gate::define('viewPulse', fn (User $user): bool => $user->isDev());
@@ -55,6 +57,24 @@ class AppServiceProvider extends ServiceProvider
     {
         foreach ([Station::class, Program::class, ProgramSchedule::class, Announcer::class, Post::class, Event::class, SocialHighlight::class] as $model) {
             $model::observe(StationContentObserver::class);
+        }
+    }
+
+    /**
+     * `php artisan serve` starts PHP with only an allow-list of environment
+     * variables. Without TEMP/TMP, PHP on Windows has no writable temp folder,
+     * so every file upload fails ("unable to create a temporary file" and a
+     * 422 from Livewire's upload endpoint).
+     */
+    protected function letServeFindTempFolder(): void
+    {
+        if ($this->app->runningInConsole()) {
+            ServeCommand::$passthroughVariables = array_values(array_unique([
+                ...ServeCommand::$passthroughVariables,
+                'TEMP',
+                'TMP',
+                'TMPDIR',
+            ]));
         }
     }
 
