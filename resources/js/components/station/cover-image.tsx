@@ -1,26 +1,42 @@
 import { cn } from '@/lib/utils';
 
 /**
- * An image, or a brand-yellow panel with a short label when there is none,
- * so missing uploads still look intentional.
+ * An image fitted whole into its box. When the image's shape doesn't match
+ * the box, the gaps are filled with a blurred, zoomed copy of itself (a
+ * pillarbox or letterbox), so nothing gets cropped. With no image, a
+ * brand-yellow panel with a short label, so missing uploads still look
+ * intentional.
  */
 export function CoverImage({
     src,
     label,
+    alt = '',
     className,
 }: {
     src: string | null;
     label: string;
+    alt?: string;
     className?: string;
 }) {
     if (src) {
         return (
-            <img
-                src={src}
-                alt=""
-                loading="lazy"
-                className={cn('object-cover', className)}
-            />
+            <div
+                className={cn('relative overflow-hidden bg-oz-black', className)}
+            >
+                <img
+                    src={src}
+                    alt=""
+                    aria-hidden
+                    loading="lazy"
+                    className="absolute inset-0 size-full scale-125 object-cover opacity-80 blur-2xl"
+                />
+                <img
+                    src={src}
+                    alt={alt}
+                    loading="lazy"
+                    className="absolute inset-0 size-full object-contain"
+                />
+            </div>
         );
     }
 

@@ -262,7 +262,7 @@ function StoryCard({ story }: { story: Post }) {
                 <CoverImage
                     src={story.image_url}
                     label={story.station?.name ?? 'OZ News'}
-                    className="aspect-[4/3] w-full transition-transform duration-500 group-hover:scale-[1.02]"
+                    className="aspect-video w-full transition-transform duration-500 group-hover:scale-[1.02]"
                 />
             </Link>
             <p className="mt-4 text-sm font-semibold text-oz-ink/70">

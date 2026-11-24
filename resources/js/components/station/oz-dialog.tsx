@@ -13,6 +13,7 @@ export function OzDialog({
     title,
     description,
     media,
+    wideMedia = false,
     children,
     className,
 }: {
@@ -23,6 +24,8 @@ export function OzDialog({
     description?: ReactNode;
     /** Optional image area on top (or left on wide screens). */
     media?: ReactNode;
+    /** Keep the image on top at 16:9 on every screen size. */
+    wideMedia?: boolean;
     children?: ReactNode;
     className?: string;
 }) {
@@ -34,13 +37,22 @@ export function OzDialog({
                     className={cn(
                         'fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100svh-2rem)] w-[calc(100vw-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[2rem] bg-oz-white font-oz text-oz-black shadow-2xl focus:outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
                         // On phones the image sits on top and the text scrolls below it.
+                        media && 'grid-rows-[auto_minmax(0,1fr)]',
                         media &&
-                            'grid-rows-[auto_minmax(0,1fr)] md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:grid-rows-1',
+                            !wideMedia &&
+                            'md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:grid-rows-1',
                         className,
                     )}
                 >
                     {media && (
-                        <div className="relative aspect-[4/3] bg-oz-yellow md:aspect-auto">
+                        <div
+                            className={cn(
+                                'relative bg-oz-yellow',
+                                wideMedia
+                                    ? 'aspect-video'
+                                    : 'aspect-[4/3] md:aspect-auto',
+                            )}
+                        >
                             {media}
                         </div>
                     )}
@@ -71,7 +83,7 @@ export function OzDialog({
     );
 }
 
-/** A labelled block inside a dialog ("Schedule", "Hosts", …). */
+/** A labelled block inside a dialog ("Schedule", "Hosts", â€¦). */
 export function DialogSection({
     title,
     children,

@@ -1,5 +1,6 @@
 import { CalendarClock, Info, MapPin, Ticket, Users } from 'lucide-react';
 import { useState } from 'react';
+import { CoverImage } from '@/components/station/cover-image';
 import { OzDialog } from '@/components/station/oz-dialog';
 import {
     STATION_TIMEZONE,
@@ -131,12 +132,14 @@ function EventDialog({
             onOpenChange={onOpenChange}
             title={event.title}
             description={event.is_oz_event ? 'An OZ event' : undefined}
+            wideMedia
             media={
                 event.poster_url ? (
-                    <img
+                    <CoverImage
                         src={event.poster_url}
+                        label={event.title}
                         alt={`Poster for ${event.title}`}
-                        className="absolute inset-0 size-full object-cover"
+                        className="absolute inset-0 size-full"
                     />
                 ) : (
                     <span
