@@ -79,7 +79,8 @@ function sameStream(a: StreamStatus, b: StreamStatus): boolean {
     return (
         a.audio_url === b.audio_url &&
         a.is_video_live === b.is_video_live &&
-        a.video?.src === b.video?.src
+        a.video?.src === b.video?.src &&
+        a.intermission_url === b.intermission_url
     );
 }
 

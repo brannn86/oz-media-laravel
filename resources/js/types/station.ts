@@ -13,7 +13,10 @@ export type StreamStatus = {
     station: string;
     audio_url: string | null;
     video: VideoSource | null;
+    /** Video is offered: the station has a video stream URL. */
     is_video_live: boolean;
+    /** Loops in the video player while the livestream is blank or offline. */
+    intermission_url: string | null;
 };
 
 export type Station = {
