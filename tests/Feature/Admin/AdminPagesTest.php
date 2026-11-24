@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\AdminRole;
+use App\Events\StationStreamStatusUpdated;
 use App\Filament\Pages\StationSettings;
 use App\Filament\Resources\Announcers\AnnouncerResource;
 use App\Filament\Resources\Events\EventResource;
@@ -86,17 +86,26 @@ it('saves station settings', function () {
         ->and($this->station->social_links['instagram'])->toBe('https://www.instagram.com/oz.new');
 });
 
-it('lets social media toggle the stream mode from the stations table', function () {
-    EventFacade::fake();
-
-    $social = User::factory()->create()->assignRole(AdminRole::SocialMedia->value);
-
-    $this->actingAs($social);
+it('shows each station as Audio, or Audio and Video when it has a video URL', function () {
+    $radioOnly = Station::factory()->create(['stream_video_url' => null]);
+    $this->station->update(['stream_video_url' => 'https://www.youtube.com/watch?v=abcdefghijk']);
 
     Livewire::test(ListStations::class)
-        ->callAction(TestAction::make('toggleStreamMode')->table($this->station));
+        ->assertTableColumnStateSet('live_mode', 'Audio and Video', $this->station)
+        ->assertTableColumnStateSet('live_mode', 'Audio', $radioOnly)
+        ->assertTableActionDoesNotExist('toggleStreamMode');
+});
 
-    expect($this->station->refresh()->is_video_live)->toBeTrue();
+it('uploads an intermission video in station settings and tells open players', function () {
+    EventFacade::fake([StationStreamStatusUpdated::class]);
+
+    Livewire::test(StationSettings::class, ['stationSlug' => 'oz-bandung'])
+        ->fillForm(['intermission' => fakeMp4()])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($this->station->refresh()->intermissionVideoUrl())->toEndWith('.mp4');
+    EventFacade::assertDispatched(StationStreamStatusUpdated::class);
 });
 
 it('rejects overlapping schedule slots in the program relation manager', function () {

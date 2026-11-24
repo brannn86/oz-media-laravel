@@ -25,8 +25,10 @@ class StreamStatusResource extends JsonResource
             'station' => $this->slug,
             'audio_url' => $this->stream_audio_url,
             'video' => $video,
-            // Video mode only when there is actually something to show.
-            'is_video_live' => $this->is_video_live && $video !== null,
+            // Kept for API clients: video is offered whenever a video URL is set.
+            'is_video_live' => $video !== null,
+            // Fills the video player while the livestream is blank or offline.
+            'intermission_url' => $video !== null ? $this->intermissionVideoUrl() : null,
         ];
     }
 }

@@ -11,7 +11,6 @@ use App\Actions\Polls\LaunchPollAction;
 use App\Actions\SongRequests\ModerateSongRequestAction;
 use App\Enums\PollStatus;
 use App\Enums\PollType;
-use App\Filament\Actions\ToggleStreamModeAction;
 use App\Filament\NavigationGroup;
 use App\Models\ChatMessage;
 use App\Models\Poll;
@@ -471,7 +470,6 @@ class StudioMode extends Page
 
         return [
             $this->launchPollAction(),
-            ToggleStreamModeAction::make($this->station),
             ...($others->isEmpty() ? [] : [
                 ActionGroup::make($others->map(fn (Station $station): Action => Action::make("switch-{$station->id}")
                     ->label($station->name)

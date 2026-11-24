@@ -94,12 +94,12 @@ it('switches slow mode to one of the allowed values', function () {
     Event::assertDispatchedTimes(ChatSettingsUpdated::class, 1);
 });
 
-it('shows the video toggle only to roles that may use it', function () {
-    $this->station->update(['stream_video_url' => 'https://www.youtube.com/watch?v=abcdefghijk']);
-
-    $this->actingAs(User::factory()->create()->assignRole(AdminRole::Editorial->value));
-    Livewire::test(StudioMode::class)->assertActionHidden('toggleStreamMode');
-
+it('shows what listeners can tune in to, without a mode switch', function () {
     $this->actingAs(User::factory()->create()->assignRole(AdminRole::SocialMedia->value));
-    Livewire::test(StudioMode::class)->assertActionVisible('toggleStreamMode');
+
+    $this->station->update(['stream_video_url' => 'https://www.youtube.com/watch?v=abcdefghijk']);
+    Livewire::test(StudioMode::class)->assertSee('Audio and Video')->assertActionDoesNotExist('toggleStreamMode');
+
+    $this->station->update(['stream_video_url' => null]);
+    Livewire::test(StudioMode::class)->assertDontSee('Audio and Video');
 });

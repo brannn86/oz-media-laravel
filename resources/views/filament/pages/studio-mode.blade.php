@@ -245,10 +245,10 @@
                     </p>
                 @endif
                 <div class="mt-4">
-                    <x-filament::badge :color="$station->is_video_live ? 'danger' : 'gray'" :icon="$station->is_video_live ? 'heroicon-m-video-camera' : 'heroicon-m-radio'">
-                        {{ $station->is_video_live ? 'Video livestream' : 'Audio only' }}
+                    <x-filament::badge :color="$station->hasVideoStream() ? 'danger' : 'gray'" :icon="$station->hasVideoStream() ? 'heroicon-m-video-camera' : 'heroicon-m-radio'">
+                        {{ $station->hasVideoStream() ? 'Audio and Video' : 'Audio' }}
                     </x-filament::badge>
-                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Switch with the button at the top of the page.</p>
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Listeners pick radio or video. Video is offered while a video stream URL is set in Station Settings.</p>
                 </div>
             </x-filament::section>
 

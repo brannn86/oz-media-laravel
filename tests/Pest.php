@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 /*
@@ -44,7 +45,17 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * A tiny upload that file-type sniffing recognises as an MP4 (an ISO Media
+ * "ftyp" header), for tests of video fields. It isn't playable. The type is
+ * also declared, because Livewire reports a test upload's declared type
+ * (Laravel's guess for .mp4 is application/mp4) instead of sniffing it.
+ */
+function fakeMp4(string $name = 'intermission.mp4'): UploadedFile
 {
-    // ..
+    $header = pack('N', 24).'ftypisom'.pack('N', 512).'isomiso2mp41';
+
+    return UploadedFile::fake()
+        ->createWithContent($name, $header.str_repeat("\0", 1024))
+        ->mimeType('video/mp4');
 }

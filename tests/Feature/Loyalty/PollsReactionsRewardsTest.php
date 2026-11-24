@@ -90,10 +90,11 @@ describe('polls', function () {
 });
 
 describe('reactions', function () {
-    it('only work while the video livestream is on', function () {
+    it('only work while the station offers video', function () {
+        $this->station->update(['stream_video_url' => null]);
         $this->postJson('/api/v1/stations/oz-bandung/reactions', ['type' => 'fire'])->assertUnprocessable();
 
-        $this->station->update(['is_video_live' => true]);
+        $this->station->update(['stream_video_url' => 'https://www.youtube.com/watch?v=abcdefghijk']);
         $this->postJson('/api/v1/stations/oz-bandung/reactions', ['type' => 'fire'])->assertNoContent();
 
         Event::assertDispatched(StudioReactionSent::class, fn ($event) => $event->broadcastWith() === ['type' => 'fire']
@@ -101,7 +102,6 @@ describe('reactions', function () {
     });
 
     it('are throttled per viewer', function () {
-        $this->station->update(['is_video_live' => true]);
         Sanctum::actingAs($this->listener);
 
         foreach (range(1, 3) as $_) {

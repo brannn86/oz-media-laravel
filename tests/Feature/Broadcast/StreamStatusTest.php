@@ -1,13 +1,13 @@
 <?php
 
-use App\Actions\Stations\SetStreamMode;
 use App\Events\StationStreamStatusUpdated;
+use App\Http\Resources\StreamStatusResource;
 use App\Models\Station;
 use App\Support\VideoStream;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Support\Facades\Event;
 
-it('broadcasts when the live mode or a stream URL changes', function (array $changes) {
+it('broadcasts when a stream URL changes', function (array $changes) {
     Event::fake([StationStreamStatusUpdated::class]);
     $station = Station::factory()->create(['stream_video_url' => 'https://www.youtube.com/watch?v=abcdefghijk']);
 
@@ -15,7 +15,7 @@ it('broadcasts when the live mode or a stream URL changes', function (array $cha
 
     Event::assertDispatched(StationStreamStatusUpdated::class, fn ($event) => $event->station->is($station));
 })->with([
-    'video live' => [['is_video_live' => true]],
+    'video removed' => [['stream_video_url' => null]],
     'audio url' => [['stream_audio_url' => 'https://new.example.com/live.mp3']],
     'video url' => [['stream_video_url' => 'https://example.com/live.m3u8']],
 ]);
@@ -29,15 +29,15 @@ it('does not broadcast for unrelated edits', function () {
     Event::assertNotDispatched(StationStreamStatusUpdated::class);
 });
 
-it('broadcasts the Filament toggle on the station channel with the player payload', function () {
+it('broadcasts a new video URL on the station channel with the player payload', function () {
     Event::fake([StationStreamStatusUpdated::class]);
     $station = Station::factory()->create([
         'slug' => 'oz-bandung',
         'stream_audio_url' => 'https://stream.example.com/oz.mp3',
-        'stream_video_url' => 'https://www.youtube.com/watch?v=abcdefghijk',
+        'stream_video_url' => null,
     ]);
 
-    app(SetStreamMode::class)->toggle($station);
+    $station->update(['stream_video_url' => 'https://www.youtube.com/watch?v=abcdefghijk']);
 
     Event::assertDispatched(StationStreamStatusUpdated::class, function (StationStreamStatusUpdated $event): bool {
         $channel = $event->broadcastOn()[0];
@@ -50,8 +50,26 @@ it('broadcasts the Filament toggle on the station channel with the player payloa
                 'audio_url' => 'https://stream.example.com/oz.mp3',
                 'video' => ['type' => 'youtube', 'src' => 'https://www.youtube.com/embed/abcdefghijk?autoplay=1'],
                 'is_video_live' => true,
+                'intermission_url' => null,
             ];
     });
+});
+
+it('offers video, with the intermission clip, only while a video URL is set', function () {
+    $station = Station::factory()->create(['stream_video_url' => 'https://www.youtube.com/embed/live_stream?channel=UC123']);
+    $station->addMedia(fakeMp4())->toMediaCollection('intermission');
+
+    $status = StreamStatusResource::make($station->refresh())->resolve();
+
+    expect($status['is_video_live'])->toBeTrue()
+        ->and($status['intermission_url'])->toEndWith('.mp4');
+
+    $station->update(['stream_video_url' => null]);
+    $status = StreamStatusResource::make($station->refresh())->resolve();
+
+    expect($status['video'])->toBeNull()
+        ->and($status['is_video_live'])->toBeFalse()
+        ->and($status['intermission_url'])->toBeNull();
 });
 
 it('works out how to play a video stream URL', function (?string $url, ?array $expected) {

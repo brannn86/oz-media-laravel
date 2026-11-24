@@ -3,15 +3,17 @@
 namespace App\Filament\Pages;
 
 use App\Enums\StreamTitleFormat;
-use App\Filament\Actions\ToggleStreamModeAction;
+use App\Events\StationStreamStatusUpdated;
 use App\Filament\NavigationGroup;
 use App\Models\Station;
+use App\Support\StationCache;
 use BackedEnum;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -127,7 +129,13 @@ class StationSettings extends Page
                                     ->url()
                                     ->maxLength(255)
                                     ->placeholder('https://www.youtube.com/embed/live_stream?channel=…')
-                                    ->helperText('Embed or HLS URL used when the station is in Video Livestream mode. Switch modes with the button at the top of the page.'),
+                                    ->helperText("YouTube link (a video, or live_stream?channel=… for the channel's current livestream), an HLS .m3u8 URL, or an embeddable page. While it's set, listeners can choose to watch video; leave it empty for radio only."),
+                                SpatieMediaLibraryFileUpload::make('intermission')
+                                    ->label('Intermission video')
+                                    ->collection('intermission')
+                                    ->acceptedFileTypes(Station::INTERMISSION_MIME_TYPES)
+                                    ->maxSize(20480)
+                                    ->helperText('MP4 or WebM, up to 20 MB. Loops in the video player whenever the livestream is blank or offline (a show starting late, or not live on YouTube yet). Keep it short and light.'),
                             ]),
                         Tab::make('Contact')
                             ->icon(Heroicon::OutlinedPhone)
@@ -207,7 +215,16 @@ class StationSettings extends Page
 
     public function save(): void
     {
+        $intermissionBefore = $this->station->getFirstMedia('intermission')?->getKey();
+
         $this->station->update($this->form->getState());
+        $this->form->saveRelationships();
+
+        if ($this->station->refresh()->getFirstMedia('intermission')?->getKey() !== $intermissionBefore) {
+            // Open players pick up the new clip without a reload.
+            StationCache::flush($this->station);
+            StationStreamStatusUpdated::dispatch($this->station);
+        }
 
         if ($this->station->wasChanged('slug')) {
             // Keep the URL in sync so a refresh doesn't 404.
@@ -225,7 +242,6 @@ class StationSettings extends Page
         $others = Station::query()->whereKeyNot($this->station->getKey())->orderBy('name')->get();
 
         return [
-            ToggleStreamModeAction::make($this->station),
             ...($others->isEmpty() ? [] : [
                 ActionGroup::make($others->map(fn (Station $station): Action => Action::make("switch-{$station->id}")
                     ->label($station->name)

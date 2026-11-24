@@ -45,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
         $this->invalidateStationCaches();
         $this->registerDevCommands();
         $this->letServeFindTempFolder();
+        $this->allowLargerUploads();
 
         // Laravel Pulse (/pulse): server health, queues, Reverb load. Developers only.
         Gate::define('viewPulse', fn (User $user): bool => $user->isDev());
@@ -58,6 +59,16 @@ class AppServiceProvider extends ServiceProvider
         foreach ([Station::class, Program::class, ProgramSchedule::class, Announcer::class, Post::class, Event::class, SocialHighlight::class] as $model) {
             $model::observe(StationContentObserver::class);
         }
+    }
+
+    /**
+     * Livewire caps temporary uploads at 12 MB; the station's intermission
+     * video may be up to 20 MB. Each field still sets its own, smaller limit.
+     * (PHP's upload_max_filesize and post_max_size must allow it too.)
+     */
+    protected function allowLargerUploads(): void
+    {
+        config(['livewire.temporary_file_upload.rules' => ['required', 'file', 'max:20480']]);
     }
 
     /**

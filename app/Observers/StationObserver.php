@@ -10,7 +10,7 @@ class StationObserver
     /**
      * Attributes the public player depends on.
      */
-    private const STREAM_ATTRIBUTES = ['is_video_live', 'stream_audio_url', 'stream_video_url'];
+    private const STREAM_ATTRIBUTES = ['stream_audio_url', 'stream_video_url'];
 
     public function updated(Station $station): void
     {

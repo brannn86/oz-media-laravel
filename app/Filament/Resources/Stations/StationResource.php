@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Stations;
 
-use App\Filament\Actions\ToggleStreamModeAction;
 use App\Filament\NavigationGroup;
 use App\Filament\Pages\StationSettings;
 use App\Filament\Resources\Stations\Pages\CreateStation;
@@ -68,19 +67,19 @@ class StationResource extends Resource
                 TextColumn::make('slug')
                     ->prefix('/')
                     ->color('gray'),
-                TextColumn::make('is_video_live')
+                TextColumn::make('live_mode')
                     ->label('Live mode')
                     ->badge()
-                    ->formatStateUsing(fn (bool $state): string => $state ? 'Video Livestream' : 'Audio Only')
-                    ->color(fn (bool $state): string => $state ? 'danger' : 'gray')
-                    ->icon(fn (bool $state): Heroicon => $state ? Heroicon::VideoCamera : Heroicon::Radio),
+                    ->state(fn (Station $record): string => $record->hasVideoStream() ? 'Audio and Video' : 'Audio')
+                    ->color(fn (Station $record): string => $record->hasVideoStream() ? 'danger' : 'gray')
+                    ->icon(fn (Station $record): Heroicon => $record->hasVideoStream() ? Heroicon::VideoCamera : Heroicon::Radio)
+                    ->tooltip('Video is offered when the station has a video stream URL; listeners pick radio or video.'),
                 IconColumn::make('is_active')
                     ->label('Active')
                     ->boolean(),
             ])
             ->recordUrl(null)
             ->recordActions([
-                ToggleStreamModeAction::make()->button(),
                 Action::make('settings')
                     ->icon(Heroicon::OutlinedCog6Tooth)
                     ->color('gray')

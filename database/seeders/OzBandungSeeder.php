@@ -48,7 +48,6 @@ class OzBandungSeeder extends Seeder
             'stream_audio_url' => 'https://streaming.ozradio.id:8443/ozbandung',
             'stream_title_format' => 'title_artist',
             'stream_video_url' => 'https://www.youtube.com/embed/live_stream?channel=OZ_BANDUNG_CHANNEL_ID',
-            'is_video_live' => false,
             'contact_info' => [
                 'email' => 'hello@ozmedianet.com',
                 'phone' => '+62 22 0000 0000',

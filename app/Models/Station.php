@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * @property int $id
@@ -23,7 +25,6 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * @property string|null $stream_audio_url
  * @property string|null $stream_video_url
  * @property StreamTitleFormat $stream_title_format
- * @property bool $is_video_live
  * @property int $chat_slow_mode_seconds Minimum seconds between messages per listener (0 = off).
  * @property array{email?: string|null, phone?: string|null, address?: string|null, map_url?: string|null, whatsapp?: string|null}|null $contact_info
  * @property array{instagram?: string|null, tiktok?: string|null, youtube?: string|null, threads?: string|null, x?: string|null}|null $social_links
@@ -35,13 +36,16 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  */
 #[ObservedBy(StationObserver::class)]
 #[Fillable([
-    'slug', 'name', 'tagline', 'stream_audio_url', 'stream_video_url', 'stream_title_format', 'is_video_live', 'chat_slow_mode_seconds',
+    'slug', 'name', 'tagline', 'stream_audio_url', 'stream_video_url', 'stream_title_format', 'chat_slow_mode_seconds',
     'contact_info', 'social_links', 'about_content', 'privacy_policy_content', 'is_active',
 ])]
-class Station extends Model
+class Station extends Model implements HasMedia
 {
     /** @use HasFactory<StationFactory> */
-    use HasFactory, HasUniqueSlug;
+    use HasFactory, HasUniqueSlug, InteractsWithMedia;
+
+    /** Video files the intermission clip may be. */
+    public const INTERMISSION_MIME_TYPES = ['video/mp4', 'video/webm'];
 
     protected $attributes = [
         'stream_title_format' => 'title_artist',
@@ -51,12 +55,19 @@ class Station extends Model
     {
         return [
             'stream_title_format' => StreamTitleFormat::class,
-            'is_video_live' => 'boolean',
             'is_active' => 'boolean',
             'chat_slow_mode_seconds' => 'integer',
             'contact_info' => 'array',
             'social_links' => 'array',
         ];
+    }
+
+    public function registerMediaCollections(): void
+    {
+        // Plays in the video player whenever the livestream is blank or offline.
+        $this->addMediaCollection('intermission')
+            ->singleFile()
+            ->acceptsMimeTypes(self::INTERMISSION_MIME_TYPES);
     }
 
     protected function slugSourceAttribute(): string
@@ -213,12 +224,16 @@ class Station extends Model
     }
 
     /**
-     * The stream the public player should use right now.
+     * Video is offered whenever a video stream URL is set; listeners choose
+     * radio or video themselves.
      */
-    public function activeStreamUrl(): ?string
+    public function hasVideoStream(): bool
     {
-        return $this->is_video_live && filled($this->stream_video_url)
-            ? $this->stream_video_url
-            : $this->stream_audio_url;
+        return filled($this->stream_video_url);
+    }
+
+    public function intermissionVideoUrl(): ?string
+    {
+        return $this->getFirstMediaUrl('intermission') ?: null;
     }
 }

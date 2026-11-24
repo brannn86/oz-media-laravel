@@ -21,7 +21,6 @@ class StationFactory extends Factory
             'tagline' => rtrim(fake()->sentence(4), '.'),
             'stream_audio_url' => 'https://stream.example.com/'.Str::slug($name).'.mp3',
             'stream_video_url' => null,
-            'is_video_live' => false,
             'contact_info' => [
                 'email' => fake()->companyEmail(),
                 'phone' => fake()->phoneNumber(),
@@ -45,11 +44,13 @@ class StationFactory extends Factory
         return $this->state(['is_active' => false]);
     }
 
-    public function videoLive(): static
+    /**
+     * Offers video (listeners can pick it) alongside the radio stream.
+     */
+    public function withVideo(): static
     {
         return $this->state([
             'stream_video_url' => 'https://www.youtube.com/embed/live_stream?channel=example',
-            'is_video_live' => true,
         ]);
     }
 }

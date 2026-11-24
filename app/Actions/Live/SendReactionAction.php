@@ -22,13 +22,13 @@ class SendReactionAction
     /**
      * @param  string  $viewerKey  Account id, or session/device id for guests.
      *
-     * @throws ValidationException when the station is not live on video
+     * @throws ValidationException when the station has no video livestream
      * @throws ThrottleRequestsException when reacting too fast
      */
     public function handle(Station $station, ReactionType $type, string $viewerKey): void
     {
-        if (! $station->is_video_live) {
-            throw ValidationException::withMessages(['type' => 'Reactions open when the video livestream is on.']);
+        if (! $station->hasVideoStream()) {
+            throw ValidationException::withMessages(['type' => 'Reactions open when the station has a video livestream.']);
         }
 
         $key = "reaction:{$station->id}:".hash('sha256', $viewerKey);

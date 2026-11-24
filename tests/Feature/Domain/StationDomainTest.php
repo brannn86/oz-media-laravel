@@ -1,7 +1,6 @@
 <?php
 
 use App\Actions\Schedules\FindScheduleConflicts;
-use App\Actions\Stations\SetStreamMode;
 use App\Enums\DayOfWeek;
 use App\Enums\PostStatus;
 use App\Enums\SocialPlatform;
@@ -11,36 +10,35 @@ use App\Models\Post;
 use App\Models\Program;
 use App\Models\ProgramSchedule;
 use App\Models\Station;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event as EventFacade;
-use Illuminate\Validation\ValidationException;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileUnacceptableForCollection;
 
 describe('stream mode', function () {
-    it('switches to video and broadcasts the change', function () {
+    it('offers video exactly while a video stream URL is set', function () {
         EventFacade::fake([StationStreamStatusUpdated::class]);
-        $station = Station::factory()->create(['stream_video_url' => 'https://video.example.com/live']);
+        $station = Station::factory()->create(['stream_video_url' => null]);
 
-        app(SetStreamMode::class)->toggle($station);
+        expect($station->hasVideoStream())->toBeFalse();
 
-        expect($station->refresh()->is_video_live)->toBeTrue()
-            ->and($station->activeStreamUrl())->toBe('https://video.example.com/live');
+        $station->update(['stream_video_url' => 'https://video.example.com/live']);
+
+        expect($station->hasVideoStream())->toBeTrue();
         EventFacade::assertDispatched(StationStreamStatusUpdated::class);
     });
 
-    it('refuses video mode without a video stream URL', function () {
-        $station = Station::factory()->create(['stream_video_url' => null]);
-
-        app(SetStreamMode::class)->handle($station, true);
-    })->throws(ValidationException::class);
-
-    it('does nothing when the mode is unchanged', function () {
-        EventFacade::fake([StationStreamStatusUpdated::class]);
+    it('keeps one intermission clip per station and only accepts video', function () {
         $station = Station::factory()->create();
 
-        app(SetStreamMode::class)->handle($station, false);
+        $station->addMedia(fakeMp4('first.mp4'))->toMediaCollection('intermission');
+        $station->addMedia(fakeMp4('second.mp4'))->toMediaCollection('intermission');
 
-        EventFacade::assertNotDispatched(StationStreamStatusUpdated::class);
-    });
+        expect($station->refresh()->getMedia('intermission'))->toHaveCount(1)
+            ->and($station->intermissionVideoUrl())->toEndWith('second.mp4');
+
+        $station->addMedia(UploadedFile::fake()->image('poster.png'))->toMediaCollection('intermission');
+    })->throws(FileUnacceptableForCollection::class);
 });
 
 describe('schedule conflicts', function () {
