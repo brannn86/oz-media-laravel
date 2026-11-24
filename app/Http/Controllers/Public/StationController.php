@@ -105,6 +105,26 @@ class StationController extends Controller
     }
 
     /**
+     * One event on its own page, with what else is coming up.
+     */
+    public function event(Request $request, Station $station, string $slug): Response
+    {
+        $event = $station->events()->where('slug', $slug)->firstOrFail();
+
+        return Inertia::render('station/events/show', [
+            'meta' => PageMeta::make(
+                "{$event->title} | {$station->name}",
+                $event->description ?: "{$event->title}, {$event->start_date->timezone('Asia/Jakarta')->translatedFormat('j F Y')}.",
+                $event->webpImageUrl('poster'),
+            ),
+            'event' => EventResource::make($event)->resolve($request),
+            'upcoming' => EventResource::collection(
+                $station->events()->upcoming()->whereKeyNot($event->getKey())->limit(3)->get()
+            )->resolve($request),
+        ]);
+    }
+
+    /**
      * OZ Poin: how to earn, the leaderboard, rewards and your redemptions.
      */
     public function rewards(Request $request, Station $station, GetLeaderboardAction $leaderboard): Response

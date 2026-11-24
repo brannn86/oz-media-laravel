@@ -41,6 +41,7 @@ Route::prefix('{station:slug}')
         Route::get('programs', [StationController::class, 'programs'])->name('programs');
         Route::get('announcers', [StationController::class, 'announcers'])->name('announcers');
         Route::get('events', [StationController::class, 'events'])->name('events');
+        Route::get('events/{slug}', [StationController::class, 'event'])->name('events.show');
         Route::get('rewards', [StationController::class, 'rewards'])->name('rewards');
         Route::get('news', [StationNewsController::class, 'index'])->name('news.index');
         Route::get('news/{slug}', [StationNewsController::class, 'show'])->name('news.show');

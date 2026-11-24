@@ -31,11 +31,7 @@ export default function StationEvents() {
                 ) : (
                     <div className="divide-y divide-oz-black/10">
                         {upcoming.map((event) => (
-                            <EventRow
-                                key={event.id}
-                                event={event}
-                                showDescription
-                            />
+                            <EventRow key={event.id} event={event} />
                         ))}
                     </div>
                 )}
