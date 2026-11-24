@@ -11,6 +11,7 @@ use App\Models\SongRequest;
 use App\Models\Station;
 use App\Models\TrackPlay;
 use App\Support\Icecast\ListenerCount;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -240,4 +241,11 @@ it('includes the listener count in the now-playing payload', function () {
 
     expect($payload['listeners'])->toBe(21)
         ->and($payload['track']['title'])->toBe('Hatchu!!');
+});
+
+it('reads the listener count back from stores that return numbers as strings', function () {
+    // Redis keeps plain numbers unserialized: they come back as "16".
+    Cache::put("icecast:listeners:{$this->station->id}", '16', 60);
+
+    expect(ListenerCount::get($this->station))->toBe(16);
 });

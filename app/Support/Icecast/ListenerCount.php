@@ -18,7 +18,8 @@ class ListenerCount
     {
         $count = Cache::get(self::key($station));
 
-        return is_int($count) ? $count : null;
+        // Redis stores plain numbers unserialized, so they come back as strings.
+        return is_numeric($count) ? (int) $count : null;
     }
 
     /**
