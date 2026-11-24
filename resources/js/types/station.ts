@@ -21,11 +21,11 @@ export type Station = {
     name: string;
     tagline: string | null;
     contact: Partial<
-        Record<'email' | 'phone' | 'address' | 'whatsapp', string>
+        Record<'email' | 'phone' | 'address' | 'map_url' | 'whatsapp', string>
     >;
-    /** In footer order: Instagram, TikTok, YouTube, Threads. */
+    /** In footer order: Instagram, TikTok, YouTube, Threads, X (empty ones left out). */
     social: Partial<
-        Record<'instagram' | 'tiktok' | 'youtube' | 'threads', string>
+        Record<'instagram' | 'tiktok' | 'youtube' | 'threads' | 'x', string>
     >;
     channel: string;
     stream: StreamStatus;

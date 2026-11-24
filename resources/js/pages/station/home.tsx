@@ -247,7 +247,22 @@ export default function StationHome() {
                                     Studio
                                 </dt>
                                 <dd className="mt-1 font-semibold whitespace-pre-line">
-                                    {station.contact.address}
+                                    {station.contact.map_url ? (
+                                        <a
+                                            href={station.contact.map_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="underline decoration-oz-black/30 underline-offset-4 hover:decoration-oz-black"
+                                        >
+                                            {station.contact.address}
+                                            <span className="sr-only">
+                                                {' '}
+                                                (open in maps)
+                                            </span>
+                                        </a>
+                                    ) : (
+                                        station.contact.address
+                                    )}
                                 </dd>
                             </div>
                         )}

@@ -14,8 +14,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class StationResource extends JsonResource
 {
-    /** Station socials shown on the site, in order. */
-    private const SOCIAL_NETWORKS = ['instagram', 'tiktok', 'youtube', 'threads'];
+    /** Station socials shown on the site, in order; empty ones are left out. */
+    private const SOCIAL_NETWORKS = ['instagram', 'tiktok', 'youtube', 'threads', 'x'];
 
     /**
      * @return array<string, mixed>
@@ -26,7 +26,7 @@ class StationResource extends JsonResource
             'slug' => $this->slug,
             'name' => $this->name,
             'tagline' => $this->tagline,
-            'contact' => array_filter($this->contact_info ?? [], filled(...)),
+            'contact' => $this->contact(),
             'social' => $this->socialProfiles(),
             'channel' => StationStreamStatusUpdated::channelName($this->resource),
             'stream' => StreamStatusResource::make($this->resource)->resolve($request),
@@ -34,7 +34,24 @@ class StationResource extends JsonResource
     }
 
     /**
-     * The station's profiles in footer order; older networks (e.g. X) are dropped.
+     * Filled contact details. The map link is only kept when it's a web link,
+     * since the address is rendered as a link to it.
+     *
+     * @return array<string, string>
+     */
+    private function contact(): array
+    {
+        $contact = array_filter($this->contact_info ?? [], filled(...));
+
+        if (isset($contact['map_url']) && ! preg_match('#^https?://#i', (string) $contact['map_url'])) {
+            unset($contact['map_url']);
+        }
+
+        return $contact;
+    }
+
+    /**
+     * The station's profiles in footer order; anything else stored is dropped.
      *
      * @return array<string, string>
      */

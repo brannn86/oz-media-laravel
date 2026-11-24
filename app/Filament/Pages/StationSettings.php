@@ -150,6 +150,15 @@ class StationSettings extends Page
                                     ->label('Address')
                                     ->rows(3)
                                     ->columnSpanFull(),
+                                TextInput::make('contact_info.map_url')
+                                    ->label('Map link')
+                                    ->url()
+                                    ->rule('url:http,https')
+                                    ->maxLength(2048)
+                                    ->prefixIcon(Heroicon::OutlinedMapPin)
+                                    ->placeholder('https://maps.app.goo.gl/…')
+                                    ->helperText('Google Maps (or any map) link to the studio. The address on the site links here.')
+                                    ->columnSpanFull(),
                             ]),
                         Tab::make('Social')
                             ->icon(Heroicon::OutlinedShare)
@@ -159,6 +168,8 @@ class StationSettings extends Page
                                 TextInput::make('social_links.tiktok')->label('TikTok')->url()->placeholder('https://www.tiktok.com/@…'),
                                 TextInput::make('social_links.youtube')->label('YouTube')->url()->placeholder('https://www.youtube.com/@…'),
                                 TextInput::make('social_links.threads')->label('Threads')->url()->placeholder('https://www.threads.com/@…'),
+                                TextInput::make('social_links.x')->label('X (Twitter)')->url()->placeholder('https://x.com/…')
+                                    ->helperText('Optional. Left empty, X is hidden on the site.'),
                             ]),
                         Tab::make('About')
                             ->icon(Heroicon::OutlinedInformationCircle)

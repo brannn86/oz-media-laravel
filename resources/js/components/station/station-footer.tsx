@@ -89,7 +89,22 @@ export function StationFooter({ station }: { station: Station }) {
                         )}
                         {contact.address && (
                             <li className="pt-2 text-sm leading-relaxed whitespace-pre-line text-oz-white/60">
-                                {contact.address}
+                                {contact.map_url ? (
+                                    <a
+                                        href={contact.map_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="underline decoration-oz-white/30 underline-offset-4 hover:text-oz-yellow hover:decoration-oz-yellow"
+                                    >
+                                        {contact.address}
+                                        <span className="sr-only">
+                                            {' '}
+                                            (open in maps)
+                                        </span>
+                                    </a>
+                                ) : (
+                                    contact.address
+                                )}
                             </li>
                         )}
                     </ul>
