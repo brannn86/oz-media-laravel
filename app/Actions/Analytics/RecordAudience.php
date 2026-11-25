@@ -4,9 +4,11 @@ namespace App\Actions\Analytics;
 
 use App\Enums\AudienceMode;
 use App\Models\Station;
+use App\Support\TrafficSource;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Counts the people with the site's player on (guests included): every
@@ -17,6 +19,11 @@ use Illuminate\Support\Facades\DB;
  * audience_minutes. Each visitor is also recorded once per WIB day in
  * audience_visitors. The database sees one write per minute per station
  * and mode, plus one per new visitor a day, whatever the audience size.
+ *
+ * Sessions (audience_sessions) are the exception: one row per unbroken
+ * stretch of listening, updated by each counted ping, so session length,
+ * drop-off and where listeners came from can be measured. A gap of
+ * SESSION_GAP_SECONDS starts a new session.
  */
 class RecordAudience
 {
@@ -26,10 +33,16 @@ class RecordAudience
     /** Minutes flush() looks back over (re-writing is harmless: it sets, not adds). */
     private const FLUSH_WINDOW = 10;
 
+    /** No ping for this long ends a session (pings come every 60 s). */
+    public const SESSION_GAP_SECONDS = 180;
+
     /**
      * @return bool Whether this ping counted (false: already counted this minute).
      */
-    public function ping(Station $station, AudienceMode $mode, string $viewerKey): bool
+    /**
+     * @param  array{referrer_host?: string|null, utm_source?: string|null, utm_medium?: string|null, utm_campaign?: string|null}  $landing  Where the visit came from.
+     */
+    public function ping(Station $station, AudienceMode $mode, string $viewerKey, array $landing = []): bool
     {
         $visitor = sha1($viewerKey);
         $minute = CarbonImmutable::now()->startOfMinute();
@@ -53,7 +66,48 @@ class RecordAudience
             ]);
         }
 
+        $this->trackSession($station, $mode, $visitor, $landing);
+
         return true;
+    }
+
+    /**
+     * Extends the visitor's current session, or starts one (with its source).
+     *
+     * @param  array{referrer_host?: string|null, utm_source?: string|null, utm_medium?: string|null, utm_campaign?: string|null}  $landing
+     */
+    private function trackSession(Station $station, AudienceMode $mode, string $visitor, array $landing): void
+    {
+        $key = "audience:session:{$station->id}:{$mode->value}:{$visitor}";
+        $now = CarbonImmutable::now();
+        $session = Cache::get($key);
+
+        if (is_numeric($session) && DB::table('audience_sessions')->where('id', $session)->update([
+            'last_seen_at' => $now,
+            'minutes' => DB::raw('minutes + 1'),
+        ]) === 1) {
+            Cache::put($key, (int) $session, self::SESSION_GAP_SECONDS);
+
+            return;
+        }
+
+        $clean = fn (string $field): ?string => filled($landing[$field] ?? null) ? Str::limit(trim((string) $landing[$field]), 100, '') : null;
+
+        $id = DB::table('audience_sessions')->insertGetId([
+            'station_id' => $station->id,
+            'mode' => $mode->value,
+            'visitor' => $visitor,
+            'started_at' => $now,
+            'last_seen_at' => $now,
+            'minutes' => 1,
+            'source' => TrafficSource::classify($clean('referrer_host'), $clean('utm_source')),
+            'referrer_host' => $clean('referrer_host'),
+            'utm_source' => $clean('utm_source'),
+            'utm_medium' => $clean('utm_medium'),
+            'utm_campaign' => $clean('utm_campaign'),
+        ]);
+
+        Cache::put($key, $id, self::SESSION_GAP_SECONDS);
     }
 
     /**

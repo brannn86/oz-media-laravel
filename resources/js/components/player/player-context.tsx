@@ -10,6 +10,7 @@ import {
 import type { ReactNode } from 'react';
 import { attachStream } from '@/components/player/attach-stream';
 import { apiFetch } from '@/lib/api';
+import { landing } from '@/lib/landing';
 import type { Broadcast, NowPlaying, Station, StreamStatus } from '@/types';
 
 /**
@@ -142,7 +143,8 @@ function visitorId(): string | null {
 
 /**
  * Counts this player in Analytics (guests included): a ping now and once a
- * minute while the radio is actually playing or the video is open.
+ * minute while the radio is actually playing or the video is open, with
+ * where the visit came from (it labels the listening session).
  */
 function useAudiencePing(stationSlug: string, mode: StreamMode | null) {
     useEffect(() => {
@@ -155,7 +157,7 @@ function useAudiencePing(stationSlug: string, mode: StreamMode | null) {
 
             apiFetch(`/api/v1/stations/${stationSlug}/audience`, {
                 method: 'POST',
-                body: { mode },
+                body: { mode, source: landing() },
                 headers: id ? { 'X-Listener-Id': id } : undefined,
             }).catch(() => undefined);
         };
