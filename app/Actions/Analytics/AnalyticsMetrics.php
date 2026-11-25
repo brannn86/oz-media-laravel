@@ -431,6 +431,90 @@ class AnalyticsMetrics
     }
 
     /**
+     * The same days as dayLabels(), as ISO dates ("2026-11-24"), for exports.
+     *
+     * @return list<string>
+     */
+    public function dates(int $days): array
+    {
+        return array_map(fn (CarbonImmutable $day): string => $day->toDateString(), $this->days($days));
+    }
+
+    /**
+     * Every song aired in the window, most played first (for exports).
+     *
+     * @return list<array{title: string, artist: string|null, plays: int, average_listeners: float|null}>
+     */
+    public function topSongs(int $days): array
+    {
+        return array_values(TrackPlay::query()
+            ->whereBetween('started_at', $this->lastDays($days))
+            ->groupBy('title', 'artist')
+            ->select(['title', 'artist', DB::raw('COUNT(*) as plays'), DB::raw('AVG(listeners) as average_listeners')])
+            ->orderByDesc('plays')
+            ->toBase()
+            ->get()
+            ->map(fn (object $row): array => [
+                'title' => (string) $row->title,
+                'artist' => $row->artist !== null ? (string) $row->artist : null,
+                'plays' => (int) $row->plays,
+                'average_listeners' => $row->average_listeners !== null ? round((float) $row->average_listeners, 1) : null,
+            ])
+            ->all());
+    }
+
+    /**
+     * Signed-in listeners by listening minutes in the window (for exports).
+     *
+     * @return list<array{name: string, email: string, minutes: int, streak: int, points: int}>
+     */
+    public function topListeners(int $days): array
+    {
+        $since = $this->lastDays($days)[0];
+        $listening = fn ($query) => $query->where('reason', PointReason::Listening)->where('created_at', '>=', $since);
+
+        return array_values(User::query()
+            ->doesntHave('roles')
+            ->whereHas('pointTransactions', $listening)
+            ->withCount(['pointTransactions as minutes' => $listening])
+            ->orderByDesc('minutes')
+            ->get()
+            ->map(fn (User $user): array => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'minutes' => (int) $user->getAttribute('minutes'),
+                'streak' => $user->current_streak_days,
+                'points' => $user->points_balance,
+            ])
+            ->all());
+    }
+
+    /**
+     * Articles by views in the window (for exports).
+     *
+     * @return list<array{title: string, station: string|null, section: string|null, published_at: string|null, views: int}>
+     */
+    public function topArticles(int $days): array
+    {
+        $inWindow = fn ($query) => $query->whereBetween('date', $this->lastDates($days));
+
+        return array_values(Post::query()
+            ->with('station')
+            ->whereHas('dailyViews', $inWindow)
+            ->withSum(['dailyViews as views' => $inWindow], 'views')
+            ->orderByDesc('views')
+            ->get()
+            ->map(fn (Post $post): array => [
+                'title' => $post->title,
+                'station' => $post->station?->name,
+                'section' => $post->category?->getLabel(),
+                'published_at' => $post->published_at?->setTimezone(DashboardMetrics::TIMEZONE)->format('Y-m-d H:i'),
+                'views' => (int) $post->getAttribute('views'),
+            ])
+            ->all());
+    }
+
+    /**
      * @return list<CarbonImmutable>
      */
     private function days(int $days): array
