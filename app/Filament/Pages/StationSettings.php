@@ -13,6 +13,7 @@ use BackedEnum;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -227,6 +228,22 @@ class StationSettings extends Page
                                     ->prefixIcon(Heroicon::OutlinedLink)
                                     ->placeholder('https://…')
                                     ->helperText('Where a click on the banner goes (opens in a new tab).'),
+                            ]),
+                        Tab::make('Ozubathon')
+                            ->icon(Heroicon::OutlinedSparkles)
+                            ->hidden(fn (Get $get): bool => $this->isBasic($get))
+                            ->schema([
+                                Toggle::make('ozubathon_enabled')
+                                    ->label('Ozubathon theme')
+                                    ->helperText('Swaps the home page hero for the Ozubathon one (OZ Radio’s 55th-anniversary, 55-hour live broadcast: logo, countdown, then the live hour count), and features the station on ozmedianet.com. The player, chat and sponsor banner work as usual. Switch it off after the event.')
+                                    ->live(),
+                                DateTimePicker::make('ozubathon_starts_at')
+                                    ->label('Starts at (WIB)')
+                                    ->timezone('Asia/Jakarta')
+                                    ->seconds(false)
+                                    ->placeholder('23 Dec 2026, 00:00')
+                                    ->helperText('The 55 hours count from here. Empty: 23 December 2026, 00:00 WIB.')
+                                    ->visible(fn (Get $get): bool => (bool) $get('ozubathon_enabled')),
                             ]),
                         Tab::make('Social')
                             ->icon(Heroicon::OutlinedShare)

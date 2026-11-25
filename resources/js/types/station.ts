@@ -35,6 +35,8 @@ export type Station = {
     >;
     /** The OZ Poin page is switched on (points accrue either way). */
     rewards_page: boolean;
+    /** The Ozubathon (55th-anniversary, 55-hour broadcast) theme, while it's on. */
+    ozubathon: Ozubathon | null;
     channel: string;
     stream: StreamStatus;
 };
@@ -174,4 +176,11 @@ export type StationPageProps = {
     /** The signed-in listener, or null for guests. */
     account: Account | null;
     meta: PageMeta;
+};
+
+/** The Ozubathon's window (ISO times); `hours` is its length, 55. */
+export type Ozubathon = {
+    starts_at: string;
+    ends_at: string;
+    hours: number;
 };

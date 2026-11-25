@@ -38,6 +38,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property string|null $sponsor_url
  * @property bool $sponsor_enabled Off: no ad space under the player at all.
  * @property bool $rewards_page_enabled Off: the OZ Poin page is hidden (points still accrue).
+ * @property bool $ozubathon_enabled The Ozubathon (55th-anniversary subathon) theme is on.
+ * @property CarbonImmutable|null $ozubathon_starts_at When its 55 hours start; null: config('oz.ozubathon.default_starts_at').
  * @property bool $is_active
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -45,7 +47,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 #[ObservedBy(StationObserver::class)]
 #[Fillable([
     'slug', 'name', 'tagline', 'site_type', 'stream_audio_url', 'stream_video_url', 'stream_title_format', 'chat_slow_mode_seconds',
-    'contact_info', 'social_links', 'about_content', 'privacy_policy_content', 'sponsor_name', 'sponsor_url', 'sponsor_enabled', 'rewards_page_enabled', 'is_active',
+    'contact_info', 'social_links', 'about_content', 'privacy_policy_content', 'sponsor_name', 'sponsor_url', 'sponsor_enabled', 'rewards_page_enabled', 'ozubathon_enabled', 'ozubathon_starts_at', 'is_active',
 ])]
 class Station extends Model implements HasMedia
 {
@@ -70,6 +72,7 @@ class Station extends Model implements HasMedia
         'site_type' => 'full',
         'sponsor_enabled' => true,
         'rewards_page_enabled' => true,
+        'ozubathon_enabled' => false,
     ];
 
     protected function casts(): array
@@ -80,6 +83,8 @@ class Station extends Model implements HasMedia
             'is_active' => 'boolean',
             'sponsor_enabled' => 'boolean',
             'rewards_page_enabled' => 'boolean',
+            'ozubathon_enabled' => 'boolean',
+            'ozubathon_starts_at' => 'immutable_datetime',
             'chat_slow_mode_seconds' => 'integer',
             'contact_info' => 'array',
             'social_links' => 'array',
@@ -115,6 +120,29 @@ class Station extends Model implements HasMedia
     public function isBasic(): bool
     {
         return $this->site_type === StationSiteType::Basic;
+    }
+
+    /**
+     * The Ozubathon while its theme is on: when its 55 hours start and end.
+     * Null when the theme is off (or the station is a basic, player-only site).
+     *
+     * @return array{starts_at: string, ends_at: string, hours: int}|null
+     */
+    public function ozubathon(): ?array
+    {
+        if (! $this->ozubathon_enabled || $this->isBasic()) {
+            return null;
+        }
+
+        $hours = (int) config('oz.ozubathon.hours');
+        $start = $this->ozubathon_starts_at
+            ?? CarbonImmutable::parse((string) config('oz.ozubathon.default_starts_at'), 'Asia/Jakarta');
+
+        return [
+            'starts_at' => $start->toIso8601String(),
+            'ends_at' => $start->addHours($hours)->toIso8601String(),
+            'hours' => $hours,
+        ];
     }
 
     /**

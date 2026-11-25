@@ -200,4 +200,12 @@ return [
     // Where the house ad (shown when a station has no sponsor banner) sends advertisers.
     'advertising_email' => env('ADVERTISING_EMAIL', 'marketing@ozmedianet.com'),
 
+    // Ozubathon: OZ Radio's 55th-anniversary subathon, a 55-hour live
+    // broadcast. Switched on per station in Station settings; the start
+    // falls back to this (WIB) when none is set there.
+    'ozubathon' => [
+        'hours' => 55,
+        'default_starts_at' => '2026-12-23 00:00',
+    ],
+
 ];

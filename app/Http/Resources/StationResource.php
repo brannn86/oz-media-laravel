@@ -33,6 +33,8 @@ class StationResource extends JsonResource
             'social' => $this->socialProfiles(),
             // Off: the OZ Poin page and its links are hidden (points still accrue).
             'rewards_page' => $this->rewards_page_enabled,
+            // The 55th-anniversary subathon theme: its window, or null while off.
+            'ozubathon' => $this->ozubathon(),
             'channel' => StationStreamStatusUpdated::channelName($this->resource),
             'stream' => StreamStatusResource::make($this->resource)->resolve($request),
         ];

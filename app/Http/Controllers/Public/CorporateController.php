@@ -31,6 +31,10 @@ class CorporateController extends Controller
                 'name' => $station->name,
                 'tagline' => $station->tagline,
             ]),
+            // The station running the Ozubathon theme, for the spotlight (null: none).
+            'ozubathon' => ($host = $stations->first(fn (Station $station): bool => $station->ozubathon() !== null))
+                ? ['station' => ['slug' => $host->slug, 'name' => $host->name], ...$host->ozubathon(), 'now' => now()->toIso8601String()]
+                : null,
             'stories' => PostResource::collection(
                 Post::query()
                     ->published()
