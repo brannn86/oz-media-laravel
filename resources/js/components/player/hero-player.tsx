@@ -52,8 +52,30 @@ export function HeroPlayer({
 }) {
     const player = usePlayer();
     const reactions = useReactions(player.station.slug);
-    const { active, mode, hasStarted, setVideoInHero } = player;
+    const { active, mode, hasStarted, setVideoInHero, setHeroInView } = player;
     const [choosing, setChoosing] = useState(false);
+    const boxRef = useRef<HTMLDivElement>(null);
+
+    // The player bar waits until this box is scrolled past (same threshold
+    // as the mini video, so both appear together).
+    useEffect(() => {
+        const box = boxRef.current;
+
+        if (!box) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => setHeroInView(entry.isIntersecting),
+            { threshold: 0.3 },
+        );
+        observer.observe(box);
+
+        return () => {
+            observer.disconnect();
+            setHeroInView(false);
+        };
+    }, [setHeroInView]);
 
     const watching = active && mode === 'video';
     const listening = hasStarted && mode === 'audio';
@@ -87,7 +109,10 @@ export function HeroPlayer({
                 {header}
                 <HeroPlayerControls onReact={reactions.send} />
             </div>
-            <div className="relative aspect-video w-full overflow-hidden rounded-3xl bg-oz-black text-oz-white shadow-xl ring-1 ring-oz-black/10">
+            <div
+                ref={boxRef}
+                className="relative aspect-video w-full overflow-hidden rounded-3xl bg-oz-black text-oz-white shadow-xl ring-1 ring-oz-black/10"
+            >
                 {watching ? (
                     <HeroVideo floaters={reactions.floaters} />
                 ) : listening ? (

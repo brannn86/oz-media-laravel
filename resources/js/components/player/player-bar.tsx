@@ -30,10 +30,11 @@ export function PlayerBar() {
     const live = useLive();
     const { mode, active, status } = player;
 
-    // Hidden until the listener tunes in (from the hero); chat and requests
-    // stay one tap away meanwhile, except while the drawer is open (it has
-    // its own tabs and close button, and the buttons would sit on top of it).
-    if (!player.hasStarted) {
+    // Hidden until the listener tunes in, and while the home hero player is
+    // on screen (it has the same controls); chat and requests stay one tap
+    // away meanwhile, except while the drawer is open (it has its own tabs
+    // and close button, and the buttons would sit on top of it).
+    if (!player.barVisible) {
         if (live.drawerOpen) {
             return null;
         }

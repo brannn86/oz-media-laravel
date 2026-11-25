@@ -79,19 +79,20 @@ export default function StationLayout({ children }: { children: ReactNode }) {
 }
 
 /**
- * The mini player bar only appears once the listener has tuned in. Its height
- * is exposed as --oz-player-bar (0 while hidden) so everything fixed to the
- * bottom of the screen (drawer, poll, video, footer spacer) sits above it.
+ * The mini player bar only appears once the listener has tuned in (and the
+ * home hero player is scrolled past). Its height is exposed as --oz-player-bar
+ * (0 while hidden) so everything fixed to the bottom of the screen (drawer,
+ * poll, video, footer spacer) sits above it.
  */
 function PlayerBarSpace({ children }: { children: ReactNode }) {
-    const { hasStarted } = usePlayer();
+    const { barVisible } = usePlayer();
 
     return (
         <div
             className="contents"
             style={
                 {
-                    '--oz-player-bar': hasStarted ? '4.5rem' : '0rem',
+                    '--oz-player-bar': barVisible ? '4.5rem' : '0rem',
                 } as CSSProperties
             }
         >

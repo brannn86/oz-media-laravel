@@ -63,6 +63,14 @@ type PlayerApi = {
      */
     videoInHero: boolean;
     setVideoInHero: (inHero: boolean) => void;
+    /**
+     * The home hero player is on screen. The player bar waits until it's
+     * scrolled past, so the controls aren't shown twice.
+     */
+    heroInView: boolean;
+    setHeroInView: (inView: boolean) => void;
+    /** The bottom player bar is showing: tuned in, and the hero is out of view. */
+    barVisible: boolean;
     toggle: () => void;
     start: () => void;
     /** Tune in to (or switch to) audio or video. Call it from a tap. */
@@ -268,6 +276,7 @@ export function PlayerProvider({
     const [muted, setMuted] = useState(false);
     const [videoLayout, setVideoLayout] = useState<VideoLayout>('docked');
     const [videoInHero, setVideoInHero] = useState(false);
+    const [heroInView, setHeroInView] = useState(false);
     const [preferredMode, setPreferredMode] = useState<StreamMode>('audio');
 
     // Visualizer: an AudioContext is woken inside the tune-in tap; the
@@ -540,6 +549,9 @@ export function PlayerProvider({
         canAnalyse,
         videoInHero,
         setVideoInHero,
+        heroInView,
+        setHeroInView,
+        barVisible: hasStarted && !heroInView,
         toggle,
         start,
         play,
