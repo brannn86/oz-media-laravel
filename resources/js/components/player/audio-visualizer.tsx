@@ -9,12 +9,21 @@ const BAR_SLOT_PX = 12;
 const MIN_BARS = 32;
 const MAX_BARS = 96;
 /**
- * Bins spread logarithmically from the lowest to about 7 kHz (bin width is
+ * Bins spread logarithmically from the lowest to about 5 kHz (bin width is
  * sampleRate / fftSize, ~190 Hz at fftSize 256): music lives low, and a
  * linear spread leaves the outer bars flat.
  */
 const LOW_BIN = 1;
-const HIGH_BIN = 36;
+const HIGH_BIN = 28;
+/** Below this a band counts as silence, so hiss never fills a bar. */
+const NOISE_FLOOR = 48;
+/** How fast a band's remembered peak fades (per frame), so loud songs don't stay loud. */
+const PEAK_DECAY = 0.985;
+
+/** The hill: 1 in the middle, easing down to 0.3 at the edges. */
+function envelope(fromCentre: number): number {
+    return 0.3 + 0.7 * Math.cos((Math.min(1, fromCentre) * Math.PI) / 2) ** 1.5;
+}
 /** Gap between bars, as a share of each bar's slot. */
 const GAP = 0.28;
 
@@ -60,6 +69,11 @@ export function AudioVisualizer({
         ).matches;
 
         const bins = new Uint8Array(analyser?.frequencyBinCount ?? 0);
+        // Each band's recent loudest, so every band (treble too) moves.
+        const peaks = new Float32Array(bins.length).fill(NOISE_FLOOR);
+        // ...and its running average: movement is measured against it, so the
+        // bars react to beats and changes rather than sitting at a steady level.
+        const means = new Float32Array(bins.length);
         const heights = new Float32Array(MAX_BARS);
         let bars = MIN_BARS;
         let frame = 0;
@@ -96,15 +110,24 @@ export function AudioVisualizer({
                 const bin = Math.round(
                     LOW_BIN * (HIGH_BIN / LOW_BIN) ** Math.min(1, fromCentre),
                 );
-                // Treble is quieter by nature; lift it so the edges move too.
-                // The curve adds contrast, so loud passages don't flatten.
-                const level = (bins[bin] / 255) * (1 + fromCentre * 0.5);
+                // Where this band sits between most of its recent average and
+                // its recent peak (0–1), shaped by the hill: the centre stays
+                // tallest, every bar moves.
+                const base = means[bin] * 0.6;
+                const level = Math.min(
+                    1,
+                    Math.max(0, bins[bin] - base) /
+                        Math.max(peaks[bin] - base, NOISE_FLOOR / 2),
+                );
 
-                return Math.min(1, Math.max(0.05, level ** 1.6));
+                return Math.max(
+                    0.04,
+                    envelope(fromCentre) * (0.2 + 0.8 * level ** 2),
+                );
             }
 
             if (still) {
-                return 0.55 - fromCentre * 0.35;
+                return envelope(fromCentre) * 0.6;
             }
 
             // Decorative: overlapping slow waves, tallest in the middle,
@@ -115,15 +138,17 @@ export function AudioVisualizer({
                 Math.sin(time / 610 - x * 0.31) * 0.35 +
                 Math.sin(time / 230 + x * 1.7) * 0.15;
 
-            return Math.max(
-                0.08,
-                (0.72 - fromCentre * 0.45) * (0.62 + wave * 0.38),
-            );
+            return Math.max(0.06, envelope(fromCentre) * (0.55 + wave * 0.4));
         };
 
         const draw = (time: number) => {
             if (analyser && playingRef.current) {
                 analyser.getByteFrequencyData(bins);
+
+                for (let b = 0; b < bins.length; b++) {
+                    peaks[b] = Math.max(peaks[b] * PEAK_DECAY, bins[b]);
+                    means[b] = means[b] * 0.97 + bins[b] * 0.03;
+                }
             }
 
             context.clearRect(0, 0, width, height);
