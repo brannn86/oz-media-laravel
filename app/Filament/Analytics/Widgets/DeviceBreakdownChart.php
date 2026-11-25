@@ -24,11 +24,13 @@ class DeviceBreakdownChart extends ChartWidget
 
     public function getDescription(): string
     {
-        $rows = app(DeviceMetrics::class)->breakdown($this->dimension, 30);
+        $sessions = array_sum(array_column(app(DeviceMetrics::class)->breakdown($this->dimension, 30), 'sessions'));
 
-        return $rows === []
-            ? 'Listening and watching sessions, last 30 days. None yet.'
-            : number_format(array_sum(array_column($rows, 'sessions'))).' listening and watching sessions, last 30 days.';
+        return match ($sessions) {
+            0 => 'Listening and watching sessions, last 30 days. None yet.',
+            1 => '1 listening or watching session, last 30 days.',
+            default => number_format($sessions).' listening and watching sessions, last 30 days.',
+        };
     }
 
     protected function getData(): array
