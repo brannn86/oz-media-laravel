@@ -37,6 +37,8 @@ class ShareStationContext
         $station = $request->route('station');
 
         abort_unless($station instanceof Station && $station->is_active, 404);
+        // A basic site is the player page and the privacy policy, nothing else.
+        abort_if($station->isBasic() && ! $request->routeIs('station.home', 'station.privacy'), 404);
 
         Inertia::share([
             // Station settings rarely change; cached until they do (StationContentObserver).

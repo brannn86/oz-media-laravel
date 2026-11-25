@@ -197,15 +197,7 @@ return [
         'icecast_admin_password' => env('ICECAST_ADMIN_PASSWORD'),
     ],
 
-    'network' => [
-        'partners' => [
-            [
-                'name' => 'OZ Bali',
-                'logo' => 'oz-bali', // public/images/logos, see BrandLogo
-                'tagline' => 'The island\'s OZ station, run by our Bali partner team.',
-                'url' => env('OZ_BALI_URL'),
-            ],
-        ],
-    ],
+    // Where the house ad (shown when a station has no sponsor banner) sends advertisers.
+    'advertising_email' => env('ADVERTISING_EMAIL', 'marketing@ozmedianet.com'),
 
 ];

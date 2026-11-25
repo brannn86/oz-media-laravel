@@ -5,6 +5,7 @@ import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import BasicStationLayout from '@/layouts/BasicStationLayout';
 import StationLayout from '@/layouts/StationLayout';
 import { setupEcho } from '@/lib/echo';
 
@@ -28,6 +29,9 @@ void createInertiaApp({
             // Persistent: the player inside survives navigation between station pages.
             case name.startsWith('station/'):
                 return StationLayout;
+            // A basic station site (radio only), persistent for the same reason.
+            case name.startsWith('basic/'):
+                return BasicStationLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):

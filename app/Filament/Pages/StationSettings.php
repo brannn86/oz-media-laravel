@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\StationSiteType;
 use App\Enums\StreamTitleFormat;
 use App\Events\StationStreamStatusUpdated;
 use App\Filament\NavigationGroup;
@@ -25,6 +26,7 @@ use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
@@ -106,6 +108,13 @@ class StationSettings extends Page
                                 TextInput::make('tagline')
                                     ->maxLength(255)
                                     ->columnSpanFull(),
+                                Select::make('site_type')
+                                    ->label('Website')
+                                    ->options(StationSiteType::class)
+                                    ->required()
+                                    ->selectablePlaceholder(false)
+                                    ->live()
+                                    ->helperText('Basic is one page with the radio player (and the privacy policy); programs, news, events, chat and video are switched off.'),
                                 Toggle::make('is_active')
                                     ->label('Station is active')
                                     ->helperText('Inactive stations are hidden from the public site.'),
@@ -126,12 +135,14 @@ class StationSettings extends Page
                                     ->selectablePlaceholder(false)
                                     ->helperText('How the automation system writes the stream title, e.g. "Hatchu!! - Salma Salsabil" is Title - Artist.'),
                                 TextInput::make('stream_video_url')
+                                    ->hidden(fn (Get $get): bool => $this->isBasic($get))
                                     ->label('Video stream URL')
                                     ->url()
                                     ->maxLength(255)
                                     ->placeholder('https://www.youtube.com/embed/live_stream?channel=…')
                                     ->helperText("YouTube link (a video, or live_stream?channel=… for the channel's current livestream), an HLS .m3u8 URL, or an embeddable page. While it's set, listeners can choose to watch video; leave it empty for radio only."),
                                 SpatieMediaLibraryFileUpload::make('intermission')
+                                    ->hidden(fn (Get $get): bool => $this->isBasic($get))
                                     ->label('Intermission video')
                                     ->collection('intermission')
                                     ->acceptedFileTypes(Station::INTERMISSION_MIME_TYPES)
@@ -170,6 +181,43 @@ class StationSettings extends Page
                                     ->placeholder('https://maps.app.goo.gl/…')
                                     ->helperText('Google Maps (or any map) link to the studio. The address on the site links here.')
                                     ->columnSpanFull(),
+                            ]),
+                        Tab::make('Sponsor')
+                            ->icon(Heroicon::OutlinedMegaphone)
+                            ->columns(2)
+                            ->schema([
+                                SpatieMediaLibraryFileUpload::make('sponsor_banner')
+                                    ->label('Banner')
+                                    ->collection('sponsor_banner')
+                                    ->image()
+                                    ->maxSize(4096)
+                                    ->helperText(sprintf(
+                                        'Shown full width under the player. Upload %d × %d px (8:1), JPG, PNG or WebP, up to 4 MB; it shows at about 1232 × 154 on a wide screen. Other shapes are cropped to fit, so keep text away from the edges, and large: it shrinks on smaller screens. Leave empty to show the "Your brand here" house ad.',
+                                        ...Station::SPONSOR_BANNERS['sponsor_banner'],
+                                    ))
+                                    ->columnSpanFull(),
+                                SpatieMediaLibraryFileUpload::make('sponsor_banner_mobile')
+                                    ->label('Phone banner (optional)')
+                                    ->collection('sponsor_banner_mobile')
+                                    ->image()
+                                    ->maxSize(4096)
+                                    ->helperText(sprintf(
+                                        'Used instead on phones. Upload %d × %d px (4:1). Without it, phones get the wide banner, scaled down. Other shapes are cropped to fit.',
+                                        ...Station::SPONSOR_BANNERS['sponsor_banner_mobile'],
+                                    ))
+                                    ->columnSpanFull(),
+                                TextInput::make('sponsor_name')
+                                    ->label('Sponsor name')
+                                    ->maxLength(255)
+                                    ->helperText('Read out by screen readers in place of the image.'),
+                                TextInput::make('sponsor_url')
+                                    ->label('Link')
+                                    ->url()
+                                    ->rule('url:http,https')
+                                    ->maxLength(2048)
+                                    ->prefixIcon(Heroicon::OutlinedLink)
+                                    ->placeholder('https://…')
+                                    ->helperText('Where a click on the banner goes (opens in a new tab).'),
                             ]),
                         Tab::make('Social')
                             ->icon(Heroicon::OutlinedShare)
@@ -223,9 +271,12 @@ class StationSettings extends Page
         $this->station->update($this->form->getState());
         $this->form->saveRelationships();
 
+        // Uploads (banner, intermission) don't touch the station row, so the
+        // observer misses them; the public site caches both.
+        StationCache::flush($this->station);
+
         if ($this->station->refresh()->getFirstMedia('intermission')?->getKey() !== $intermissionBefore) {
             // Open players pick up the new clip without a reload.
-            StationCache::flush($this->station);
             StationStreamStatusUpdated::dispatch($this->station);
         }
 
@@ -238,6 +289,14 @@ class StationSettings extends Page
             ->title('Station settings saved')
             ->success()
             ->send();
+    }
+
+    /** The form, as currently filled in, is for a basic (player only) site. */
+    private function isBasic(Get $get): bool
+    {
+        $type = $get('site_type');
+
+        return ($type instanceof StationSiteType ? $type : StationSiteType::tryFrom((string) $type)) === StationSiteType::Basic;
     }
 
     protected function getHeaderActions(): array

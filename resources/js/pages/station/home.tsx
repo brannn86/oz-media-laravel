@@ -8,6 +8,8 @@ import { OnAirHero } from '@/components/station/on-air-hero';
 import { ProgramCards } from '@/components/station/program-cards';
 import { RecentlyPlayed } from '@/components/station/recently-played';
 import { SectionHeading } from '@/components/station/page-heading';
+import { SponsorBanner } from '@/components/station/sponsor-banner';
+import type { Sponsor } from '@/components/station/sponsor-banner';
 import { StationDetailsProvider } from '@/components/station/station-details';
 import { cn } from '@/lib/utils';
 import stationRoutes from '@/routes/station';
@@ -26,6 +28,7 @@ type Props = StationPageProps & {
     highlights: SocialHighlight[];
     programs: Program[];
     announcers: Announcer[];
+    sponsor: Sponsor;
 };
 
 const moreLink =
@@ -41,6 +44,7 @@ export default function StationHome() {
         highlights,
         programs,
         announcers,
+        sponsor,
     } = usePage<Props>().props;
     const [lead, ...rest] = news;
     const whatsapp = station.contact.whatsapp?.replace(/\D/g, '');
@@ -50,6 +54,12 @@ export default function StationHome() {
             <Head title={meta.title} />
 
             <OnAirHero station={station} broadcast={broadcast} />
+
+            <SponsorBanner
+                sponsor={sponsor}
+                stationName={station.name}
+                className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 sm:pt-10"
+            />
 
             <RecentlyPlayed />
 

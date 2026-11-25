@@ -21,6 +21,7 @@ use Database\Seeders\OzBandungSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event as EventFacade;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -129,4 +130,38 @@ it('rejects overlapping schedule slots in the program relation manager', functio
             'end_time' => '11:00',
         ])
         ->assertHasFormErrors(['end_time']);
+});
+
+it('saves a sponsor banner and shows it under the player', function () {
+    Storage::fake('public');
+    Storage::fake('local');
+
+    $this->get('/oz-bandung')->assertInertia(fn ($page) => $page
+        ->where('sponsor.house_email', config('oz.advertising_email')));
+
+    Livewire::test(StationSettings::class, ['stationSlug' => 'oz-bandung'])
+        ->fillForm([
+            'sponsor_banner' => UploadedFile::fake()->image('banner.png', 2400, 300),
+            'sponsor_name' => 'Kopi Kita',
+            'sponsor_url' => 'https://kopikita.example',
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($this->station->refresh()->getFirstMedia('sponsor_banner'))->not->toBeNull();
+
+    // The save clears the cached house ad.
+    $this->get('/oz-bandung')->assertInertia(fn ($page) => $page
+        ->where('sponsor.name', 'Kopi Kita')
+        ->where('sponsor.url', 'https://kopikita.example')
+        ->where('sponsor.image_url', fn (string $url) => str_contains($url, '/storage/'))
+        ->where('sponsor.mobile_image_url', null));
+});
+
+it('hides the video settings for a basic station', function () {
+    Livewire::test(StationSettings::class, ['stationSlug' => 'oz-bandung'])
+        ->assertFormFieldVisible('stream_video_url')
+        ->fillForm(['site_type' => 'basic'])
+        ->assertFormFieldHidden('stream_video_url')
+        ->assertFormFieldHidden('intermission');
 });

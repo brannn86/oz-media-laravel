@@ -262,13 +262,18 @@ function PlayIcon({
     );
 }
 
-function VolumeControl() {
+/** Mute and a volume slider (for dark backgrounds). Hidden on phones unless `className` says otherwise. */
+export function VolumeControl({
+    className = 'hidden md:flex',
+}: {
+    className?: string;
+}) {
     const { volume, muted, setVolume, toggleMute } = usePlayer();
     const level = muted ? 0 : volume;
     const Icon = level === 0 ? VolumeX : level < 0.5 ? Volume1 : Volume2;
 
     return (
-        <div className="hidden items-center gap-2 md:flex">
+        <div className={cn('items-center gap-2', className)}>
             <button
                 type="button"
                 onClick={toggleMute}

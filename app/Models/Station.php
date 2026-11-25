@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StationSiteType;
 use App\Enums\StreamTitleFormat;
 use App\Models\Concerns\HasUniqueSlug;
 use App\Observers\StationObserver;
@@ -14,14 +15,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * @property int $id
  * @property string $slug
  * @property string $name
  * @property string|null $tagline
+ * @property StationSiteType $site_type
  * @property string|null $stream_audio_url
  * @property string|null $stream_video_url
  * @property StreamTitleFormat $stream_title_format
@@ -30,14 +34,16 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property array{instagram?: string|null, tiktok?: string|null, youtube?: string|null, threads?: string|null, x?: string|null}|null $social_links
  * @property string|null $about_content
  * @property string|null $privacy_policy_content
+ * @property string|null $sponsor_name
+ * @property string|null $sponsor_url
  * @property bool $is_active
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
 #[ObservedBy(StationObserver::class)]
 #[Fillable([
-    'slug', 'name', 'tagline', 'stream_audio_url', 'stream_video_url', 'stream_title_format', 'chat_slow_mode_seconds',
-    'contact_info', 'social_links', 'about_content', 'privacy_policy_content', 'is_active',
+    'slug', 'name', 'tagline', 'site_type', 'stream_audio_url', 'stream_video_url', 'stream_title_format', 'chat_slow_mode_seconds',
+    'contact_info', 'social_links', 'about_content', 'privacy_policy_content', 'sponsor_name', 'sponsor_url', 'is_active',
 ])]
 class Station extends Model implements HasMedia
 {
@@ -47,14 +53,26 @@ class Station extends Model implements HasMedia
     /** Video files the intermission clip may be. */
     public const INTERMISSION_MIME_TYPES = ['video/mp4', 'video/webm'];
 
+    /**
+     * Sponsor banner collections and their recommended upload size (2x the
+     * size on screen: 1232×154 across a wide page, 4:1 on a phone). Larger
+     * uploads are scaled down to this.
+     */
+    public const SPONSOR_BANNERS = [
+        'sponsor_banner' => [2400, 300],
+        'sponsor_banner_mobile' => [1200, 300],
+    ];
+
     protected $attributes = [
         'stream_title_format' => 'title_artist',
+        'site_type' => 'full',
     ];
 
     protected function casts(): array
     {
         return [
             'stream_title_format' => StreamTitleFormat::class,
+            'site_type' => StationSiteType::class,
             'is_active' => 'boolean',
             'chat_slow_mode_seconds' => 'integer',
             'contact_info' => 'array',
@@ -68,6 +86,50 @@ class Station extends Model implements HasMedia
         $this->addMediaCollection('intermission')
             ->singleFile()
             ->acceptsMimeTypes(self::INTERMISSION_MIME_TYPES);
+
+        // The sponsor banner under the player: wide, plus an optional phone crop.
+        foreach (array_keys(self::SPONSOR_BANNERS) as $collection) {
+            $this->addMediaCollection($collection)
+                ->singleFile()
+                ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+        }
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        foreach (self::SPONSOR_BANNERS as $collection => [$width, $height]) {
+            $this->addMediaConversion('webp')
+                ->performOnCollections($collection)
+                ->format('webp')
+                ->quality(85)
+                ->fit(Fit::Max, $width, $height);
+        }
+    }
+
+    public function isBasic(): bool
+    {
+        return $this->site_type === StationSiteType::Basic;
+    }
+
+    /**
+     * The uploaded sponsor banner, or null for the house ad.
+     *
+     * @return array{name: string|null, url: string|null, image_url: string, mobile_image_url: string|null}|null
+     */
+    public function sponsor(): ?array
+    {
+        $banner = $this->getFirstMedia('sponsor_banner');
+
+        if (! $banner instanceof Media) {
+            return null;
+        }
+
+        return [
+            'name' => $this->sponsor_name,
+            'url' => $this->sponsor_url,
+            'image_url' => $banner->getAvailableUrl(['webp']),
+            'mobile_image_url' => $this->getFirstMedia('sponsor_banner_mobile')?->getAvailableUrl(['webp']),
+        ];
     }
 
     protected function slugSourceAttribute(): string

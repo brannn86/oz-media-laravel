@@ -257,7 +257,7 @@ Beyond the standard Laravel keys in `.env.example`:
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`                   | "Continue with Google" (hidden when unset)                                                |
 | `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID`                                              | Adds the Umami tracking script to station sites                                           |
 | `UMAMI_SHARE_URL`                                                                   | Umami share link embedded in the admin dashboard                                          |
-| `OZ_BALI_URL`                                                                       | Link to the OZ Bali partner site (shown as "coming soon" when empty)                      |
+| `ADVERTISING_EMAIL`                                                                 | Where the house ad under the player sends advertisers (default `marketing@ozmedianet.com`) |
 | `QUEUE_MAIL`, `QUEUE_POINTS`, `QUEUE_MEDIA`, `QUEUE_ANALYTICS`, `QUEUE_MAINTENANCE` | Rename the named queues (defaults: `mail`, `points`, `media`, `analytics`, `maintenance`) |
 
 App-level tuning (chat limits, blocked words seed, points, request limits, retention) lives in `config/oz.php`.
@@ -312,6 +312,7 @@ composer install --no-dev --optimize-autoloader
 npm ci && npm run build
 php artisan migrate --force
 php artisan db:seed --class=RolesAndPermissionsSeeder --force   # permissions for new admin pages; safe to re-run
+php artisan db:seed --class=OzBaliSeeder --force             # creates OZ Bali (/oz-bali, basic site) if missing; safe to re-run
 php artisan optimize
 php artisan filament:optimize
 php artisan queue:restart

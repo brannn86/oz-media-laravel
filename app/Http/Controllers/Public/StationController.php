@@ -33,7 +33,15 @@ class StationController extends Controller
 
     public function home(Request $request, Station $station): Response
     {
+        if ($station->isBasic()) {
+            return Inertia::render('basic/home', [
+                'meta' => PageMeta::make($station->tagline ? "{$station->name} | {$station->tagline}" : $station->name),
+                'sponsor' => $this->sponsor($station),
+            ]);
+        }
+
         return Inertia::render('station/home', [
+            'sponsor' => $this->sponsor($station),
             'meta' => PageMeta::make(
                 "{$station->name} | {$station->tagline}",
                 strip_tags((string) $station->about_content),
@@ -159,7 +167,19 @@ class StationController extends Controller
 
     public function privacy(Station $station): Response
     {
-        return $this->contentPage('station/privacy', "Privacy Policy | {$station->name}", $station->privacy_policy_content);
+        return $this->contentPage($station->isBasic() ? 'basic/privacy' : 'station/privacy', "Privacy Policy | {$station->name}", $station->privacy_policy_content);
+    }
+
+    /**
+     * The banner under the player: the uploaded one, or the house ad
+     * (`house_email` is where advertisers write) when there is none.
+     *
+     * @return array{name: string|null, url: string|null, image_url: string, mobile_image_url: string|null}|array{house_email: string}
+     */
+    private function sponsor(Station $station): array
+    {
+        return StationCache::remember($station, 'sponsor', fn (): array => $station->sponsor()
+            ?? ['house_email' => (string) config('oz.advertising_email')]);
     }
 
     private function contentPage(string $component, string $title, ?string $html): Response
