@@ -8,6 +8,7 @@ use App\Filament\Analytics\Widgets\AudienceStats;
 use App\Filament\Analytics\Widgets\TopListenersTable;
 use App\Filament\Analytics\Widgets\TopSongsTable;
 use App\Filament\Pages\Analytics\AudienceAnalytics;
+use App\Filament\Pages\Analytics\DevicesAnalytics;
 use App\Filament\Pages\Analytics\EngagementAnalytics;
 use App\Filament\Pages\Analytics\NewsAnalytics;
 use App\Filament\Pages\Analytics\ProgramsAnalytics;
@@ -37,6 +38,7 @@ it('opens every analytics page for every admin role', function (AdminRole $role,
     'radio' => RadioAnalytics::class,
     'video' => VideoAnalytics::class,
     'programs' => ProgramsAnalytics::class,
+    'devices' => DevicesAnalytics::class,
     'news' => NewsAnalytics::class,
     'engagement' => EngagementAnalytics::class,
 ]);

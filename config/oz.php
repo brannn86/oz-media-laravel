@@ -167,6 +167,10 @@ return [
         'timeout_seconds' => 5,
         // How many past songs the site shows under "Recently played".
         'recent_limit' => 10,
+        // Optional: Icecast's admin login, to see what players listeners use
+        // (smart speakers, radio apps, ...) in Analytics > Devices.
+        'icecast_admin_user' => env('ICECAST_ADMIN_USER', 'admin'),
+        'icecast_admin_password' => env('ICECAST_ADMIN_PASSWORD'),
     ],
 
     'network' => [

@@ -268,3 +268,32 @@ it('samples the Icecast count once every quarter hour', function () {
     expect(DB::table('icecast_samples')->orderBy('sampled_at')->pluck('listeners')->all())->toBe([14, 20])
         ->and(Carbon::parse(DB::table('icecast_samples')->min('sampled_at'))->format('H:i'))->toBe('10:00');
 });
+
+it('groups Icecast listeners by player when the admin login is set', function () {
+    config(['oz.now_playing.icecast_admin_password' => 'secret']);
+    $this->travelTo(Carbon::parse('2026-11-24 10:01:00'));
+    Http::fake(['https://streaming.example.com:8443/admin/listclients*' => Http::response(<<<'XML'
+        <?xml version="1.0"?>
+        <icestats><source mount="/ozbandung"><Listeners>3</Listeners>
+          <listener id="1"><IP>203.0.113.9</IP><UserAgent>AlexaMediaPlayer/2.1</UserAgent><Connected>60</Connected></listener>
+          <listener id="2"><IP>203.0.113.10</IP><UserAgent>Mozilla/5.0 (Windows NT 10.0) Chrome/131.0</UserAgent><Connected>90</Connected></listener>
+          <listener id="3"><IP>203.0.113.11</IP><UserAgent>Sonos/80.1</UserAgent><Connected>30</Connected></listener>
+        </source></icestats>
+        XML)]);
+    icecastReturns([mount('Hatchu!! - Salma Salsabil', listeners: 3)]);
+
+    sync();
+
+    expect(DB::table('icecast_client_samples')->orderBy('category')->pluck('listeners', 'category')->all())
+        ->toBe(['Smart speakers & TVs' => 2, 'Web browsers' => 1]);
+    Http::assertSent(fn ($request) => str_contains($request->url(), '/admin/listclients?mount=%2Fozbandung')
+        && $request->hasHeader('Authorization', 'Basic '.base64_encode('admin:secret')));
+});
+
+it('skips the listener list without an admin login', function () {
+    icecastReturns([mount('Hatchu!! - Salma Salsabil')]);
+
+    sync();
+
+    expect(DB::table('icecast_client_samples')->count())->toBe(0);
+});

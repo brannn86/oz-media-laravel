@@ -22,7 +22,7 @@ class NewsAnalytics extends AnalyticsPage
 
     protected static ?string $title = 'News analytics';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 6;
 
     protected static ?string $slug = 'analytics/news';
 

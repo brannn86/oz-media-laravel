@@ -3,6 +3,7 @@
 use App\Enums\AdminRole;
 use App\Filament\Analytics\CsvExport;
 use App\Filament\Pages\Analytics\AudienceAnalytics;
+use App\Filament\Pages\Analytics\DevicesAnalytics;
 use App\Filament\Pages\Analytics\EngagementAnalytics;
 use App\Filament\Pages\Analytics\NewsAnalytics;
 use App\Filament\Pages\Analytics\ProgramsAnalytics;
@@ -36,6 +37,7 @@ it('exports every dataset of every analytics page as CSV', function (string $pag
     'radio' => RadioAnalytics::class,
     'video' => VideoAnalytics::class,
     'programs' => ProgramsAnalytics::class,
+    'devices' => DevicesAnalytics::class,
     'news' => NewsAnalytics::class,
     'engagement' => EngagementAnalytics::class,
 ]);

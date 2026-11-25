@@ -117,7 +117,7 @@ enum AdminRole: string implements HasColor, HasLabel
         return [
             ...array_map(
                 fn (string $page): string => "View:{$page}Analytics",
-                ['Audience', 'Radio', 'Video', 'Programs', 'News', 'Engagement'],
+                ['Audience', 'Radio', 'Video', 'Programs', 'Devices', 'News', 'Engagement'],
             ),
             'View:CampaignLinks',
         ];

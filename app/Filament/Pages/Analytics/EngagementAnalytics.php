@@ -20,7 +20,7 @@ class EngagementAnalytics extends AnalyticsPage
 
     protected static ?string $title = 'Engagement analytics';
 
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 7;
 
     protected static ?string $slug = 'analytics/engagement';
 

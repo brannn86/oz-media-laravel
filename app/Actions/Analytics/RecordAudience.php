@@ -5,6 +5,7 @@ namespace App\Actions\Analytics;
 use App\Enums\AudienceMode;
 use App\Models\Station;
 use App\Support\TrafficSource;
+use App\Support\UserAgent;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -41,8 +42,9 @@ class RecordAudience
      */
     /**
      * @param  array{referrer_host?: string|null, utm_source?: string|null, utm_medium?: string|null, utm_campaign?: string|null}  $landing  Where the visit came from.
+     * @param  string  $platform  "Website" or "App".
      */
-    public function ping(Station $station, AudienceMode $mode, string $viewerKey, array $landing = []): bool
+    public function ping(Station $station, AudienceMode $mode, string $viewerKey, array $landing = [], ?string $userAgent = null, string $platform = 'Website'): bool
     {
         $visitor = sha1($viewerKey);
         $minute = CarbonImmutable::now()->startOfMinute();
@@ -66,7 +68,7 @@ class RecordAudience
             ]);
         }
 
-        $this->trackSession($station, $mode, $visitor, $landing);
+        $this->trackSession($station, $mode, $visitor, $landing, $userAgent, $platform);
 
         return true;
     }
@@ -76,7 +78,7 @@ class RecordAudience
      *
      * @param  array{referrer_host?: string|null, utm_source?: string|null, utm_medium?: string|null, utm_campaign?: string|null}  $landing
      */
-    private function trackSession(Station $station, AudienceMode $mode, string $visitor, array $landing): void
+    private function trackSession(Station $station, AudienceMode $mode, string $visitor, array $landing, ?string $userAgent, string $platform): void
     {
         $key = "audience:session:{$station->id}:{$mode->value}:{$visitor}";
         $now = CarbonImmutable::now();
@@ -96,6 +98,10 @@ class RecordAudience
         $id = DB::table('audience_sessions')->insertGetId([
             'station_id' => $station->id,
             'mode' => $mode->value,
+            'platform' => $platform,
+            'device' => UserAgent::device($userAgent),
+            'os' => UserAgent::os($userAgent),
+            'browser' => $platform === 'App' ? null : UserAgent::browser($userAgent),
             'visitor' => $visitor,
             'started_at' => $now,
             'last_seen_at' => $now,

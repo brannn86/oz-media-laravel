@@ -15,7 +15,8 @@ use Illuminate\Validation\Rule;
  * "Still here": a player pings once a minute while the radio plays or the
  * video is open. Anyone can ping (guests included); a visitor counts once a
  * minute however often they call. `source` describes the visit's landing
- * page (external referrer host, UTM tags); it labels a new session.
+ * page (external referrer host, UTM tags); it labels a new session, with the
+ * device it ran on. The mobile app sends `X-OZ-Client: app`.
  */
 class AudienceController extends Controller
 {
@@ -30,7 +31,14 @@ class AudienceController extends Controller
             'source.utm_campaign' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $audience->ping($station, AudienceMode::from($data['mode']), ViewerKey::from($request), $data['source'] ?? []);
+        $audience->ping(
+            $station,
+            AudienceMode::from($data['mode']),
+            ViewerKey::from($request),
+            $data['source'] ?? [],
+            $request->userAgent(),
+            $request->header('X-OZ-Client') === 'app' ? 'App' : 'Website',
+        );
 
         return response()->noContent();
     }

@@ -111,3 +111,15 @@ it('keeps the campaign of a tagged link', function () {
     expect((array) DB::table('audience_sessions')->first(['source', 'utm_medium', 'utm_campaign']))
         ->toBe(['source' => 'Instagram', 'utm_medium' => 'story', 'utm_campaign' => 'drive-time']);
 });
+
+it('records what a session ran on, website or app', function () {
+    $this->withHeaders(['X-Listener-Id' => 'phone-a', 'User-Agent' => 'Mozilla/5.0 (Linux; Android 14; SM-A546E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36'])
+        ->postJson('/api/v1/stations/oz-bandung/audience', ['mode' => 'audio'])->assertNoContent();
+    $this->withHeaders(['X-Listener-Id' => 'app-b', 'X-OZ-Client' => 'app', 'User-Agent' => 'OZRadio/1.0 (iPhone; iOS 18.1)'])
+        ->postJson('/api/v1/stations/oz-bandung/audience', ['mode' => 'audio'])->assertNoContent();
+
+    $sessions = DB::table('audience_sessions')->orderBy('id')->get(['platform', 'device', 'os', 'browser']);
+
+    expect((array) $sessions[0])->toBe(['platform' => 'Website', 'device' => 'Phone', 'os' => 'Android', 'browser' => 'Chrome'])
+        ->and((array) $sessions[1])->toBe(['platform' => 'App', 'device' => 'Phone', 'os' => 'iOS', 'browser' => null]);
+});

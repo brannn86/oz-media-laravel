@@ -12,6 +12,7 @@ use App\Models\Station;
 use App\Models\TrackPlay;
 use App\Support\Icecast\IcecastClient;
 use App\Support\Icecast\ListenerCount;
+use App\Support\UserAgent;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -154,6 +155,46 @@ class SyncNowPlayingAction
                 'sampled_at' => $quarter,
                 'listeners' => $listeners,
             ]);
+
+            $this->samplePlayers($station, $quarter);
+        }
+    }
+
+    /**
+     * With an Icecast admin login configured: what kinds of player are
+     * connected (smart speakers, radio apps, browsers, ...), by user agent.
+     * Optional, so a failure here is logged and never stops the sync.
+     */
+    private function samplePlayers(Station $station, CarbonImmutable $quarter): void
+    {
+        $password = config('oz.now_playing.icecast_admin_password');
+        $endpoint = $station->icecastStatusEndpoint();
+
+        if (! is_string($password) || $password === '' || $endpoint === null) {
+            return;
+        }
+
+        try {
+            $agents = $this->icecast->listenerAgents($endpoint['url'], $endpoint['mount'], (string) config('oz.now_playing.icecast_admin_user'), $password);
+        } catch (Throwable $e) {
+            Log::warning("Now playing: can't read Icecast's listener list for {$station->slug}.", ['error' => $e->getMessage()]);
+
+            return;
+        }
+
+        $rows = collect($agents)
+            ->countBy(fn (string $agent): string => UserAgent::icecastClient($agent))
+            ->map(fn (int $listeners, string $category): array => [
+                'station_id' => $station->id,
+                'sampled_at' => $quarter,
+                'category' => $category,
+                'listeners' => $listeners,
+            ])
+            ->values()
+            ->all();
+
+        if ($rows !== []) {
+            DB::table('icecast_client_samples')->insertOrIgnore($rows);
         }
     }
 
