@@ -21,6 +21,13 @@ class StationCache
     public const DEFAULT_TTL = 3600;
 
     /**
+     * Part of every key. Bump it when a cached payload changes shape (a new
+     * field in StationResource, say), so a deploy doesn't serve entries
+     * cached by the old code.
+     */
+    private const FORMAT = 2;
+
+    /**
      * @template T
      *
      * @param  Closure(): T  $callback
@@ -47,7 +54,7 @@ class StationCache
 
     private static function key(int|string $stationId, string $name): string
     {
-        return "station:{$stationId}:v".self::version($stationId).":{$name}";
+        return "station:{$stationId}:f".self::FORMAT.':v'.self::version($stationId).":{$name}";
     }
 
     private static function version(int|string $stationId): string

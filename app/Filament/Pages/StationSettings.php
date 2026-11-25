@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Enums\StreamTitleFormat;
 use App\Events\StationStreamStatusUpdated;
 use App\Filament\NavigationGroup;
+use App\Http\Resources\StationResource;
 use App\Models\Station;
 use App\Support\StationCache;
 use BackedEnum;
@@ -141,14 +142,16 @@ class StationSettings extends Page
                             ->icon(Heroicon::OutlinedPhone)
                             ->columns(2)
                             ->schema([
+                                TextInput::make('contact_info.heading')
+                                    ->label('Heading')
+                                    ->maxLength(120)
+                                    ->placeholder(StationResource::DEFAULT_CONTACT_HEADING)
+                                    ->helperText('The big line above the contact details on the station home page. Leave empty for the default.')
+                                    ->columnSpanFull(),
                                 TextInput::make('contact_info.email')
                                     ->label('Email')
                                     ->email()
                                     ->prefixIcon(Heroicon::OutlinedEnvelope),
-                                TextInput::make('contact_info.phone')
-                                    ->label('Phone')
-                                    ->tel()
-                                    ->prefixIcon(Heroicon::OutlinedPhone),
                                 TextInput::make('contact_info.whatsapp')
                                     ->label('WhatsApp')
                                     ->tel()

@@ -193,35 +193,24 @@ export default function StationHome() {
                             id="contact-title"
                             className="font-oz-display text-4xl leading-[0.95] font-extrabold tracking-tight text-balance sm:text-6xl"
                         >
-                            Got a song request? Say hi to the studio.
+                            {station.contact.heading}
                         </h2>
-                        {whatsapp && (
-                            <a
-                                href={`https://wa.me/${whatsapp}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="mt-8 inline-flex h-14 items-center gap-3 rounded-full bg-oz-black px-7 text-lg font-bold text-oz-white transition-transform hover:scale-[1.02] focus-visible:ring-4 focus-visible:ring-oz-black/30 focus-visible:outline-none"
-                            >
-                                <BrandIcon
-                                    brand="whatsapp"
-                                    className="size-6"
-                                />
-                                Message us on WhatsApp
-                            </a>
-                        )}
                     </div>
                     <dl className="grid gap-5 text-base sm:grid-cols-2">
-                        {station.contact.phone && (
+                        {whatsapp && (
                             <div>
                                 <dt className="text-sm font-semibold text-oz-black/60">
-                                    Studio line
+                                    WhatsApp
                                 </dt>
                                 <dd className="mt-1 font-semibold">
                                     <a
-                                        href={`tel:${station.contact.phone.replace(/\s/g, '')}`}
-                                        className="hover:underline"
+                                        href={`https://wa.me/${whatsapp}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 hover:underline"
                                     >
-                                        {station.contact.phone}
+                                        <BrandIcon brand="whatsapp" />
+                                        {station.contact.whatsapp}
                                     </a>
                                 </dd>
                             </div>

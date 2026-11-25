@@ -46,6 +46,14 @@ export function StationFooter({ station }: { station: Station }) {
                                 </Link>
                             </li>
                         ))}
+                        <li>
+                            <Link
+                                href={stationRoutes.privacy(station.slug)}
+                                className="font-semibold hover:text-oz-yellow"
+                            >
+                                Privacy policy
+                            </Link>
+                        </li>
                     </ul>
                 </nav>
 
@@ -64,16 +72,6 @@ export function StationFooter({ station }: { station: Station }) {
                                 >
                                     <BrandIcon brand="whatsapp" />
                                     WhatsApp {contact.whatsapp}
-                                </a>
-                            </li>
-                        )}
-                        {contact.phone && (
-                            <li>
-                                <a
-                                    href={`tel:${contact.phone.replace(/\s/g, '')}`}
-                                    className="hover:text-oz-yellow"
-                                >
-                                    {contact.phone}
                                 </a>
                             </li>
                         )}
@@ -111,7 +109,7 @@ export function StationFooter({ station }: { station: Station }) {
                 </div>
             </div>
             <div className="border-t border-oz-white/10">
-                <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-oz-white/50 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <div className="mx-auto max-w-7xl px-4 py-6 text-sm text-oz-white/50 sm:px-6">
                     <p>
                         {station.name} is part of{' '}
                         <Link
@@ -122,12 +120,6 @@ export function StationFooter({ station }: { station: Station }) {
                         </Link>
                         .
                     </p>
-                    <Link
-                        href={stationRoutes.privacy(station.slug)}
-                        className="hover:text-oz-white"
-                    >
-                        Privacy policy
-                    </Link>
                 </div>
             </div>
         </footer>

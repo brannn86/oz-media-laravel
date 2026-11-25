@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\PostStatus;
+use App\Http\Resources\StationResource;
 use App\Models\Post;
 use App\Models\Station;
 use Database\Seeders\OzBandungSeeder;
@@ -136,4 +137,19 @@ it('includes what the site measures in the editable privacy policy', function ()
     $this->get('/oz-bandung/privacy')->assertInertia(fn (Assert $page) => $page
         ->component('station/privacy')
         ->where('body', fn (string $body) => str_contains($body, 'What this site measures') && str_contains($body, '13 months')));
+});
+
+it('uses the station\'s own contact heading, or the default', function () {
+    $this->get('/oz-bandung')->assertInertia(fn (Assert $page) => $page
+        ->where('station.contact.heading', StationResource::DEFAULT_CONTACT_HEADING));
+
+    $this->station->update(['contact_info' => [...$this->station->contact_info, 'heading' => 'Call the studio!']]);
+
+    $this->get('/oz-bandung')->assertInertia(fn (Assert $page) => $page
+        ->where('station.contact.heading', 'Call the studio!'));
+});
+
+it('sends program covers with the schedule', function () {
+    $this->get('/oz-bandung/programs')->assertInertia(fn (Assert $page) => $page
+        ->has('slots.0.program.cover_image_url'));
 });

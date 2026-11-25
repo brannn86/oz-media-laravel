@@ -25,7 +25,10 @@ export type Station = {
     tagline: string | null;
     contact: Partial<
         Record<'email' | 'phone' | 'address' | 'map_url' | 'whatsapp', string>
-    >;
+    > & {
+        /** Always set: the station's own or the default. */
+        heading: string;
+    };
     /** In footer order: Instagram, TikTok, YouTube, Threads, X (empty ones left out). */
     social: Partial<
         Record<'instagram' | 'tiktok' | 'youtube' | 'threads' | 'x', string>

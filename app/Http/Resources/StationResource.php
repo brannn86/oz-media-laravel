@@ -14,6 +14,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class StationResource extends JsonResource
 {
+    /** Shown above the contact details when the station hasn't set its own. */
+    public const DEFAULT_CONTACT_HEADING = 'Got a song request? Say hi to the studio.';
+
     /** Station socials shown on the site, in order; empty ones are left out. */
     private const SOCIAL_NETWORKS = ['instagram', 'tiktok', 'youtube', 'threads', 'x'];
 
@@ -46,6 +49,8 @@ class StationResource extends JsonResource
         if (isset($contact['map_url']) && ! preg_match('#^https?://#i', (string) $contact['map_url'])) {
             unset($contact['map_url']);
         }
+
+        $contact['heading'] ??= self::DEFAULT_CONTACT_HEADING;
 
         return $contact;
     }

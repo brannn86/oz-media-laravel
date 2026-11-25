@@ -26,7 +26,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
  * @property string|null $stream_video_url
  * @property StreamTitleFormat $stream_title_format
  * @property int $chat_slow_mode_seconds Minimum seconds between messages per listener (0 = off).
- * @property array{email?: string|null, phone?: string|null, address?: string|null, map_url?: string|null, whatsapp?: string|null}|null $contact_info
+ * @property array{heading?: string|null, email?: string|null, phone?: string|null, address?: string|null, map_url?: string|null, whatsapp?: string|null}|null $contact_info
  * @property array{instagram?: string|null, tiktok?: string|null, youtube?: string|null, threads?: string|null, x?: string|null}|null $social_links
  * @property string|null $about_content
  * @property string|null $privacy_policy_content
