@@ -43,7 +43,7 @@ function actingRole(?AdminRole $role): User
 dataset('screens', function () {
     $matrix = [
         //                            D     E      S      L
-        'dashboard' => [fn () => '/admin', [true, true, true, false]],
+        'dashboard' => [fn () => '/admin/dashboard', [true, true, true, false]],
         'programs' => [fn () => ProgramResource::getUrl(), [true, true, false, false]],
         'schedule' => [fn () => ProgramScheduleResource::getUrl(), [true, true, false, false]],
         'announcers' => [fn () => AnnouncerResource::getUrl(), [true, true, false, false]],
@@ -106,5 +106,5 @@ it('keeps abilities inside screens role-specific', function () {
 });
 
 it('never lets a listener into the panel, even with a valid session', function () {
-    $this->actingAs(actingRole(null))->get('/admin')->assertForbidden();
+    $this->actingAs(actingRole(null))->get('/admin/dashboard')->assertForbidden();
 });

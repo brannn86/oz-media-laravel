@@ -4,6 +4,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Domains
+    |--------------------------------------------------------------------------
+    |
+    | Production: the public site on the main domain (ozmedianet.com, stations
+    | at /oz-bandung ...), the admin panel on admin.ozmedianet.com (dashboard at
+    | /dashboard) and Studio Mode on studio.ozmedianet.com. Left empty (local
+    | development), everything runs on one host: the admin at /admin, the
+    | studio at /studio. Set SESSION_DOMAIN=.ozmedianet.com so one sign-in
+    | works on the admin and studio domains.
+    |
+    */
+
+    'domains' => [
+        'main' => env('MAIN_DOMAIN') ?: null,
+        'admin' => env('ADMIN_DOMAIN') ?: null,
+        'studio' => env('STUDIO_DOMAIN') ?: null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Initial Dev Account
     |--------------------------------------------------------------------------
     |

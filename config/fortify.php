@@ -89,7 +89,8 @@ return [
 
     'prefix' => '',
 
-    'domain' => null,
+    // Listener sign-in lives on the public site's domain (null: any host).
+    'domain' => env('MAIN_DOMAIN') ?: null,
 
     /*
     |--------------------------------------------------------------------------

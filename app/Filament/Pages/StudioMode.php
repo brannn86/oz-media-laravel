@@ -72,6 +72,15 @@ class StudioMode extends Page
 
     protected static ?string $slug = 'studio-mode';
 
+    /**
+     * Studio Mode has its own panel (studio.ozmedianet.com); the admin sidebar
+     * links there instead (AdminPanelProvider).
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected const FEED_SIZE = 100;
 
     #[Url(as: 'station')]

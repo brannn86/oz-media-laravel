@@ -53,7 +53,7 @@ it('renders every list and create page with seeded content', function (string $u
 ]);
 
 it('shows each sidebar item exactly once for dev', function () {
-    $this->get('/admin')->assertOk();
+    $this->get('/admin/dashboard')->assertOk();
 
     $items = collect(Filament::getNavigation())
         ->flatMap(fn ($group) => collect($group->getItems())->map(fn ($item) => ($group->getLabel() ?? '').' / '.$item->getLabel()));
