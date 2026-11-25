@@ -41,3 +41,9 @@ Schedule::command('oz:archive-chat')
     ->dailyAt('03:30')
     ->timezone('Asia/Jakarta')
     ->onOneServer();
+
+// Per-visitor analytics past the retention stated on the privacy page.
+Schedule::command('analytics:prune-visitors')
+    ->dailyAt('03:45')
+    ->timezone('Asia/Jakarta')
+    ->onOneServer();

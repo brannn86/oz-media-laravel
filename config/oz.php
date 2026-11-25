@@ -151,6 +151,10 @@ return [
         'archive_chat_after_days' => 90,
         // Moderated (deleted) chat is removed for good after this.
         'purge_deleted_chat_after_days' => 30,
+        // Per-visitor analytics rows (audience_sessions, audience_visitors) are
+        // deleted after this; the anonymous totals are kept. Stated on the
+        // privacy page, so change both together.
+        'visitor_analytics_months' => 13,
     ],
 
     /*
