@@ -28,6 +28,11 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->profileRules($this->user()->id);
+        return [
+            ...$this->profileRules($this->user()->id),
+            // Only when the form has them (the station profile page does,
+            // the admin settings page doesn't), so they aren't wiped.
+            ...array_map(fn (array $rules): array => ['sometimes', ...$rules], $this->listenerDetailsRules()),
+        ];
     }
 }

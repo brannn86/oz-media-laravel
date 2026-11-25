@@ -20,21 +20,26 @@ class RegisterListenerAction
     use PasswordValidationRules, ProfileValidationRules;
 
     /**
-     * @param  array<string, mixed>  $input  name, email, password, password_confirmation
+     * @param  array<string, mixed>  $input  name, email, password, password_confirmation, age_range, gender, location
+     * @param  bool  $requireDetails  The website asks for age range, gender and location; the app may not (yet).
      *
      * @throws ValidationException
      */
-    public function handle(array $input, bool $dispatchRegistered = true): User
+    public function handle(array $input, bool $dispatchRegistered = true, bool $requireDetails = false): User
     {
         $data = Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
-        ])->validate();
+            ...$this->listenerDetailsRules($requireDetails),
+        ], attributes: ['age_range' => 'age range'])->validate();
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => $data['password'],
+            'age_range' => $data['age_range'] ?? null,
+            'gender' => $data['gender'] ?? null,
+            'location' => isset($data['location']) ? trim($data['location']) : null,
         ]);
 
         if ($dispatchRegistered) {

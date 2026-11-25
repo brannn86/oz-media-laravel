@@ -27,7 +27,7 @@ class AuthController extends Controller
     {
         $request->validate(['device_name' => ['required', 'string', 'max:100']]);
 
-        $user = $register->handle($request->only(['name', 'email', 'password', 'password_confirmation']));
+        $user = $register->handle($request->only(['name', 'email', 'password', 'password_confirmation', 'age_range', 'gender', 'location']));
 
         return $this->tokenResponse($tokens->for($user, $request->string('device_name')->toString()), 201);
     }

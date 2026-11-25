@@ -2,6 +2,7 @@ import { Form, usePage } from '@inertiajs/react';
 import { createContext, useCallback, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import PasswordInput from '@/components/password-input';
+import { ListenerDetailsFields } from '@/components/station/listener-details-fields';
 import { OzMark } from '@/components/station/oz-mark';
 import {
     OzField,
@@ -23,6 +24,8 @@ import { store as loginStore } from '@/routes/login';
 import { email as passwordEmail } from '@/routes/password';
 import { store as registerStore } from '@/routes/register';
 import google from '@/routes/auth/google';
+import stationRoutes from '@/routes/station';
+import type { StationPageProps } from '@/types';
 
 export type AuthMode = 'login' | 'register' | 'forgot';
 
@@ -231,6 +234,8 @@ function LoginForm({ googleSignIn, onSuccess, onModeChange }: FormProps) {
 
 function RegisterForm({ googleSignIn, onSuccess, onModeChange }: FormProps) {
     const returnPath = useReturnPath();
+    // The popup only opens on station pages.
+    const stationSlug = usePage<StationPageProps>().props.station.slug;
 
     return (
         <>
@@ -276,6 +281,11 @@ function RegisterForm({ googleSignIn, onSuccess, onModeChange }: FormProps) {
                                 className={ozInputClass}
                             />
                         </OzField>
+                        <ListenerDetailsFields
+                            idPrefix="auth"
+                            errors={errors}
+                            required
+                        />
                         <OzField
                             id="auth-password"
                             label="Password"
@@ -317,6 +327,19 @@ function RegisterForm({ googleSignIn, onSuccess, onModeChange }: FormProps) {
                             {processing && <Spinner />}
                             Create account
                         </button>
+                        <p className="text-center text-xs text-oz-black/60">
+                            We use your age, gender and area only as totals, to
+                            know our audience. See our{' '}
+                            <a
+                                href={stationRoutes.privacy(stationSlug).url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline underline-offset-2"
+                            >
+                                privacy policy
+                            </a>
+                            .
+                        </p>
                     </>
                 )}
             </Form>

@@ -73,7 +73,8 @@ class OzBandungSeeder extends Seeder
                 <p>We use this information to run our services, improve our programming and, with your consent, to send you news about OZ events.</p>
                 <h3>Contact</h3>
                 <p>Questions? Email hello@ozmedianet.com.</p>
-                HTML."\n".file_get_contents(database_path('content/privacy-measurement.html')),
+                HTML."\n".file_get_contents(database_path('content/privacy-measurement.html'))
+                ."\n".file_get_contents(database_path('content/privacy-account.html')),
             'is_active' => true,
         ]);
     }

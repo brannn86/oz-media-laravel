@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\AgeRange;
 use App\Events\StationStreamStatusUpdated;
 use App\Filament\Pages\StationSettings;
 use App\Filament\Resources\Announcers\AnnouncerResource;
@@ -12,6 +13,7 @@ use App\Filament\Resources\ProgramSchedules\ProgramScheduleResource;
 use App\Filament\Resources\SocialHighlights\SocialHighlightResource;
 use App\Filament\Resources\Stations\Pages\ListStations;
 use App\Filament\Resources\Stations\StationResource;
+use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\UserResource;
 use App\Models\Post;
 use App\Models\Program;
@@ -164,4 +166,29 @@ it('hides the video settings for a basic station', function () {
         ->fillForm(['site_type' => 'basic'])
         ->assertFormFieldHidden('stream_video_url')
         ->assertFormFieldHidden('intermission');
+});
+
+it('switches the ad space and the OZ Poin page off in station settings', function () {
+    Livewire::test(StationSettings::class, ['stationSlug' => 'oz-bandung'])
+        ->fillForm(['sponsor_enabled' => false, 'rewards_page_enabled' => false])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $this->station->refresh();
+
+    expect($this->station->sponsor_enabled)->toBeFalse()
+        ->and($this->station->rewards_page_enabled)->toBeFalse();
+    $this->get('/oz-bandung/rewards')->assertNotFound();
+});
+
+it('shows and edits listener details in the users admin', function () {
+    $listener = User::factory()->create(['age_range' => '18_24', 'gender' => 'female', 'location' => 'Kota Bandung, Jawa Barat']);
+
+    Livewire::test(EditUser::class, ['record' => $listener->getRouteKey()])
+        ->assertSchemaStateSet(['age_range' => AgeRange::From18To24, 'location' => 'Kota Bandung, Jawa Barat'])
+        ->fillForm(['location' => 'Kota Cimahi, Jawa Barat'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($listener->refresh()->location)->toBe('Kota Cimahi, Jawa Barat');
 });

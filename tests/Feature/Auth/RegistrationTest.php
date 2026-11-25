@@ -31,6 +31,9 @@ class RegistrationTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'age_range' => '25_34',
+            'gender' => 'female',
+            'location' => 'Kota Bandung, Jawa Barat',
         ]);
 
         $this->assertAuthenticated();

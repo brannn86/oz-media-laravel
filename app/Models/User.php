@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\AdminRole;
+use App\Enums\AgeRange;
+use App\Enums\Gender;
 use App\Notifications\Auth\ResetPasswordNotification;
 use App\Notifications\Auth\VerifyEmailNotification;
 use App\Support\ReturnPath;
@@ -32,6 +34,9 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $password Null for listeners who only use Google sign-in.
  * @property string|null $google_id
  * @property string|null $avatar_url
+ * @property AgeRange|null $age_range
+ * @property Gender|null $gender
+ * @property string|null $location Free text, usually one of ListenerLocations.
  * @property CarbonImmutable|null $chat_muted_until
  * @property int $points_balance OZ Poin; always equals the sum of point_transactions.
  * @property int $current_streak_days Consecutive WIB days with listening.
@@ -43,7 +48,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'avatar_url'])]
+#[Fillable(['name', 'email', 'password', 'avatar_url', 'age_range', 'gender', 'location'])]
 #[Hidden(['password', 'google_id', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail, PasskeyUser
 {
@@ -75,6 +80,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Pas
             'points_balance' => 'integer',
             'current_streak_days' => 'integer',
             'last_listened_date' => 'immutable_date',
+            'age_range' => AgeRange::class,
+            'gender' => Gender::class,
         ];
     }
 

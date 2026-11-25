@@ -20,7 +20,8 @@ class OzBaliSeeder extends Seeder
             'tagline' => 'The island\'s OZ station, 101.2 FM.',
             'site_type' => StationSiteType::Basic,
             'is_active' => true,
-            'privacy_policy_content' => file_get_contents(database_path('content/privacy-measurement.html')),
+            'privacy_policy_content' => file_get_contents(database_path('content/privacy-measurement.html'))
+                ."\n".file_get_contents(database_path('content/privacy-account.html')),
         ]);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Concerns;
 
+use App\Enums\AgeRange;
+use App\Enums\Gender;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
@@ -47,6 +49,23 @@ trait ProfileValidationRules
             $userId === null
                 ? Rule::unique(User::class)
                 : Rule::unique(User::class)->ignore($userId),
+        ];
+    }
+
+    /**
+     * Age range, gender and location: asked at sign-up on the website
+     * (`$required`), optional for the app and when editing a profile.
+     *
+     * @return array<string, array<int, ValidationRule|string|object>>
+     */
+    protected function listenerDetailsRules(bool $required = false): array
+    {
+        $presence = $required ? 'required' : 'nullable';
+
+        return [
+            'age_range' => [$presence, Rule::enum(AgeRange::class)],
+            'gender' => [$presence, Rule::enum(Gender::class)],
+            'location' => [$presence, 'string', 'max:100'],
         ];
     }
 }

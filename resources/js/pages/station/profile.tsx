@@ -5,6 +5,7 @@ import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileCo
 import { useLive } from '@/components/live/live-context';
 import PasswordInput from '@/components/password-input';
 import { ListenerAvatar } from '@/components/station/account-menu';
+import { ListenerDetailsFields } from '@/components/station/listener-details-fields';
 import {
     OzField,
     ozInputClass,
@@ -27,6 +28,9 @@ type Props = StationPageProps & {
         member_since: string | null;
         email_verified: boolean;
         two_factor_enabled: boolean;
+        age_range: string | null;
+        gender: string | null;
+        location: string | null;
     };
     passwordRules: string;
     status?: string;
@@ -73,17 +77,27 @@ export default function StationProfile() {
                     </div>
 
                     <div className="flex flex-wrap gap-3">
-                        <Link
-                            href={stationRoutes.rewards(station.slug)}
-                            className="inline-flex items-center gap-3 rounded-full bg-oz-yellow px-6 py-3 transition-transform hover:scale-[1.02] focus-visible:ring-4 focus-visible:ring-oz-black/30 focus-visible:outline-none"
-                        >
-                            <Coins className="size-6" aria-hidden />
-                            <span className="font-oz-display text-3xl font-extrabold tabular-nums">
-                                {account.points_balance.toLocaleString()}
-                            </span>
-                            <span className="font-semibold">poin</span>
-                            <ArrowUpRight className="size-5" aria-hidden />
-                        </Link>
+                        {station.rewards_page ? (
+                            <Link
+                                href={stationRoutes.rewards(station.slug)}
+                                className="inline-flex items-center gap-3 rounded-full bg-oz-yellow px-6 py-3 transition-transform hover:scale-[1.02] focus-visible:ring-4 focus-visible:ring-oz-black/30 focus-visible:outline-none"
+                            >
+                                <Coins className="size-6" aria-hidden />
+                                <span className="font-oz-display text-3xl font-extrabold tabular-nums">
+                                    {account.points_balance.toLocaleString()}
+                                </span>
+                                <span className="font-semibold">poin</span>
+                                <ArrowUpRight className="size-5" aria-hidden />
+                            </Link>
+                        ) : (
+                            <p className="inline-flex items-center gap-3 rounded-full bg-oz-yellow px-6 py-3">
+                                <Coins className="size-6" aria-hidden />
+                                <span className="font-oz-display text-3xl font-extrabold tabular-nums">
+                                    {account.points_balance.toLocaleString()}
+                                </span>
+                                <span className="font-semibold">poin</span>
+                            </p>
+                        )}
                         {account.current_streak_days > 0 && (
                             <p className="inline-flex items-center gap-2 rounded-full bg-oz-black px-5 py-3 font-semibold text-oz-white">
                                 <Flame
@@ -109,7 +123,7 @@ export default function StationProfile() {
                     <div className="mt-8 grid items-start gap-6 lg:grid-cols-2">
                         <SettingsCard
                             title="Profile details"
-                            text="Your name shows next to your chat messages and song requests."
+                            text="Your name shows next to your chat messages and song requests. Age, gender and area are only counted in totals."
                         >
                             <Form
                                 {...ProfileController.update.form()}
@@ -147,6 +161,11 @@ export default function StationProfile() {
                                                 className={ozInputClass}
                                             />
                                         </OzField>
+                                        <ListenerDetailsFields
+                                            idPrefix="profile"
+                                            errors={errors}
+                                            defaults={profile}
+                                        />
                                         <button
                                             type="submit"
                                             disabled={processing}

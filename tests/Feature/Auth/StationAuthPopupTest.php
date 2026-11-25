@@ -54,6 +54,9 @@ it('returns to the station page after signing up from the popup', function () {
         'email' => 'sari@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
+        'age_range' => '25_34',
+        'gender' => 'female',
+        'location' => 'Kota Bandung, Jawa Barat',
         'return' => '/oz-bandung/events',
     ])->assertRedirect('/oz-bandung/events');
 

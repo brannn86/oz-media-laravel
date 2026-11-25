@@ -19,6 +19,6 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
-        return $this->register->handle($input, dispatchRegistered: false);
+        return $this->register->handle($input, dispatchRegistered: false, requireDetails: true);
     }
 }

@@ -43,6 +43,9 @@ it('queues the verification email on sign-up', function () {
         'email' => 'listener@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
+        'age_range' => '25_34',
+        'gender' => 'female',
+        'location' => 'Kota Bandung, Jawa Barat',
     ]);
 
     Queue::assertPushedOn('mail', SendQueuedNotifications::class, fn (SendQueuedNotifications $job) => $job->notification instanceof VerifyEmailNotification);

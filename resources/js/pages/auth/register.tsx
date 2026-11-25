@@ -2,6 +2,7 @@ import { Form, Head } from '@inertiajs/react';
 import { GoogleSignInButton } from '@/components/google-sign-in-button';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import { ListenerDetailsFields } from '@/components/station/listener-details-fields';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,6 +64,12 @@ export default function Register({
                                 />
                                 <InputError message={errors.email} />
                             </div>
+
+                            <ListenerDetailsFields
+                                idPrefix="register"
+                                errors={errors}
+                                required
+                            />
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password">Password</Label>

@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Users;
 
 use App\Enums\AdminRole;
+use App\Enums\AgeRange;
+use App\Enums\Gender;
 use App\Filament\NavigationGroup;
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
@@ -12,6 +14,7 @@ use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -61,6 +64,18 @@ class UserResource extends Resource
                             ->dehydrateStateUsing(fn (string $state): string => Hash::make($state))
                             ->helperText(fn (string $operation): ?string => $operation === 'edit' ? 'Leave blank to keep the current password.' : null),
                     ]),
+                Section::make('Listener details')
+                    ->description('Given at sign-up (Google sign-ups add them on their profile page). Used for audience totals only.')
+                    ->columns(3)
+                    ->collapsible()
+                    ->schema([
+                        Select::make('age_range')
+                            ->options(AgeRange::class),
+                        Select::make('gender')
+                            ->options(Gender::class),
+                        TextInput::make('location')
+                            ->maxLength(100),
+                    ]),
                 Section::make('Admin role')
                     ->description('Users without a role cannot sign in to the admin panel.')
                     ->schema([
@@ -101,6 +116,17 @@ class UserResource extends Resource
                     ->formatStateUsing(fn (string $state): string => AdminRole::tryFrom($state)?->getLabel() ?? $state)
                     ->color(fn (string $state): string => AdminRole::tryFrom($state)?->getColor() ?? 'gray')
                     ->placeholder('No access'),
+                TextColumn::make('age_range')
+                    ->label('Age')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('gender')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('location')
+                    ->placeholder('—')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->label('Joined')
                     ->date()
