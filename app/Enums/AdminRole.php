@@ -114,10 +114,13 @@ enum AdminRole: string implements HasColor, HasLabel
      */
     public static function analytics(): array
     {
-        return array_map(
-            fn (string $page): string => "View:{$page}Analytics",
-            ['Audience', 'Radio', 'Video', 'Programs', 'News', 'Engagement'],
-        );
+        return [
+            ...array_map(
+                fn (string $page): string => "View:{$page}Analytics",
+                ['Audience', 'Radio', 'Video', 'Programs', 'News', 'Engagement'],
+            ),
+            'View:CampaignLinks',
+        ];
     }
 
     /**
