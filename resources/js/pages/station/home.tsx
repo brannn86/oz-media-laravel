@@ -4,6 +4,7 @@ import { BrandIcon } from '@/components/station/brand-icon';
 import { EventRow } from '@/components/station/event-row';
 import { HighlightTile } from '@/components/station/highlight-tile';
 import { LeadStory, StoryItem } from '@/components/station/news-items';
+import { OzubathonHero } from '@/components/ozubathon/ozubathon-hero';
 import { OnAirHero } from '@/components/station/on-air-hero';
 import { ProgramCards } from '@/components/station/program-cards';
 import { RecentlyPlayed } from '@/components/station/recently-played';
@@ -50,22 +51,28 @@ export default function StationHome() {
     const [lead, ...rest] = news;
     const whatsapp = station.contact.whatsapp?.replace(/\D/g, '');
 
+    const banner = sponsor && (
+        <SponsorBanner sponsor={sponsor} stationName={station.name} />
+    );
+
     return (
         <>
             <Head title={meta.title} />
 
-            <OnAirHero
-                station={station}
-                broadcast={broadcast}
-                banner={
-                    sponsor && (
-                        <SponsorBanner
-                            sponsor={sponsor}
-                            stationName={station.name}
-                        />
-                    )
-                }
-            />
+            {station.ozubathon ? (
+                <OzubathonHero
+                    station={station}
+                    broadcast={broadcast}
+                    event={station.ozubathon}
+                    banner={banner}
+                />
+            ) : (
+                <OnAirHero
+                    station={station}
+                    broadcast={broadcast}
+                    banner={banner}
+                />
+            )}
 
             <RecentlyPlayed />
 

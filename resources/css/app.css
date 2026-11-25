@@ -65,6 +65,11 @@
     --color-oz-ink: #3a3a3a;
     --color-oz-paper: #f6f6f4;
 
+    /* Ozubathon (OZ's 55th-anniversary subathon), from its poster and moodboard. */
+    --font-ozb-display: 'Anton', 'TangoSans', ui-sans-serif, sans-serif;
+    --font-ozb: 'Poppins', 'Plus Jakarta Sans', ui-sans-serif, sans-serif;
+    --color-ozb-yellow: #fdc911;
+
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
@@ -290,4 +295,40 @@
         drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff)
         drop-shadow(1px 1px 0 #fff) drop-shadow(-1px -1px 0 #fff)
         drop-shadow(1px -1px 0 #fff) drop-shadow(-1px 1px 0 #fff);
+}
+
+/*
+ * Ozubathon theme. The torn yellow band is the poster's: #fdc911 with the
+ * brand kit's halftone props ghosted into it, over the crumpled paper's
+ * grain, its edges from an authored torn mask. Stickers slap onto the page
+ * once, on load. OzubathonGround sets the images inline, so they resolve
+ * against the page (the Vite dev server doesn't serve public/).
+ */
+.ozb-band {
+    background-color: var(--color-ozb-yellow);
+    background-position: center;
+    background-size: cover;
+    background-blend-mode: multiply, multiply;
+    mask-position: center;
+    mask-size: 100% 100%;
+    mask-repeat: no-repeat;
+}
+
+@keyframes ozb-slap {
+    from {
+        opacity: 0.35;
+        scale: 1.12;
+        filter: blur(3px);
+    }
+}
+
+.ozb-slap {
+    animation: ozb-slap 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--ozb-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ozb-slap {
+        animation: none;
+    }
 }

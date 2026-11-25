@@ -25,6 +25,14 @@ export default defineConfig({
                 bunny('Plus Jakarta Sans', {
                     weights: [400, 500, 600, 700, 800],
                 }),
+                // Ozubathon theme: the poster's heavy condensed display, and
+                // Poppins (the moodboard's secondary face) for its small copy.
+                bunny('Anton', {
+                    weights: [400],
+                }),
+                bunny('Poppins', {
+                    weights: [500, 600, 700],
+                }),
             ],
         }),
         inertia(),

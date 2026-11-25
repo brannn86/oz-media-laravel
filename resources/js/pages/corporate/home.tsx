@@ -1,16 +1,25 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Radio } from 'lucide-react';
+import {
+    OzubathonGround,
+    OzubathonLockup,
+    OzubathonMeter,
+} from '@/components/ozubathon/ozubathon-parts';
 import { CoverImage } from '@/components/station/cover-image';
 import { BrandLogo } from '@/components/station/brand-logo';
 import { formatDate } from '@/lib/wib';
 import { home } from '@/routes';
 import stationRoutes from '@/routes/station';
-import type { PageMeta, Post } from '@/types';
+import type { Ozubathon, PageMeta, Post } from '@/types';
 
 type Props = {
     meta: PageMeta;
     stations: { slug: string; name: string; tagline: string | null }[];
     stories: Post[];
+    /** The station running the Ozubathon theme, for the spotlight. */
+    ozubathon:
+        | (Ozubathon & { station: { slug: string; name: string }; now: string })
+        | null;
 };
 
 const platforms = [
@@ -33,7 +42,7 @@ const platforms = [
 ];
 
 export default function CorporateHome() {
-    const { meta, stations, stories } = usePage<Props>().props;
+    const { meta, stations, stories, ozubathon } = usePage<Props>().props;
 
     return (
         <div className="min-h-screen bg-oz-white font-oz text-oz-black antialiased">
@@ -92,6 +101,49 @@ export default function CorporateHome() {
                         )}
                     </div>
                 </section>
+
+                {ozubathon && (
+                    <section
+                        aria-labelledby="ozubathon-spotlight"
+                        className="mb-16 sm:mb-24"
+                    >
+                        <OzubathonGround bandClassName="top-[10%] bottom-[10%]">
+                            <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)] items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+                                <div id="ozubathon-spotlight">
+                                    <OzubathonLockup
+                                        event={ozubathon}
+                                        as="h2"
+                                        size="compact"
+                                    />
+                                </div>
+                                <div className="flex flex-col items-start gap-6">
+                                    <p className="max-w-md bg-oz-white px-4 py-3 font-ozb text-lg leading-snug font-medium shadow-[0_10px_20px_-10px_rgba(0,0,0,0.4)]">
+                                        OZ Radio turns 55, and goes live for 55
+                                        hours straight: on-air, online and
+                                        on-ground.
+                                    </p>
+                                    <OzubathonMeter
+                                        event={ozubathon}
+                                        initialNow={Date.parse(ozubathon.now)}
+                                        className="w-full max-w-xl -rotate-1"
+                                    />
+                                    <Link
+                                        href={stationRoutes.home(
+                                            ozubathon.station.slug,
+                                        )}
+                                        className="inline-flex h-14 items-center gap-3 rounded-full bg-oz-black px-7 font-ozb text-lg font-semibold text-oz-white transition-transform hover:scale-[1.02] focus-visible:ring-4 focus-visible:ring-oz-black/30 focus-visible:outline-none"
+                                    >
+                                        <Radio
+                                            className="size-6 text-ozb-yellow"
+                                            aria-hidden
+                                        />
+                                        Tune in on {ozubathon.station.name}
+                                    </Link>
+                                </div>
+                            </div>
+                        </OzubathonGround>
+                    </section>
+                )}
 
                 <section
                     id="stations"
