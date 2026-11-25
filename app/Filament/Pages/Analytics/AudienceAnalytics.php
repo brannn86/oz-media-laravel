@@ -5,12 +5,16 @@ namespace App\Filament\Pages\Analytics;
 use App\Filament\Analytics\AnalyticsPage;
 use App\Filament\Analytics\Widgets\AudienceChart;
 use App\Filament\Analytics\Widgets\AudienceStats;
+use App\Filament\Analytics\Widgets\CampaignsTable;
+use App\Filament\Analytics\Widgets\CohortTable;
+use App\Filament\Analytics\Widgets\RetentionStats;
+use App\Filament\Analytics\Widgets\SourcesTable;
 use App\Filament\Analytics\Widgets\TopListenersTable;
 use BackedEnum;
 use Filament\Support\Icons\Heroicon;
 
 /**
- * Listener accounts: sign-ups, who listens, streaks, the most loyal listeners.
+ * Who listens: accounts and sign-ups, where listeners come from, whether they come back, the most loyal listeners.
  */
 class AudienceAnalytics extends AnalyticsPage
 {
@@ -29,6 +33,10 @@ class AudienceAnalytics extends AnalyticsPage
         return [
             AudienceStats::class,
             AudienceChart::class,
+            SourcesTable::class,
+            CampaignsTable::class,
+            RetentionStats::class,
+            CohortTable::class,
             TopListenersTable::class,
         ];
     }
