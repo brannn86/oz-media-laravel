@@ -4,11 +4,14 @@ namespace App\Filament\Pages\Analytics;
 
 use App\Actions\Analytics\AcquisitionMetrics;
 use App\Actions\Analytics\AnalyticsMetrics;
+use App\Actions\Analytics\ListenerProfileMetrics;
 use App\Filament\Analytics\AnalyticsPage;
 use App\Filament\Analytics\Widgets\AudienceChart;
 use App\Filament\Analytics\Widgets\AudienceStats;
 use App\Filament\Analytics\Widgets\CampaignsTable;
 use App\Filament\Analytics\Widgets\CohortTable;
+use App\Filament\Analytics\Widgets\ListenerLocationsTable;
+use App\Filament\Analytics\Widgets\ListenerProfileChart;
 use App\Filament\Analytics\Widgets\RetentionStats;
 use App\Filament\Analytics\Widgets\SourcesTable;
 use App\Filament\Analytics\Widgets\TopListenersTable;
@@ -16,7 +19,7 @@ use BackedEnum;
 use Filament\Support\Icons\Heroicon;
 
 /**
- * Who listens: accounts and sign-ups, where listeners come from, whether they come back, the most loyal listeners.
+ * Who listens: accounts and sign-ups, age, gender and area, where listeners come from, whether they come back, the most loyal listeners.
  */
 class AudienceAnalytics extends AnalyticsPage
 {
@@ -45,6 +48,12 @@ class AudienceAnalytics extends AnalyticsPage
                     ], $metrics->dates(30), $accounts, $players),
                 ];
             },
+            'Listeners by age, 30 days' => fn (): array => $this->profileExport('age_range', 'Age'),
+            'Listeners by gender, 30 days' => fn (): array => $this->profileExport('gender', 'Gender'),
+            'Where listeners live, 30 days' => fn (): array => [
+                ['Area', 'Accounts', 'Listened', 'Hours'],
+                array_map(fn (array $row): array => array_values($row), app(ListenerProfileMetrics::class)->locations(30)),
+            ],
             'Where listeners come from, 30 days' => fn (): array => [
                 ['Source', 'Sessions', 'Listeners', 'Hours', 'Typical session (min)'],
                 array_map(fn (array $row): array => array_values($row), app(AcquisitionMetrics::class)->sources(30)),
@@ -64,11 +73,25 @@ class AudienceAnalytics extends AnalyticsPage
         ];
     }
 
+    /**
+     * @return array{0: list<string>, 1: list<list<mixed>>}
+     */
+    private function profileExport(string $dimension, string $heading): array
+    {
+        return [
+            [$heading, 'Accounts', 'Listened', 'Hours'],
+            array_map(fn (array $row): array => array_values($row), app(ListenerProfileMetrics::class)->breakdown($dimension, 30)),
+        ];
+    }
+
     protected function getHeaderWidgets(): array
     {
         return [
             AudienceStats::class,
             AudienceChart::class,
+            ListenerProfileChart::make(['dimension' => 'age_range']),
+            ListenerProfileChart::make(['dimension' => 'gender']),
+            ListenerLocationsTable::class,
             SourcesTable::class,
             CampaignsTable::class,
             RetentionStats::class,

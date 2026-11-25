@@ -6,6 +6,7 @@ use App\Actions\Analytics\RecordAudience;
 use App\Enums\AudienceMode;
 use App\Http\Controllers\Controller;
 use App\Models\Station;
+use App\Models\User;
 use App\Support\ViewerKey;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -38,6 +39,7 @@ class AudienceController extends Controller
             $data['source'] ?? [],
             $request->userAgent(),
             $request->header('X-OZ-Client') === 'app' ? 'App' : 'Website',
+            $request->user('sanctum') instanceof User ? $request->user('sanctum') : null,
         );
 
         return response()->noContent();
