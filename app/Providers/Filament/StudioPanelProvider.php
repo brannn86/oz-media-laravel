@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\StudioMode;
+use App\Http\Middleware\ServeStorageFromThisHost;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -56,6 +57,8 @@ class StudioPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
             ])
+            // Persistent, so Livewire requests (which load the upload previews) get it too.
+            ->middleware([ServeStorageFromThisHost::class], isPersistent: true)
             ->authMiddleware([
                 Authenticate::class,
             ]);
