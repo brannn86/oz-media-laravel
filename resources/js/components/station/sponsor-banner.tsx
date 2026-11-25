@@ -13,7 +13,9 @@ export type Sponsor =
 
 /**
  * The ad space under the player: full width inside the page margins, 8:1
- * on wide screens and 4:1 on phones (the sizes the admin asks for).
+ * on wide screens and 4:1 on phones (the sizes the admin asks for). No
+ * visible "Advertisement" label (it costs height under the player); the
+ * landmark is named for screen readers.
  * `tone="dark"` for dark pages.
  */
 export function SponsorBanner({
@@ -31,14 +33,6 @@ export function SponsorBanner({
 
     return (
         <aside aria-label="Advertisement" className={className}>
-            <p
-                className={cn(
-                    'mb-2 text-xs font-semibold tracking-wide uppercase',
-                    dark ? 'text-oz-white/50' : 'text-oz-black/50',
-                )}
-            >
-                Advertisement
-            </p>
             {'image_url' in sponsor ? (
                 <SponsorImage sponsor={sponsor} />
             ) : (
@@ -61,9 +55,13 @@ export function SponsorBanner({
                                 dark ? 'text-oz-white/70' : 'text-oz-ink',
                             )}
                         >
-                            Advertise on {stationName}:{' '}
-                            <span className="font-semibold">
-                                {sponsor.house_email}
+                            Advertise on {stationName}
+                            {/* Too long for a phone; the link still mails it. */}
+                            <span className="hidden sm:inline">
+                                :{' '}
+                                <span className="font-semibold">
+                                    {sponsor.house_email}
+                                </span>
                             </span>
                         </span>
                     </span>

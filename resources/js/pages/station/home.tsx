@@ -53,12 +53,15 @@ export default function StationHome() {
         <>
             <Head title={meta.title} />
 
-            <OnAirHero station={station} broadcast={broadcast} />
-
-            <SponsorBanner
-                sponsor={sponsor}
-                stationName={station.name}
-                className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 sm:pt-10"
+            <OnAirHero
+                station={station}
+                broadcast={broadcast}
+                banner={
+                    <SponsorBanner
+                        sponsor={sponsor}
+                        stationName={station.name}
+                    />
+                }
             />
 
             <RecentlyPlayed />

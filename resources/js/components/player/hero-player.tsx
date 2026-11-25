@@ -46,9 +46,11 @@ import type { Broadcast } from '@/types';
 export function HeroPlayer({
     broadcast,
     header,
+    className,
 }: {
     broadcast: Broadcast;
     header: ReactNode;
+    className?: string;
 }) {
     const player = usePlayer();
     const reactions = useReactions(player.station.slug);
@@ -104,7 +106,7 @@ export function HeroPlayer({
     }, [choosing]);
 
     return (
-        <div>
+        <div className={className}>
             <div className="mb-4 flex min-h-9 flex-wrap items-center justify-between gap-3">
                 {header}
                 <HeroPlayerControls onReact={reactions.send} />

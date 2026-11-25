@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import type { ReactNode } from 'react';
 import { HeroPlayer } from '@/components/player/hero-player';
 import { AvatarStack } from '@/components/station/announcer-avatar';
 import { Marquee } from '@/components/station/marquee';
@@ -12,13 +13,18 @@ import type { Broadcast, Station } from '@/types';
  * on air and what's up next, the two cards together as tall as the player.
  * Below `lg` the cards sit under it: next to a 16:9 box narrower than
  * ~700px they would be taller than the box.
+ *
+ * `banner` (the sponsor slot) goes right under the player, so it's in view
+ * with it: before the cards on phones, full width below both on `lg`.
  */
 export function OnAirHero({
     station,
     broadcast,
+    banner,
 }: {
     station: Station;
     broadcast: Broadcast;
+    banner?: ReactNode;
 }) {
     const { current } = broadcast;
 
@@ -27,13 +33,14 @@ export function OnAirHero({
             aria-labelledby="on-air-title"
             className="bg-oz-yellow text-oz-black"
         >
-            <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 sm:py-12 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-8">
+            <div className="mx-auto grid max-w-7xl gap-6 px-4 pt-5 pb-8 sm:px-6 sm:pt-6 sm:pb-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-6 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-8">
                 <h1 id="on-air-title" className="sr-only">
                     {station.name} live
                     {current ? `: ${current.program.title}` : ''}
                 </h1>
 
                 <HeroPlayer
+                    className="order-1"
                     broadcast={broadcast}
                     header={
                         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold sm:text-base">
@@ -51,7 +58,13 @@ export function OnAirHero({
                 />
 
                 {/* lg: level with the box (past the row above it), and as tall. */}
-                <div className="grid gap-6 sm:grid-cols-2 lg:mt-[3.25rem] lg:grid-cols-1 lg:grid-rows-[minmax(0,1fr)_auto] lg:gap-4 xl:gap-6">
+                {banner && (
+                    <div className="order-2 min-w-0 lg:order-3 lg:col-span-2">
+                        {banner}
+                    </div>
+                )}
+
+                <div className="order-3 grid gap-6 sm:grid-cols-2 lg:order-2 lg:mt-[3.25rem] lg:grid-cols-1 lg:grid-rows-[minmax(0,1fr)_auto] lg:gap-4 xl:gap-6">
                     <OnAirCard station={station} broadcast={broadcast} />
                     <UpNextCard station={station} broadcast={broadcast} />
                 </div>
