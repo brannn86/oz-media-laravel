@@ -30,7 +30,13 @@ function xsrfToken(): string | null {
 
 export async function apiFetch<T = unknown>(
     path: string,
-    options: { method?: string; body?: unknown; headers?: HeadersInit } = {},
+    options: {
+        method?: string;
+        body?: unknown;
+        headers?: HeadersInit;
+        /** Let the request finish even if the page is closing. */
+        keepalive?: boolean;
+    } = {},
 ): Promise<ApiResult<T>> {
     const headers = new Headers(options.headers);
     headers.set('Accept', 'application/json');
@@ -57,6 +63,7 @@ export async function apiFetch<T = unknown>(
         method: options.method ?? 'GET',
         headers,
         credentials: 'same-origin',
+        keepalive: options.keepalive,
         body:
             options.body === undefined
                 ? undefined

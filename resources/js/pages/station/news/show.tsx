@@ -1,5 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronRight } from 'lucide-react';
+import { useRef } from 'react';
 import { CoverImage } from '@/components/station/cover-image';
 import {
     CategoryKicker,
@@ -7,6 +8,7 @@ import {
     categoryHref,
 } from '@/components/station/news-items';
 import { ShareBar } from '@/components/station/share-bar';
+import { useReadingDepth } from '@/hooks/use-reading-depth';
 import { formatDate, formatTime } from '@/lib/wib';
 import stationRoutes from '@/routes/station';
 import type { Post, StationPageProps } from '@/types';
@@ -28,6 +30,10 @@ const crumbLink =
 export default function StationNewsShow() {
     const { station, meta, post, more, mostRead } = usePage<Props>().props;
     const newsHref = stationRoutes.news.index(station.slug);
+    const bodyRef = useRef<HTMLDivElement>(null);
+
+    // How far the article is read, for Analytics > News.
+    useReadingDepth(bodyRef, station.slug, post.slug);
 
     // "More in Sports" only when every card really is from that section.
     const moreSection =
@@ -137,6 +143,7 @@ export default function StationNewsShow() {
                     )}
 
                     <div
+                        ref={bodyRef}
                         className="oz-prose mt-10 max-w-[68ch]"
                         dangerouslySetInnerHTML={{ __html: post.body ?? '' }}
                     />

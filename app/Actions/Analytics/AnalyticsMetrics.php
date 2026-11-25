@@ -205,6 +205,83 @@ class AnalyticsMetrics
         });
     }
 
+    /**
+     * How articles were read over the window: reads, average active reading
+     * time, and the share of reads that got past each quarter of the text.
+     *
+     * @return array{reads: int, average_seconds: int, reached_25: float|null, reached_50: float|null, reached_75: float|null, finished: float|null}
+     */
+    public function readingSummary(int $days): array
+    {
+        return $this->remember("news:reading:{$days}", function () use ($days): array {
+            $totals = DB::table('post_reads')
+                ->whereBetween('date', $this->lastDates($days))
+                ->selectRaw('SUM(reads) as reads, SUM(seconds) as seconds, SUM(reached_25) as r25, SUM(reached_50) as r50, SUM(reached_75) as r75, SUM(finished) as finished')
+                ->first();
+
+            $reads = (int) ($totals->reads ?? 0);
+            $share = fn (mixed $count): ?float => $reads > 0 ? round((int) $count / $reads * 100, 1) : null;
+
+            return [
+                'reads' => $reads,
+                'average_seconds' => $reads > 0 ? intdiv((int) $totals->seconds, $reads) : 0,
+                'reached_25' => $share($totals->r25 ?? 0),
+                'reached_50' => $share($totals->r50 ?? 0),
+                'reached_75' => $share($totals->r75 ?? 0),
+                'finished' => $share($totals->finished ?? 0),
+            ];
+        });
+    }
+
+    /**
+     * Per article over the window: views, reads, average reading time and the
+     * share who finished it, most read first.
+     *
+     * @return list<array{title: string, station: string|null, views: int, reads: int, average_seconds: int, finished: float|null}>
+     */
+    public function articleReading(int $days): array
+    {
+        return $this->remember("news:article-reading:{$days}", function () use ($days): array {
+            $window = $this->lastDates($days);
+            $reads = DB::table('post_reads')
+                ->whereBetween('date', $window)
+                ->groupBy('post_id')
+                ->select('post_id', DB::raw('SUM(reads) as reads'), DB::raw('SUM(seconds) as seconds'), DB::raw('SUM(finished) as finished'))
+                ->get()
+                ->keyBy('post_id');
+
+            if ($reads->isEmpty()) {
+                return [];
+            }
+
+            $views = DB::table('post_views')
+                ->whereBetween('date', $window)
+                ->whereIn('post_id', $reads->keys())
+                ->groupBy('post_id')
+                ->pluck(DB::raw('SUM(views)'), 'post_id');
+
+            return array_values(Post::query()
+                ->with('station')
+                ->whereKey($reads->keys())
+                ->get()
+                ->map(function (Post $post) use ($reads, $views): array {
+                    $row = $reads[$post->id];
+                    $count = (int) $row->reads;
+
+                    return [
+                        'title' => $post->title,
+                        'station' => $post->station?->name,
+                        'views' => (int) ($views[$post->id] ?? 0),
+                        'reads' => $count,
+                        'average_seconds' => $count > 0 ? intdiv((int) $row->seconds, $count) : 0,
+                        'finished' => $count > 0 ? round((int) $row->finished / $count * 100, 1) : null,
+                    ];
+                })
+                ->sortByDesc('reads')
+                ->all());
+        });
+    }
+
     /* -------------------------------------------------------------- Engagement */
 
     public function chatMessages(int $days): int

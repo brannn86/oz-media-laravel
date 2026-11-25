@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ChatController;
 use App\Http\Controllers\Api\V1\HeartbeatController;
 use App\Http\Controllers\Api\V1\ListenerPresenceController;
 use App\Http\Controllers\Api\V1\PollController;
+use App\Http\Controllers\Api\V1\PostReadController;
 use App\Http\Controllers\Api\V1\ReactionController;
 use App\Http\Controllers\Api\V1\RewardController;
 use App\Http\Controllers\Api\V1\SongRequestController;
@@ -74,6 +75,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('audience', AudienceController::class)
                 ->middleware('throttle:12,1')
                 ->name('audience');
+
+            // Analytics: how far an article was read, sent once when leaving it.
+            Route::post('news/{slug}/read', PostReadController::class)
+                ->middleware('throttle:30,1')
+                ->name('news.read');
 
             Route::post('reactions', ReactionController::class)
                 ->middleware('throttle:120,1')

@@ -4,8 +4,10 @@ namespace App\Filament\Pages\Analytics;
 
 use App\Actions\Analytics\AnalyticsMetrics;
 use App\Filament\Analytics\AnalyticsPage;
+use App\Filament\Analytics\Widgets\ArticleReadingTable;
 use App\Filament\Analytics\Widgets\ArticleViewsChart;
 use App\Filament\Analytics\Widgets\NewsStats;
+use App\Filament\Analytics\Widgets\ReadingDepthChart;
 use App\Filament\Analytics\Widgets\ViewsByCategoryChart;
 use App\Filament\Widgets\TopArticlesWidget;
 use BackedEnum;
@@ -42,6 +44,10 @@ class NewsAnalytics extends AnalyticsPage
 
                 return [['Section', 'Views'], array_map(null, array_keys($views), array_values($views))];
             },
+            'How articles are read, 30 days' => fn (): array => [
+                ['Title', 'Station', 'Views', 'Reads', 'Avg. reading time (s)', 'Finished (%)'],
+                array_map(fn (array $row): array => array_values($row), app(AnalyticsMetrics::class)->articleReading(30)),
+            ],
             'Articles by views, 30 days' => fn (): array => [
                 ['Title', 'Station', 'Section', 'Published (WIB)', 'Views'],
                 array_map(fn (array $row): array => array_values($row), app(AnalyticsMetrics::class)->topArticles(30)),
@@ -55,7 +61,9 @@ class NewsAnalytics extends AnalyticsPage
             NewsStats::class,
             ArticleViewsChart::class,
             ViewsByCategoryChart::class,
+            ReadingDepthChart::class,
             TopArticlesWidget::class,
+            ArticleReadingTable::class,
         ];
     }
 }
