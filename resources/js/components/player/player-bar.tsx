@@ -27,11 +27,17 @@ import { cn } from '@/lib/utils';
  */
 export function PlayerBar() {
     const player = usePlayer();
+    const live = useLive();
     const { mode, active, status } = player;
 
     // Hidden until the listener tunes in (from the hero); chat and requests
-    // stay one tap away meanwhile.
+    // stay one tap away meanwhile, except while the drawer is open (it has
+    // its own tabs and close button, and the buttons would sit on top of it).
     if (!player.hasStarted) {
+        if (live.drawerOpen) {
+            return null;
+        }
+
         return (
             <div className="fixed right-3 bottom-3 z-40 rounded-full bg-oz-black p-1.5 shadow-xl sm:right-6 sm:bottom-6">
                 <DrawerToggles />
