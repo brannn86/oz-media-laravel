@@ -68,7 +68,7 @@ export default function StationLayout({ children }: { children: ReactNode }) {
                                 <LiveDrawer />
                                 <PollPopup station={station} />
                                 <VideoDock />
-                                <PlayerBar broadcast={broadcast} />
+                                <PlayerBar />
                             </PlayerBarSpace>
                         </RequestsProvider>
                     </ChatProvider>

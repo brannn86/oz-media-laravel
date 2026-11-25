@@ -1,6 +1,7 @@
 import {
     Headphones,
     LoaderCircle,
+    Maximize2,
     Pause,
     Play,
     RotateCcw,
@@ -8,13 +9,14 @@ import {
     Video,
     X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
     ReactionButtons,
     ReactionOverlay,
     useReactions,
 } from '@/components/live/reactions';
+import { useLive } from '@/components/live/live-context';
 import { AudioVisualizer } from '@/components/player/audio-visualizer';
 import { usePlayer } from '@/components/player/player-context';
 import type { StreamMode } from '@/components/player/player-context';
@@ -311,28 +313,99 @@ function HeroRadio({ broadcast }: { broadcast: Broadcast }) {
     );
 }
 
-/** The video livestream, filling the box; reactions float over it. */
+/**
+ * The video livestream, filling the box; reactions float over it. Scrolled
+ * out of view, it becomes the mini player (bottom right, beside the chat when
+ * that is open). Only its position changes, so the stream doesn't reload.
+ */
 function HeroVideo({
     floaters,
 }: {
     floaters: ReturnType<typeof useReactions>['floaters'];
 }) {
     const player = usePlayer();
+    const drawerOpen = useLive().drawerOpen;
     const source = player.stream.video;
     const [status, setStatus] = useFeedStatus(source, true);
+    const anchorRef = useRef<HTMLDivElement>(null);
+    const [inView, setInView] = useState(true);
+
+    useEffect(() => {
+        const anchor = anchorRef.current;
+
+        if (!anchor) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => setInView(entry.isIntersecting),
+            { threshold: 0.3 },
+        );
+        observer.observe(anchor);
+
+        return () => observer.disconnect();
+    }, []);
 
     if (!source) {
         return null;
     }
 
+    const mini = !inView;
+
     return (
-        <section
-            aria-label={`${player.station.name} video livestream, ${feedLabel(status).replace('· ', '')}`}
-            className="absolute inset-0"
-        >
-            <VideoStage source={source} status={status} onStatus={setStatus} />
-            <ReactionOverlay floaters={floaters} />
-        </section>
+        <div ref={anchorRef} className="absolute inset-0">
+            {mini && (
+                <div className="grid size-full place-items-center p-6 text-center text-sm font-semibold text-oz-white/70">
+                    Playing in the mini player
+                </div>
+            )}
+            <section
+                aria-label={`${player.station.name} video livestream, ${feedLabel(status).replace('· ', '')}`}
+                className={cn(
+                    mini
+                        ? cn(
+                              'fixed right-3 bottom-[calc(var(--oz-player-bar)+0.75rem)] left-3 z-40 aspect-video overflow-hidden rounded-2xl bg-oz-black shadow-2xl ring-1 ring-oz-white/10 sm:left-auto sm:w-[24rem]',
+                              // Beside the chat sidebar, not under it.
+                              drawerOpen && 'sm:right-[25rem]',
+                          )
+                        : 'absolute inset-0',
+                )}
+            >
+                <VideoStage
+                    source={source}
+                    status={status}
+                    onStatus={setStatus}
+                />
+                <ReactionOverlay floaters={floaters} />
+                {mini && (
+                    <div className="absolute top-2 right-2 flex gap-1">
+                        <button
+                            type="button"
+                            onClick={() =>
+                                anchorRef.current?.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'center',
+                                })
+                            }
+                            aria-label="Back to the video"
+                            title="Back to the video"
+                            className="grid size-8 place-items-center rounded-full bg-oz-black/70 text-oz-white hover:bg-oz-black focus-visible:ring-2 focus-visible:ring-oz-yellow focus-visible:outline-none"
+                        >
+                            <Maximize2 className="size-4" aria-hidden />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={player.stop}
+                            aria-label="Close the video"
+                            title="Close the video"
+                            className="grid size-8 place-items-center rounded-full bg-oz-black/70 text-oz-white hover:bg-oz-black focus-visible:ring-2 focus-visible:ring-oz-yellow focus-visible:outline-none"
+                        >
+                            <X className="size-4" aria-hidden />
+                        </button>
+                    </div>
+                )}
+            </section>
+        </div>
     );
 }
 

@@ -1,5 +1,6 @@
-import { Headphones, Minimize2, X } from 'lucide-react';
+import { Headphones, Maximize2, Minimize2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import { useLive } from '@/components/live/live-context';
 import {
     ReactionButtons,
@@ -70,7 +71,7 @@ export function VideoDock() {
                     expanded
                         ? 'inset-x-3 top-1/2 mx-auto max-w-5xl -translate-y-[calc(50%+2.25rem)] rounded-2xl sm:inset-x-8'
                         : cn(
-                              'right-3 bottom-[5.25rem] left-3 rounded-2xl sm:left-auto sm:w-[26rem]',
+                              'right-3 bottom-[calc(var(--oz-player-bar)+0.75rem)] left-3 rounded-2xl sm:left-auto sm:w-[24rem]',
                               // Sit beside the drawer instead of under it.
                               drawerOpen && 'sm:right-[25rem]',
                           ),
@@ -91,6 +92,19 @@ export function VideoDock() {
                     </p>
                     <div className="flex items-center gap-1">
                         <ReactionButtons onReact={reactions.send} />
+                        {!expanded && (
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    player.setVideoLayout('expanded')
+                                }
+                                aria-label="Enlarge video"
+                                title="Enlarge video"
+                                className="grid size-8 place-items-center rounded-full hover:bg-oz-white/10 focus-visible:ring-2 focus-visible:ring-oz-yellow focus-visible:outline-none"
+                            >
+                                <Maximize2 className="size-4" />
+                            </button>
+                        )}
                         {expanded && (
                             <button
                                 type="button"
@@ -254,6 +268,10 @@ function YouTubeFeed({
     const hostRef = useRef<HTMLDivElement>(null);
     const onStatusRef = useRef(onStatus);
     const [attempt, setAttempt] = useState(0);
+    const { volume, muted } = usePlayer();
+    const playerRef = useRef<YouTubePlayer | null>(null);
+    // The bar's volume, read when playback starts (the player starts muted).
+    const soundRef = useRef({ volume, muted });
 
     useEffect(() => {
         onStatusRef.current = onStatus;
@@ -287,7 +305,7 @@ function YouTubeFeed({
                     return;
                 }
 
-                player = new YT.Player(iframe, {
+                player = playerRef.current = new YT.Player(iframe, {
                     events: {
                         onReady: ({ target }) => {
                             target.mute();
@@ -295,7 +313,7 @@ function YouTubeFeed({
                         },
                         onStateChange: ({ target, data }) => {
                             if (data === YT_STATE.PLAYING) {
-                                target.unMute();
+                                applyVolume(target, soundRef.current);
                                 onStatusRef.current('live');
                             } else if (data === YT_STATE.ENDED) {
                                 onStatusRef.current('offline');
@@ -311,10 +329,20 @@ function YouTubeFeed({
 
         return () => {
             cancelled = true;
+            playerRef.current = null;
             player?.destroy();
             host.replaceChildren();
         };
     }, [src, attempt]);
+
+    // The bar's volume and mute drive the video too.
+    useEffect(() => {
+        soundRef.current = { volume, muted };
+
+        if (playerRef.current && live) {
+            applyVolume(playerRef.current, { volume, muted });
+        }
+    }, [volume, muted, live]);
 
     useEffect(() => {
         if (live) {
@@ -332,6 +360,38 @@ function YouTubeFeed({
     return <div ref={hostRef} className="size-full" />;
 }
 
+function applyVolume(
+    player: YouTubePlayer,
+    sound: { volume: number; muted: boolean },
+): void {
+    player.setVolume(Math.round(sound.volume * 100));
+
+    if (sound.muted) {
+        player.mute();
+    } else {
+        player.unMute();
+    }
+}
+
+/**
+ * A <video> follows the bar's volume and mute.
+ */
+function useFollowVolume(ref: RefObject<HTMLMediaElement | null>) {
+    const { volume, muted } = usePlayer();
+
+    useEffect(() => {
+        if (ref.current) {
+            ref.current.volume = volume;
+        }
+    }, [ref, volume]);
+
+    useEffect(() => {
+        if (ref.current) {
+            ref.current.muted = muted;
+        }
+    }, [ref, muted]);
+}
+
 /**
  * HLS livestream. Browsers may refuse to start video *with sound* outside a
  * tap; then it starts muted (always allowed) with a "Tap for sound" button.
@@ -347,6 +407,7 @@ function HlsVideo({
     const videoRef = useRef<HTMLVideoElement>(null);
     const [needsSound, setNeedsSound] = useState(false);
     const [attempt, setAttempt] = useState(0);
+    useFollowVolume(videoRef);
 
     useEffect(() => {
         const video = videoRef.current;
@@ -430,6 +491,7 @@ function Intermission({
 }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [needsSound, setNeedsSound] = useState(false);
+    useFollowVolume(videoRef);
 
     useEffect(() => {
         const video = videoRef.current;
