@@ -239,7 +239,9 @@ Broadcasting fails safe: if Reverb is down, the action still succeeds and the ev
 
 **Admin roles.** `dev` is Shield's super admin. `editorial` and `social_media` have fixed permission sets defined in `App\Enums\AdminRole`. Built-in role names can't be renamed. `tests/Feature/Hardening/RbacMatrixTest.php` pins down who can do what.
 
-**Studio Mode.** An admin page for the on-air studio: live chat moderation, the song request queue, polls, reactions and the listener count.
+**Studio Mode.** The view for the on-air studio: live chat moderation, the song request queue, polls, reactions and the listener count. It has its own full-width panel (`studio.ozmedianet.com`, or `/studio` locally), linked from the admin sidebar, with the same accounts and permissions.
+
+**Addresses.** With `MAIN_DOMAIN`, `ADMIN_DOMAIN` and `STUDIO_DOMAIN` set, the public site, admin and studio each answer only on their own host. When they're empty (locally), everything runs on one host: admin at `/admin` (dashboard at `/admin/dashboard`) and studio at `/studio`.
 
 ## Configuration reference
 
@@ -248,6 +250,9 @@ Beyond the standard Laravel keys in `.env.example`:
 | Key                                                                                 | Purpose                                                                                   |
 | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD`                                                     | First `dev` admin created by the seeder                                                   |
+| `MAIN_DOMAIN`, `ADMIN_DOMAIN`, `STUDIO_DOMAIN`                                      | Host for the public site, admin and studio (empty: one host, `/admin` and `/studio`)      |
+| `SESSION_DOMAIN`                                                                    | `.ozmedianet.com` in production, so one sign-in works across the subdomains              |
+| `ICECAST_ADMIN_USER`, `ICECAST_ADMIN_PASSWORD`                                      | Optional Icecast admin login, for the listener player breakdown in Analytics → Devices    |
 | `REVERB_*`, `VITE_REVERB_*`                                                         | WebSocket server and the client's connection to it                                        |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`                   | "Continue with Google" (hidden when unset)                                                |
 | `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID`                                              | Adds the Umami tracking script to station sites                                           |
@@ -306,10 +311,13 @@ On every deploy:
 composer install --no-dev --optimize-autoloader
 npm ci && npm run build
 php artisan migrate --force
+php artisan db:seed --class=RolesAndPermissionsSeeder --force   # permissions for new admin pages; safe to re-run
 php artisan optimize
 php artisan filament:optimize
 php artisan queue:restart
 ```
+
+Then restart Reverb (`php artisan reverb:restart`) so it loads the new code.
 
 Keep these processes running (Supervisor, systemd or Forge daemons):
 
@@ -320,3 +328,11 @@ Keep these processes running (Supervisor, systemd or Forge daemons):
 | Scheduler     | cron: `* * * * * php /path/to/artisan schedule:run` (it stays up for the minute to run the 15-second now-playing sync)                 |
 
 Production `.env` checklist: `APP_ENV=production`, `APP_DEBUG=false`, `CACHE_STORE=redis`, `SESSION_DRIVER=redis`, `QUEUE_CONNECTION=redis`, SMTP mail (see [Email](#email)), `ADMIN_PASSWORD` for the first seed, and `REVERB_HOST`/`REVERB_SCHEME` set to the public WebSocket host. Run `php artisan storage:link` once.
+
+Domains:
+
+- `.env`: `APP_URL=https://ozmedianet.com`, `MAIN_DOMAIN=ozmedianet.com`, `ADMIN_DOMAIN=admin.ozmedianet.com`, `STUDIO_DOMAIN=studio.ozmedianet.com`, `SESSION_DOMAIN=.ozmedianet.com`, `SESSION_SECURE_COOKIE=true`.
+- DNS: `A`/`CNAME` records for `admin` and `studio` pointing at the same server as `ozmedianet.com`, and the web server (and TLS certificate) serving all three hosts from the same `public/` directory.
+- Google sign-in: the redirect URI stays `https://ozmedianet.com/auth/google/callback`.
+
+PHP: `upload_max_filesize` and `post_max_size` of at least `25M` (the intermission video upload allows 20 MB), and the web server's body limit to match (nginx `client_max_body_size 25m`).
