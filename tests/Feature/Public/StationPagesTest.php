@@ -120,15 +120,11 @@ it('does not let the station route swallow app paths', function () {
 });
 
 it('renders the corporate landing page with the network', function () {
-    config(['oz.network.partners' => [['name' => 'OZ Bali', 'tagline' => 'Bali', 'url' => null]]]);
-
     $this->get('/')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('corporate/home')
             ->where('stations.0.slug', 'oz-bandung')
-            ->where('partners.0.name', 'OZ Bali')
-            ->where('partners.0.url', null)
             ->has('stories', 4)
             ->where('stories.0.station.slug', 'oz-bandung'));
 });

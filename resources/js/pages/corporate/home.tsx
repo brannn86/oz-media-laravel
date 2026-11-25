@@ -1,5 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowUpRight, Radio } from 'lucide-react';
+import { Radio } from 'lucide-react';
 import { CoverImage } from '@/components/station/cover-image';
 import { BrandLogo } from '@/components/station/brand-logo';
 import { formatDate } from '@/lib/wib';
@@ -10,13 +10,6 @@ import type { PageMeta, Post } from '@/types';
 type Props = {
     meta: PageMeta;
     stations: { slug: string; name: string; tagline: string | null }[];
-    partners: {
-        name: string;
-        /** A key of BrandLogo's logos. */
-        logo?: string;
-        tagline: string;
-        url: string | null;
-    }[];
     stories: Post[];
 };
 
@@ -40,7 +33,7 @@ const platforms = [
 ];
 
 export default function CorporateHome() {
-    const { meta, stations, partners, stories } = usePage<Props>().props;
+    const { meta, stations, stories } = usePage<Props>().props;
 
     return (
         <div className="min-h-screen bg-oz-white font-oz text-oz-black antialiased">
@@ -108,36 +101,19 @@ export default function CorporateHome() {
                     <h2 id="stations-title" className="sr-only">
                         Our stations
                     </h2>
-                    <ul className="grid gap-4 md:grid-cols-2">
+                    <ul className="flex flex-wrap items-end gap-x-16 gap-y-10 border-y-2 border-oz-black py-12 sm:py-16">
                         {stations.map((station) => (
                             <li key={station.slug}>
                                 <Link
                                     href={stationRoutes.home(station.slug)}
-                                    className="group flex min-h-[22rem] flex-col justify-between rounded-[2rem] bg-oz-yellow p-8 transition-transform hover:-translate-y-1 focus-visible:ring-4 focus-visible:ring-oz-black focus-visible:outline-none sm:min-h-[26rem] sm:p-10"
+                                    aria-label={`${station.name}${station.tagline ? `: ${station.tagline}` : ''}`}
+                                    className="group block rounded-2xl focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:ring-offset-4 focus-visible:outline-none"
                                 >
-                                    <span className="inline-flex items-center gap-2 self-start rounded-full bg-oz-black px-3 py-1 text-sm font-bold text-oz-white">
-                                        <span className="size-2 rounded-full bg-oz-red" />
-                                        Live now
-                                    </span>
-                                    <span>
-                                        <span className="block font-oz-display text-6xl leading-[0.9] font-extrabold tracking-[-0.04em] sm:text-7xl">
-                                            {station.name}
-                                        </span>
-                                        {station.tagline && (
-                                            <span className="mt-4 block text-lg font-semibold text-oz-black/75">
-                                                {station.tagline}
-                                            </span>
-                                        )}
-                                        <span className="mt-8 inline-flex items-center gap-2 text-lg font-bold underline decoration-[3px] underline-offset-4">
-                                            Open the station
-                                        </span>
-                                    </span>
+                                    <BrandLogo
+                                        brand={station.slug}
+                                        className="h-28 transition-transform duration-300 group-hover:-translate-y-1 group-hover:rotate-[-2deg] sm:h-36"
+                                    />
                                 </Link>
-                            </li>
-                        ))}
-                        {partners.map((partner) => (
-                            <li key={partner.name}>
-                                <PartnerCard partner={partner} />
                             </li>
                         ))}
                     </ul>
@@ -202,54 +178,6 @@ export default function CorporateHome() {
                 </div>
             </footer>
         </div>
-    );
-}
-
-function PartnerCard({ partner }: { partner: Props['partners'][number] }) {
-    const body = (
-        <>
-            <span className="self-start rounded-full bg-oz-white/10 px-3 py-1 text-sm font-semibold">
-                {partner.url ? 'Partner site' : 'Site coming soon'}
-            </span>
-            <span>
-                {partner.logo ? (
-                    <BrandLogo
-                        brand={partner.logo}
-                        onDark
-                        className="h-28 sm:h-36"
-                    />
-                ) : (
-                    <span className="block font-oz-display text-6xl leading-[0.9] font-extrabold tracking-[-0.04em] sm:text-7xl">
-                        {partner.name}
-                    </span>
-                )}
-                <span className="mt-4 block text-lg text-oz-white/70">
-                    {partner.tagline}
-                </span>
-                {partner.url && (
-                    <span className="mt-8 inline-flex items-center gap-2 text-lg font-bold text-oz-yellow underline decoration-[3px] underline-offset-4">
-                        Visit {partner.name}
-                        <ArrowUpRight className="size-5" aria-hidden />
-                    </span>
-                )}
-            </span>
-        </>
-    );
-
-    const className =
-        'flex min-h-[22rem] flex-col justify-between rounded-[2rem] bg-oz-black p-8 text-oz-white sm:min-h-[26rem] sm:p-10';
-
-    return partner.url ? (
-        <a
-            href={partner.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${className} transition-transform hover:-translate-y-1 focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none`}
-        >
-            {body}
-        </a>
-    ) : (
-        <div className={className}>{body}</div>
     );
 }
 

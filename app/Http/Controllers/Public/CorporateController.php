@@ -31,7 +31,6 @@ class CorporateController extends Controller
                 'name' => $station->name,
                 'tagline' => $station->tagline,
             ]),
-            'partners' => config('oz.network.partners'),
             'stories' => PostResource::collection(
                 Post::query()
                     ->published()
