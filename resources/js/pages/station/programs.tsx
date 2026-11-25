@@ -1,6 +1,7 @@
 import { Head, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { AnnouncerAvatar } from '@/components/station/announcer-avatar';
+import { CoverImage } from '@/components/station/cover-image';
 import { PageHeading } from '@/components/station/page-heading';
 import { cn } from '@/lib/utils';
 import { slotRange, todayInWib } from '@/lib/wib';
@@ -72,26 +73,34 @@ export default function StationPrograms() {
                                 <li
                                     key={slot.id}
                                     className={cn(
-                                        'grid gap-4 py-8 sm:grid-cols-[11rem_minmax(0,1fr)_auto] sm:gap-8',
+                                        'grid gap-5 py-8 sm:grid-cols-[13rem_minmax(0,1fr)_auto] sm:items-center sm:gap-8',
                                         onAir &&
                                             '-mx-4 rounded-3xl bg-oz-yellow px-4 sm:-mx-6 sm:px-6',
                                     )}
                                 >
-                                    <div>
-                                        <p className="font-oz-display text-2xl font-extrabold tracking-tight tabular-nums">
-                                            {slotRange(slot.start, slot.end)}
-                                        </p>
-                                        {onAir && (
-                                            <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-oz-black px-3 py-1 text-xs font-bold text-oz-white">
-                                                <span className="size-2 rounded-full bg-oz-red" />
-                                                On air now
-                                            </p>
-                                        )}
-                                    </div>
+                                    <CoverImage
+                                        src={slot.program.cover_image_url}
+                                        label={slot.program.title}
+                                        className="aspect-video w-full rounded-2xl"
+                                    />
                                     <div className="min-w-0">
                                         <h2 className="font-oz-display text-2xl leading-tight font-extrabold tracking-tight sm:text-3xl">
                                             {slot.program.title}
                                         </h2>
+                                        <p className="mt-2 flex flex-wrap items-center gap-3">
+                                            <span className="font-bold tabular-nums">
+                                                {slotRange(
+                                                    slot.start,
+                                                    slot.end,
+                                                )}
+                                            </span>
+                                            {onAir && (
+                                                <span className="inline-flex items-center gap-2 rounded-full bg-oz-black px-3 py-1 text-xs font-bold text-oz-white">
+                                                    <span className="size-2 rounded-full bg-oz-red" />
+                                                    On air now
+                                                </span>
+                                            )}
+                                        </p>
                                         {slot.program.description && (
                                             <p className="mt-2 max-w-2xl text-oz-ink">
                                                 {slot.program.description}

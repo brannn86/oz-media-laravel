@@ -75,7 +75,7 @@ class StationController extends Controller
                 ProgramSchedule::query()
                     ->forStation($station)
                     ->whereHas('program', fn (Builder $query) => $query->where('is_active', true))
-                    ->with(['program.announcers' => fn ($query) => $query->where('is_active', true)])
+                    ->with(['program.media', 'program.announcers' => fn ($query) => $query->where('is_active', true)])
                     ->orderBy('day_of_week')
                     ->orderBy('start_time')
                     ->get()
@@ -97,9 +97,9 @@ class StationController extends Controller
     {
         return Inertia::render('station/events', [
             'meta' => PageMeta::make("Events | {$station->name}", "Shows, meet-ups and gigs from {$station->name} and friends."),
-            'upcoming' => EventResource::collection($station->events()->upcoming()->get())->resolve($request),
+            'upcoming' => EventResource::collection($station->events()->with('media')->upcoming()->get())->resolve($request),
             'past' => EventResource::collection(
-                $station->events()->past()->limit(6)->get()
+                $station->events()->with('media')->past()->limit(6)->get()
             )->resolve($request),
         ]);
     }

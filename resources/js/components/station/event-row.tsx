@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { ArrowRight, MapPin } from 'lucide-react';
+import { CoverImage } from '@/components/station/cover-image';
 import { STATION_TIMEZONE, formatTime } from '@/lib/wib';
 import { cn } from '@/lib/utils';
 import stationRoutes from '@/routes/station';
@@ -58,9 +59,12 @@ export function DateBlock({
 export function EventRow({
     event,
     muted = false,
+    withCover = false,
 }: {
     event: StationEvent;
     muted?: boolean;
+    /** Show the poster beside the date (the Events page). */
+    withCover?: boolean;
 }) {
     const { station } = usePage<StationPageProps>().props;
     const href = stationRoutes.events.show({
@@ -72,12 +76,31 @@ export function EventRow({
         <article
             className={cn(
                 'grid grid-cols-[4.5rem_minmax(0,1fr)] gap-5 py-6 sm:grid-cols-[5.5rem_minmax(0,1fr)_auto] sm:items-center sm:gap-8',
+                withCover && 'md:grid-cols-[5.5rem_13rem_minmax(0,1fr)_auto]',
                 muted && 'opacity-70',
             )}
         >
-            <DateBlock event={event} />
+            {withCover && (
+                <Link
+                    href={href}
+                    tabIndex={-1}
+                    aria-hidden
+                    className="col-span-2 block overflow-hidden rounded-2xl sm:col-span-3 md:order-2 md:col-span-1"
+                >
+                    <CoverImage
+                        src={event.poster_url}
+                        label={event.title}
+                        className="aspect-video w-full"
+                    />
+                </Link>
+            )}
 
-            <div className="min-w-0">
+            <DateBlock
+                event={event}
+                className={cn(withCover && 'md:order-1')}
+            />
+
+            <div className={cn('min-w-0', withCover && 'md:order-3')}>
                 {event.is_oz_event && (
                     <p className="mb-1 text-sm font-bold text-oz-black">
                         An OZ event
@@ -112,7 +135,10 @@ export function EventRow({
 
             <Link
                 href={href}
-                className="col-start-2 inline-flex items-center gap-2 justify-self-start rounded-full border-2 border-oz-black px-5 py-2 text-sm font-bold transition-colors hover:bg-oz-black hover:text-oz-yellow focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none sm:col-start-3"
+                className={cn(
+                    'col-start-2 inline-flex items-center gap-2 justify-self-start rounded-full border-2 border-oz-black px-5 py-2 text-sm font-bold transition-colors hover:bg-oz-black hover:text-oz-yellow focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none sm:col-start-3',
+                    withCover && 'md:order-4 md:col-start-4',
+                )}
             >
                 Details
                 <ArrowRight className="size-4" aria-hidden />

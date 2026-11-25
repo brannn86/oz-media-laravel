@@ -31,7 +31,7 @@ export default function StationEvents() {
                 ) : (
                     <div className="divide-y divide-oz-black/10">
                         {upcoming.map((event) => (
-                            <EventRow key={event.id} event={event} />
+                            <EventRow key={event.id} event={event} withCover />
                         ))}
                     </div>
                 )}
@@ -48,7 +48,12 @@ export default function StationEvents() {
                         </h2>
                         <div className="mt-4 divide-y divide-oz-black/10">
                             {past.map((event) => (
-                                <EventRow key={event.id} event={event} muted />
+                                <EventRow
+                                    key={event.id}
+                                    event={event}
+                                    muted
+                                    withCover
+                                />
                             ))}
                         </div>
                     </div>
