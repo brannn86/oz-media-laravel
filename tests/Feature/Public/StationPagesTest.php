@@ -132,11 +132,8 @@ it('renders the corporate landing page with the network', function () {
             ->where('stories.0.station.slug', 'oz-bandung'));
 });
 
-it('tells the privacy page what the site measures and for how long', function () {
-    config(['oz.retention.visitor_analytics_months' => 13, 'oz.analytics.umami.script_url' => null]);
-
+it('includes what the site measures in the editable privacy policy', function () {
     $this->get('/oz-bandung/privacy')->assertInertia(fn (Assert $page) => $page
         ->component('station/privacy')
-        ->where('measurement.retentionMonths', 13)
-        ->where('measurement.webAnalytics', false));
+        ->where('body', fn (string $body) => str_contains($body, 'What this site measures') && str_contains($body, '13 months')));
 });

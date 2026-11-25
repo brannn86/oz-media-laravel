@@ -1,5 +1,4 @@
 import { Head, usePage } from '@inertiajs/react';
-import type { ReactNode } from 'react';
 import type { StationPageProps } from '@/types';
 
 type Props = StationPageProps & {
@@ -13,12 +12,9 @@ type Props = StationPageProps & {
 export function ContentPage({
     heading,
     emptyText,
-    children,
 }: {
     heading: string;
     emptyText: string;
-    /** Shown after the CMS text. */
-    children?: ReactNode;
 }) {
     const { meta, body } = usePage<Props>().props;
 
@@ -37,7 +33,6 @@ export function ContentPage({
                 ) : (
                     <p className="mt-10 text-lg text-oz-ink">{emptyText}</p>
                 )}
-                {children}
             </div>
         </>
     );

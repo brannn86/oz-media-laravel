@@ -153,7 +153,7 @@ return [
         'purge_deleted_chat_after_days' => 30,
         // Per-visitor analytics rows (audience_sessions, audience_visitors) are
         // deleted after this; the anonymous totals are kept. Stated on the
-        // privacy page, so change both together.
+        // privacy policy (Station settings in the admin); change both together.
         'visitor_analytics_months' => 13,
     ],
 

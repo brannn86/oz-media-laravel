@@ -159,20 +159,10 @@ class StationController extends Controller
 
     public function privacy(Station $station): Response
     {
-        return $this->contentPage('station/privacy', "Privacy Policy | {$station->name}", $station->privacy_policy_content, [
-            // For the "What this site measures" section, kept in code so it
-            // always matches what the site actually does.
-            'measurement' => [
-                'retentionMonths' => (int) config('oz.retention.visitor_analytics_months'),
-                'webAnalytics' => filled(config('oz.analytics.umami.script_url')) && filled(config('oz.analytics.umami.website_id')),
-            ],
-        ]);
+        return $this->contentPage('station/privacy', "Privacy Policy | {$station->name}", $station->privacy_policy_content);
     }
 
-    /**
-     * @param  array<string, mixed>  $extra
-     */
-    private function contentPage(string $component, string $title, ?string $html, array $extra = []): Response
+    private function contentPage(string $component, string $title, ?string $html): Response
     {
         $body = filled($html) ? RichContentRenderer::make($html)->toHtml() : null;
 
@@ -180,7 +170,6 @@ class StationController extends Controller
             'meta' => PageMeta::make($title, $body),
             'title' => $title,
             'body' => $body,
-            ...$extra,
         ]);
     }
 }
