@@ -31,6 +31,8 @@ class StationResource extends JsonResource
             'tagline' => $this->tagline,
             'contact' => $this->contact(),
             'social' => $this->socialProfiles(),
+            // Off: the OZ Poin page and its links are hidden (points still accrue).
+            'rewards_page' => $this->rewards_page_enabled,
             'channel' => StationStreamStatusUpdated::channelName($this->resource),
             'stream' => StreamStatusResource::make($this->resource)->resolve($request),
         ];

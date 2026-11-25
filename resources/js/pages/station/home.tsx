@@ -28,7 +28,8 @@ type Props = StationPageProps & {
     highlights: SocialHighlight[];
     programs: Program[];
     announcers: Announcer[];
-    sponsor: Sponsor;
+    /** Null while the ad space is switched off. */
+    sponsor: Sponsor | null;
 };
 
 const moreLink =
@@ -57,10 +58,12 @@ export default function StationHome() {
                 station={station}
                 broadcast={broadcast}
                 banner={
-                    <SponsorBanner
-                        sponsor={sponsor}
-                        stationName={station.name}
-                    />
+                    sponsor && (
+                        <SponsorBanner
+                            sponsor={sponsor}
+                            stationName={station.name}
+                        />
+                    )
                 }
             />
 

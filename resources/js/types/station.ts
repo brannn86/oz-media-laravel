@@ -33,6 +33,8 @@ export type Station = {
     social: Partial<
         Record<'instagram' | 'tiktok' | 'youtube' | 'threads' | 'x', string>
     >;
+    /** The OZ Poin page is switched on (points accrue either way). */
+    rewards_page: boolean;
     channel: string;
     stream: StreamStatus;
 };

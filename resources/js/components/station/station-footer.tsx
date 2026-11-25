@@ -33,7 +33,7 @@ export function StationFooter({ station }: { station: Station }) {
                         Explore
                     </h2>
                     <ul className="mt-4 space-y-2">
-                        {stationNavigation(station.slug).map((item) => (
+                        {stationNavigation(station).map((item) => (
                             <li key={item.href}>
                                 <Link
                                     href={item.href}

@@ -137,6 +137,9 @@ class StationController extends Controller
      */
     public function rewards(Request $request, Station $station, GetLeaderboardAction $leaderboard): Response
     {
+        // Switched off in Station settings: the page goes, the points don't.
+        abort_unless($station->rewards_page_enabled, 404);
+
         $user = $request->user();
 
         return Inertia::render('station/rewards', [
@@ -172,12 +175,17 @@ class StationController extends Controller
 
     /**
      * The banner under the player: the uploaded one, or the house ad
-     * (`house_email` is where advertisers write) when there is none.
+     * (`house_email` is where advertisers write) when there is none. Null
+     * when the ad space is switched off in Station settings.
      *
-     * @return array{name: string|null, url: string|null, image_url: string, mobile_image_url: string|null}|array{house_email: string}
+     * @return array{name: string|null, url: string|null, image_url: string, mobile_image_url: string|null}|array{house_email: string}|null
      */
-    private function sponsor(Station $station): array
+    private function sponsor(Station $station): ?array
     {
+        if (! $station->sponsor_enabled) {
+            return null;
+        }
+
         return StationCache::remember($station, 'sponsor', fn (): array => $station->sponsor()
             ?? ['house_email' => (string) config('oz.advertising_email')]);
     }

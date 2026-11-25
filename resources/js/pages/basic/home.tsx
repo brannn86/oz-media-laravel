@@ -9,7 +9,7 @@ import type { Sponsor } from '@/components/station/sponsor-banner';
 import { cn } from '@/lib/utils';
 import type { StationPageProps } from '@/types';
 
-type Props = StationPageProps & { sponsor: Sponsor };
+type Props = StationPageProps & { sponsor: Sponsor | null };
 
 /**
  * A basic station's one page: the radio, big and centred, with the song on
@@ -23,12 +23,14 @@ export default function BasicStationHome() {
             <Head title={meta.title} />
             <div className="mx-auto max-w-5xl px-4 pt-6 pb-12 sm:px-6 sm:pt-10">
                 <RadioPlayer />
-                <SponsorBanner
-                    sponsor={sponsor}
-                    stationName={station.name}
-                    tone="dark"
-                    className="mt-10 sm:mt-14"
-                />
+                {sponsor && (
+                    <SponsorBanner
+                        sponsor={sponsor}
+                        stationName={station.name}
+                        tone="dark"
+                        className="mt-10 sm:mt-14"
+                    />
+                )}
             </div>
         </>
     );

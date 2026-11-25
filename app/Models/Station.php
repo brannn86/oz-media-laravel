@@ -36,6 +36,8 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property string|null $privacy_policy_content
  * @property string|null $sponsor_name
  * @property string|null $sponsor_url
+ * @property bool $sponsor_enabled Off: no ad space under the player at all.
+ * @property bool $rewards_page_enabled Off: the OZ Poin page is hidden (points still accrue).
  * @property bool $is_active
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -43,7 +45,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 #[ObservedBy(StationObserver::class)]
 #[Fillable([
     'slug', 'name', 'tagline', 'site_type', 'stream_audio_url', 'stream_video_url', 'stream_title_format', 'chat_slow_mode_seconds',
-    'contact_info', 'social_links', 'about_content', 'privacy_policy_content', 'sponsor_name', 'sponsor_url', 'is_active',
+    'contact_info', 'social_links', 'about_content', 'privacy_policy_content', 'sponsor_name', 'sponsor_url', 'sponsor_enabled', 'rewards_page_enabled', 'is_active',
 ])]
 class Station extends Model implements HasMedia
 {
@@ -66,6 +68,8 @@ class Station extends Model implements HasMedia
     protected $attributes = [
         'stream_title_format' => 'title_artist',
         'site_type' => 'full',
+        'sponsor_enabled' => true,
+        'rewards_page_enabled' => true,
     ];
 
     protected function casts(): array
@@ -74,6 +78,8 @@ class Station extends Model implements HasMedia
             'stream_title_format' => StreamTitleFormat::class,
             'site_type' => StationSiteType::class,
             'is_active' => 'boolean',
+            'sponsor_enabled' => 'boolean',
+            'rewards_page_enabled' => 'boolean',
             'chat_slow_mode_seconds' => 'integer',
             'contact_info' => 'array',
             'social_links' => 'array',

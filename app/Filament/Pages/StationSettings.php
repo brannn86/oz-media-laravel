@@ -118,6 +118,10 @@ class StationSettings extends Page
                                 Toggle::make('is_active')
                                     ->label('Station is active')
                                     ->helperText('Inactive stations are hidden from the public site.'),
+                                Toggle::make('rewards_page_enabled')
+                                    ->label('Show the OZ Poin page')
+                                    ->helperText('Off hides the OZ Poin page and its links. Listeners keep earning points, so nothing is lost when you switch it back on.')
+                                    ->hidden(fn (Get $get): bool => $this->isBasic($get)),
                             ]),
                         Tab::make('Streaming')
                             ->icon(Heroicon::OutlinedSignal)
@@ -186,6 +190,11 @@ class StationSettings extends Page
                             ->icon(Heroicon::OutlinedMegaphone)
                             ->columns(2)
                             ->schema([
+                                Toggle::make('sponsor_enabled')
+                                    ->label('Show the ad space')
+                                    ->helperText('Off removes the space under the player completely: no banner, no "Your brand here" house ad. The banner below is kept for when you switch it back on.')
+                                    ->live()
+                                    ->columnSpanFull(),
                                 SpatieMediaLibraryFileUpload::make('sponsor_banner')
                                     ->label('Banner')
                                     ->collection('sponsor_banner')

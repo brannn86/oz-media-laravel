@@ -13,14 +13,20 @@ import { cn } from '@/lib/utils';
 import stationRoutes from '@/routes/station';
 import type { Station } from '@/types';
 
-export function stationNavigation(slug: string) {
+/** The station's pages; OZ Poin only while its page is switched on. */
+export function stationNavigation({
+    slug,
+    rewards_page,
+}: Pick<Station, 'slug' | 'rewards_page'>) {
     return [
         { label: 'Home', href: stationRoutes.home(slug).url, exact: true },
         { label: 'Programs', href: stationRoutes.programs(slug).url },
         { label: 'Announcers', href: stationRoutes.announcers(slug).url },
         { label: 'Events', href: stationRoutes.events(slug).url },
         { label: 'News', href: stationRoutes.news.index(slug).url },
-        { label: 'OZ Poin', href: stationRoutes.rewards(slug).url },
+        ...(rewards_page
+            ? [{ label: 'OZ Poin', href: stationRoutes.rewards(slug).url }]
+            : []),
         { label: 'About', href: stationRoutes.about(slug).url },
     ];
 }
@@ -35,7 +41,7 @@ function isActive(currentUrl: string, href: string, exact = false): boolean {
 export function StationHeader({ station }: { station: Station }) {
     const { url } = usePage();
     const [open, setOpen] = useState(false);
-    const items = stationNavigation(station.slug);
+    const items = stationNavigation(station);
 
     return (
         <header className="sticky top-0 z-30 border-b border-oz-black/10 bg-oz-white/95 backdrop-blur supports-[backdrop-filter]:bg-oz-white/80">
