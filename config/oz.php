@@ -201,6 +201,7 @@ return [
         'partners' => [
             [
                 'name' => 'OZ Bali',
+                'logo' => 'oz-bali', // public/images/logos, see BrandLogo
                 'tagline' => 'The island\'s OZ station, run by our Bali partner team.',
                 'url' => env('OZ_BALI_URL'),
             ],

@@ -1,7 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowUpRight, Radio } from 'lucide-react';
 import { CoverImage } from '@/components/station/cover-image';
-import { OzMark } from '@/components/station/oz-mark';
+import { BrandLogo } from '@/components/station/brand-logo';
 import { formatDate } from '@/lib/wib';
 import { home } from '@/routes';
 import stationRoutes from '@/routes/station';
@@ -10,7 +10,13 @@ import type { PageMeta, Post } from '@/types';
 type Props = {
     meta: PageMeta;
     stations: { slug: string; name: string; tagline: string | null }[];
-    partners: { name: string; tagline: string; url: string | null }[];
+    partners: {
+        name: string;
+        /** A key of BrandLogo's logos. */
+        logo?: string;
+        tagline: string;
+        url: string | null;
+    }[];
     stories: Post[];
 };
 
@@ -46,7 +52,7 @@ export default function CorporateHome() {
                     aria-label="OZ Media home"
                     className="rounded-xl focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none"
                 >
-                    <OzMark suffix="Media" />
+                    <BrandLogo brand="oz-media" className="h-10" />
                 </Link>
                 <nav aria-label="Main">
                     <ul className="flex items-center gap-1 text-sm font-semibold">
@@ -188,7 +194,7 @@ export default function CorporateHome() {
 
             <footer className="bg-oz-black text-oz-white">
                 <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-12 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                    <OzMark suffix="Media" inverted />
+                    <BrandLogo brand="oz-media" onDark className="h-10" />
                     <p className="text-sm text-oz-white/60">
                         © {new Date().getFullYear()} OZ Media. All rights
                         reserved.
@@ -206,9 +212,17 @@ function PartnerCard({ partner }: { partner: Props['partners'][number] }) {
                 {partner.url ? 'Partner site' : 'Site coming soon'}
             </span>
             <span>
-                <span className="block font-oz-display text-6xl leading-[0.9] font-extrabold tracking-[-0.04em] sm:text-7xl">
-                    {partner.name}
-                </span>
+                {partner.logo ? (
+                    <BrandLogo
+                        brand={partner.logo}
+                        onDark
+                        className="h-28 sm:h-36"
+                    />
+                ) : (
+                    <span className="block font-oz-display text-6xl leading-[0.9] font-extrabold tracking-[-0.04em] sm:text-7xl">
+                        {partner.name}
+                    </span>
+                )}
                 <span className="mt-4 block text-lg text-oz-white/70">
                     {partner.tagline}
                 </span>

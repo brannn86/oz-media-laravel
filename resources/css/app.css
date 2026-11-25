@@ -280,3 +280,14 @@
         transform: translateX(-50%);
     }
 }
+
+/*
+ * A white outline around a logo on a dark background, where the logo's own
+ * black drop shadow would disappear. Eight 1.5px shadows trace the shape.
+ */
+@utility oz-logo-stroke {
+    filter: drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff)
+        drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff)
+        drop-shadow(1px 1px 0 #fff) drop-shadow(-1px -1px 0 #fff)
+        drop-shadow(1px -1px 0 #fff) drop-shadow(-1px 1px 0 #fff);
+}

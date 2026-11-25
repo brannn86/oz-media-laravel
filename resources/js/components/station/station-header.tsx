@@ -2,7 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
 import { AccountMenu } from '@/components/station/account-menu';
-import { OzMark } from '@/components/station/oz-mark';
+import { BrandLogo } from '@/components/station/brand-logo';
 import {
     Sheet,
     SheetContent,
@@ -36,7 +36,6 @@ export function StationHeader({ station }: { station: Station }) {
     const { url } = usePage();
     const [open, setOpen] = useState(false);
     const items = stationNavigation(station.slug);
-    const stationSuffix = station.name.replace(/^OZ\s+/i, '');
 
     return (
         <header className="sticky top-0 z-30 border-b border-oz-black/10 bg-oz-white/95 backdrop-blur supports-[backdrop-filter]:bg-oz-white/80">
@@ -46,7 +45,7 @@ export function StationHeader({ station }: { station: Station }) {
                     className="rounded-xl focus-visible:ring-4 focus-visible:ring-oz-yellow focus-visible:outline-none"
                     aria-label={`${station.name} home`}
                 >
-                    <OzMark suffix={stationSuffix} />
+                    <BrandLogo brand={station.slug} className="h-11" />
                 </Link>
 
                 <div className="flex items-center gap-2 lg:gap-4">

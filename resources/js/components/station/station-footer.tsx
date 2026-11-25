@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { BrandIcon } from '@/components/station/brand-icon';
-import { OzMark } from '@/components/station/oz-mark';
+import { BrandLogo } from '@/components/station/brand-logo';
 import { SocialLinks } from '@/components/station/social-links';
 import { stationNavigation } from '@/components/station/station-header';
 import { home } from '@/routes';
@@ -14,10 +14,7 @@ export function StationFooter({ station }: { station: Station }) {
         <footer className="bg-oz-black font-oz text-oz-white">
             <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
                 <div>
-                    <OzMark
-                        inverted
-                        suffix={station.name.replace(/^OZ\s+/i, '')}
-                    />
+                    <BrandLogo brand={station.slug} onDark className="h-20" />
                     {station.tagline && (
                         <p className="mt-5 max-w-xs font-oz-display text-2xl leading-tight font-extrabold text-oz-yellow">
                             {station.tagline}
