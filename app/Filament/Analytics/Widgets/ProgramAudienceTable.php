@@ -19,7 +19,7 @@ class ProgramAudienceTable extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->description('Icecast samples (every 15 min) and website listening minutes, credited to the show on air at the time by the current schedule.')
+            ->description('Icecast samples (every 15 min), website listening minutes and tune-outs (finished website listening sessions), credited to the show on air at the time by the current schedule.')
             ->records(fn (): array => collect(app(ProgramAudience::class)->programs(30))->keyBy('program_id')->all())
             ->paginated(false)
             ->columns([
@@ -47,6 +47,16 @@ class ProgramAudienceTable extends TableWidget
                 TextColumn::make('website_hours')
                     ->label('Website hours')
                     ->formatStateUsing(fn (float $state): string => number_format($state, 1).' h')
+                    ->alignEnd(),
+                TextColumn::make('tune_outs_per_hour')
+                    ->label('Tune-outs / h')
+                    ->tooltip('Website listeners who stopped during the show, per hour on air.')
+                    ->formatStateUsing(fn (float $state): string => number_format($state, 2))
+                    ->alignEnd(),
+                TextColumn::make('early_tune_outs')
+                    ->label('Left in first 10 min')
+                    ->tooltip('Website listeners who stopped within 10 minutes of the show starting.')
+                    ->numeric()
                     ->alignEnd(),
             ])
             ->emptyStateHeading('No shows on the schedule yet');

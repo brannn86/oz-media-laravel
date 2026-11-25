@@ -7,6 +7,8 @@ use App\Filament\Analytics\Widgets\ListenersByHourChart;
 use App\Filament\Analytics\Widgets\ListeningChart;
 use App\Filament\Analytics\Widgets\RadioListenersChart;
 use App\Filament\Analytics\Widgets\RadioStats;
+use App\Filament\Analytics\Widgets\SessionLengthChart;
+use App\Filament\Analytics\Widgets\SongDropOffTable;
 use App\Filament\Analytics\Widgets\TopSongsTable;
 use BackedEnum;
 use Filament\Support\Icons\Heroicon;
@@ -33,6 +35,8 @@ class RadioAnalytics extends AnalyticsPage
             ListeningChart::class,
             ListenersByHourChart::class,
             RadioListenersChart::class,
+            SessionLengthChart::make(['mode' => 'audio']),
+            SongDropOffTable::class,
             TopSongsTable::class,
         ];
     }

@@ -4,6 +4,7 @@ namespace App\Filament\Pages\Analytics;
 
 use App\Filament\Analytics\AnalyticsPage;
 use App\Filament\Analytics\Widgets\ReactionsChart;
+use App\Filament\Analytics\Widgets\SessionLengthChart;
 use App\Filament\Analytics\Widgets\VideoStats;
 use App\Filament\Analytics\Widgets\WatchingChart;
 use BackedEnum;
@@ -29,6 +30,7 @@ class VideoAnalytics extends AnalyticsPage
         return [
             VideoStats::class,
             WatchingChart::class,
+            SessionLengthChart::make(['mode' => 'video']),
             ReactionsChart::class,
         ];
     }

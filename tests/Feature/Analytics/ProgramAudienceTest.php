@@ -32,6 +32,14 @@ it('credits Icecast samples and website listening to the show on air', function 
         ['station_id' => $station->id, 'minute_at' => $at('10:32'), 'mode' => 'video', 'listeners' => 5], // Video doesn't count.
     ]);
 
+    // Two listeners stop early in the show, one later.
+    foreach (['10:03', '10:09', '11:30'] as $i => $time) {
+        DB::table('audience_sessions')->insert([
+            'station_id' => $station->id, 'mode' => 'audio', 'visitor' => sha1((string) $i), 'source' => 'Direct',
+            'started_at' => $at($time)->subMinutes(5), 'last_seen_at' => $at($time), 'minutes' => 5,
+        ]);
+    }
+
     $row = collect(app(ProgramAudience::class)->programs(1))->firstWhere('program', 'Midday Mix');
 
     expect($row)
@@ -39,7 +47,9 @@ it('credits Icecast samples and website listening to the show on air', function 
         ->avg_icecast->toBe(15.0)
         ->peak_icecast->toBe(20)
         ->avg_website->toBe(round(6 / 120, 2))
-        ->hosts->toBe('Raka');
+        ->hosts->toBe('Raka')
+        ->tune_outs_per_hour->toBe(1.5)
+        ->early_tune_outs->toBe(2);
 
     $hostRow = collect(app(ProgramAudience::class)->hosts(1))->firstWhere('host', 'Raka');
 

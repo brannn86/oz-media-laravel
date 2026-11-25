@@ -27,11 +27,11 @@ class ProgramAudience
     private const MINUTES_PER_WEEK = 10080;
 
     /**
-     * @return list<array{program_id: int, program: string, station: string, hosts: string, airtime_hours: float, avg_icecast: float|null, peak_icecast: int|null, avg_website: float, website_hours: float}>
+     * @return list<array{program_id: int, program: string, station: string, hosts: string, airtime_hours: float, avg_icecast: float|null, peak_icecast: int|null, avg_website: float, website_hours: float, tune_outs_per_hour: float, early_tune_outs: int}>
      */
     public function programs(int $days = 30): array
     {
-        return Cache::remember("analytics:program-audience:{$days}", self::TTL, function () use ($days): array {
+        return Cache::remember("analytics:program-audience:v2:{$days}", self::TTL, function () use ($days): array {
             $rows = [];
 
             foreach (Station::query()->orderBy('name')->get() as $station) {
@@ -54,7 +54,7 @@ class ProgramAudience
      */
     public function hosts(int $days = 30): array
     {
-        return Cache::remember("analytics:host-audience:{$days}", self::TTL, function () use ($days): array {
+        return Cache::remember("analytics:host-audience:v2:{$days}", self::TTL, function () use ($days): array {
             $programs = collect($this->programs($days))->keyBy('program_id');
             $hosts = [];
 
@@ -94,7 +94,7 @@ class ProgramAudience
     }
 
     /**
-     * @return list<array{program_id: int, program: string, station: string, hosts: string, airtime_hours: float, avg_icecast: float|null, peak_icecast: int|null, avg_website: float, website_hours: float}>
+     * @return list<array{program_id: int, program: string, station: string, hosts: string, airtime_hours: float, avg_icecast: float|null, peak_icecast: int|null, avg_website: float, website_hours: float, tune_outs_per_hour: float, early_tune_outs: int}>
      */
     private function forStation(Station $station, int $days): array
     {
@@ -104,27 +104,30 @@ class ProgramAudience
             return [];
         }
 
-        // Minute of the week (Sunday 00:00 = 0, WIB) => program id.
+        // Minute of the week (Sunday 00:00 = 0, WIB) => program id, and how far into its slot.
         $week = array_fill(0, self::MINUTES_PER_WEEK, null);
+        $into = array_fill(0, self::MINUTES_PER_WEEK, 0);
 
         foreach ($slots as $slot) {
             $offset = $slot->day_of_week->value * 1440;
 
             for ($minute = $slot->startMinutes(); $minute < $slot->endMinutes(); $minute++) {
                 $week[$offset + $minute] = $slot->program_id;
+                $into[$offset + $minute] = $minute - $slot->startMinutes();
             }
         }
 
         $now = CarbonImmutable::now();
         $from = CarbonImmutable::now(DashboardMetrics::TIMEZONE)->startOfDay()->subDays($days - 1);
-        $programOf = function (mixed $at) use ($week): ?int {
+        $weekMinute = function (mixed $at): int {
             $wib = CarbonImmutable::parse((string) $at, config('app.timezone'))->setTimezone(DashboardMetrics::TIMEZONE);
 
-            return $week[$wib->dayOfWeek * 1440 + $wib->hour * 60 + $wib->minute];
+            return $wib->dayOfWeek * 1440 + $wib->hour * 60 + $wib->minute;
         };
+        $programOf = fn (mixed $at): ?int => $week[$weekMinute($at)];
 
         $stats = [];
-        $blank = ['airtime' => 0, 'samples' => 0, 'sample_sum' => 0, 'peak' => null, 'listener_minutes' => 0];
+        $blank = ['airtime' => 0, 'samples' => 0, 'sample_sum' => 0, 'peak' => null, 'listener_minutes' => 0, 'tune_outs' => 0, 'early_tune_outs' => 0];
 
         // Airtime: every scheduled minute of the window that has already passed.
         for ($day = $from; $day->lessThanOrEqualTo($now); $day = $day->addDay()) {
@@ -162,6 +165,22 @@ class ProgramAudience
             }
         }
 
+        // Tune-outs: finished radio sessions, by the show on air when they ended.
+        foreach (DB::table('audience_sessions')->where('station_id', $station->id)->where('mode', AudienceMode::Audio->value)
+            ->whereBetween('last_seen_at', [$range[0], $now->subSeconds(RecordAudience::SESSION_GAP_SECONDS)])
+            ->select('last_seen_at')->cursor() as $session) {
+            $minute = $weekMinute($session->last_seen_at);
+
+            if ($program = $week[$minute]) {
+                $stats[$program] ??= $blank;
+                $stats[$program]['tune_outs']++;
+
+                if ($into[$minute] < 10) {
+                    $stats[$program]['early_tune_outs']++;
+                }
+            }
+        }
+
         $programs = $slots->pluck('program')->unique('id')->keyBy('id');
         $rows = [];
 
@@ -182,6 +201,8 @@ class ProgramAudience
                 'peak_icecast' => $stat['peak'],
                 'avg_website' => round($stat['listener_minutes'] / $stat['airtime'], 2),
                 'website_hours' => round($stat['listener_minutes'] / 60, 1),
+                'tune_outs_per_hour' => round($stat['tune_outs'] / ($stat['airtime'] / 60), 2),
+                'early_tune_outs' => $stat['early_tune_outs'],
             ];
         }
 
