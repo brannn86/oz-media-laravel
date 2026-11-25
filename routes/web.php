@@ -13,10 +13,6 @@ use Illuminate\Support\Facades\Route;
 Route::domain(config('oz.domains.main'))->group(function () {
     Route::get('/', CorporateController::class)->name('home');
 
-    Route::middleware(['auth', 'verified'])->group(function () {
-        Route::inertia('dashboard', 'dashboard')->name('dashboard');
-    });
-
     require __DIR__.'/settings.php';
 
     // Listener "Continue with Google" (session login; the app uses POST /api/v1/auth/google).

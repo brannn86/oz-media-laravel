@@ -45,7 +45,7 @@ it('ignores return paths that leave the site', function (string $return) {
         'email' => $user->email,
         'password' => 'password',
         'return' => $return,
-    ])->assertRedirect(route('dashboard', absolute: false));
+    ])->assertRedirect(route('home', absolute: false));
 })->with(['https://evil.example', '//evil.example', '/\\evil.example']);
 
 it('returns to the station page after signing up from the popup', function () {

@@ -23,7 +23,6 @@ void createInertiaApp({
               : `${title} - ${appName}`,
     layout: (name) => {
         switch (true) {
-            case name === 'welcome':
             case name.startsWith('corporate/'):
                 return null;
             // Persistent: the player inside survives navigation between station pages.
