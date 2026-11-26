@@ -609,7 +609,8 @@ export function PlayerProvider({
                     ) {
                         tappedRef.current = true;
                         const node = context.createAnalyser();
-                        node.fftSize = 256;
+                        // ~11.7 Hz bins at 48 kHz: the 50/59/69/80 Hz bands each get their own.
+                        node.fftSize = 4096;
                         node.minDecibels = -90;
                         node.maxDecibels = -15;
                         node.smoothingTimeConstant = 0.82;

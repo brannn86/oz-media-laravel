@@ -2,23 +2,14 @@ import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * One bar per this many px of width (within MIN_BARS..MAX_BARS): ~73 on the
- * desktop player, 32 on a phone. Mirrored, bass in the middle.
+ * Band centres in Hz, from the middle of the visualizer outwards (mirrored on
+ * both sides, so 68 bars). Each bar shows the true loudness of its band.
  */
-const BAR_SLOT_PX = 12;
-const MIN_BARS = 32;
-const MAX_BARS = 96;
-/**
- * Bins spread logarithmically from the lowest to about 5 kHz (bin width is
- * sampleRate / fftSize, ~190 Hz at fftSize 256): music lives low, and a
- * linear spread leaves the outer bars flat.
- */
-const LOW_BIN = 1;
-const HIGH_BIN = 28;
-/** Below this a band counts as silence, so hiss never fills a bar. */
-const NOISE_FLOOR = 48;
-/** How fast a band's remembered peak fades (per frame), so loud songs don't stay loud. */
-const PEAK_DECAY = 0.985;
+const BANDS = [
+    9000, 7700, 6600, 5600, 4800, 4100, 3500, 3000, 2600, 2200, 1900, 1600,
+    1400, 1200, 1000, 850, 726, 620, 530, 453, 387, 331, 282, 241, 206, 176,
+    150, 129, 110, 94, 80, 69, 59, 50,
+];
 
 /** The hill: 1 in the middle, easing down to 0.3 at the edges. */
 function envelope(fromCentre: number): number {
@@ -26,21 +17,20 @@ function envelope(fromCentre: number): number {
 }
 /** Gap between bars, as a share of each bar's slot. */
 const GAP = 0.28;
-/** Sunbeams around the circle in `rays` mode, and where they start and reach (share of the radius). */
-const RAYS = 64;
+/** Where `rays` mode's sunbeams start and reach (share of the radius). */
 const RAY_INNER = 0.64;
 const RAY_REACH = 0.34;
 
 /**
  * Live bar visualizer for the radio, drawn on a canvas.
  *
- * With an AnalyserNode it shows the real spectrum. Without one (Apple
+ * With an AnalyserNode it shows the real loudness of each band in BANDS. Without one (Apple
  * devices, or a stream that blocks analysis) it falls back to a gentle
  * decorative motion while playing. Paused, the bars sink to a low idle
  * line; with reduced motion they stay still.
  *
  * `rays` draws the same spectrum as sunbeams around a circle instead (OZ
- * Bali's sun), bass at the top, in the --bali-gold/--bali-sand colours.
+ * Bali's sun), 9 kHz at the top, in the --bali-gold/--bali-sand colours.
  */
 export function AudioVisualizer({
     analyser,
@@ -82,13 +72,25 @@ export function AudioVisualizer({
         ).matches;
 
         const bins = new Uint8Array(analyser?.frequencyBinCount ?? 0);
-        // Each band's recent loudest, so every band (treble too) moves.
-        const peaks = new Float32Array(bins.length).fill(NOISE_FLOOR);
-        // ...and its running average: movement is measured against it, so the
-        // bars react to beats and changes rather than sitting at a steady level.
-        const means = new Float32Array(bins.length);
-        const heights = new Float32Array(MAX_BARS);
-        let bars = MIN_BARS;
+        // Each band's bin range: edges halfway (geometrically) to its
+        // neighbours, at least one bin wide.
+        const ranges = BANDS.map((hz, k) => {
+            if (!analyser) {
+                return [0, 0];
+            }
+
+            const hzPerBin = analyser.context.sampleRate / analyser.fftSize;
+            const above = BANDS[k - 1] ?? hz * (hz / BANDS[k + 1]);
+            const below = BANDS[k + 1] ?? hz * (hz / BANDS[k - 1]);
+            const centre = Math.round(hz / hzPerBin);
+
+            return [
+                Math.min(centre, Math.ceil(Math.sqrt(hz * below) / hzPerBin)),
+                Math.max(centre, Math.floor(Math.sqrt(hz * above) / hzPerBin)),
+            ];
+        });
+        const bars = BANDS.length * 2;
+        const heights = new Float32Array(bars);
         let frame = 0;
         let width = 0;
         let height = 0;
@@ -100,12 +102,6 @@ export function AudioVisualizer({
             canvas.width = Math.round(width * ratio);
             canvas.height = Math.round(height * ratio);
             context.setTransform(ratio, 0, 0, ratio, 0, 0);
-            bars = rays
-                ? RAYS
-                : Math.min(
-                      MAX_BARS,
-                      Math.max(MIN_BARS, Math.round(width / BAR_SLOT_PX)),
-                  );
         };
 
         const observer = new ResizeObserver(resize);
@@ -122,23 +118,17 @@ export function AudioVisualizer({
             }
 
             if (analyser) {
-                const bin = Math.round(
-                    LOW_BIN * (HIGH_BIN / LOW_BIN) ** Math.min(1, fromCentre),
-                );
-                // Where this band sits between most of its recent average and
-                // its recent peak (0–1), shaped by the hill: the centre stays
-                // tallest, every bar moves.
-                const base = means[bin] * 0.6;
-                const level = Math.min(
-                    1,
-                    Math.max(0, bins[bin] - base) /
-                        Math.max(peaks[bin] - base, NOISE_FLOOR / 2),
-                );
+                // Mirror: the two middle bars are BANDS[0], the edges the last.
+                const band =
+                    i < BANDS.length ? BANDS.length - 1 - i : i - BANDS.length;
+                const [from, to] = ranges[band];
+                let sum = 0;
 
-                return Math.max(
-                    0.04,
-                    envelope(fromCentre) * (0.2 + 0.8 * level ** 2),
-                );
+                for (let b = from; b <= to; b++) {
+                    sum += bins[b];
+                }
+
+                return Math.max(0.04, sum / (to - from + 1) / 255);
             }
 
             if (still) {
@@ -159,11 +149,6 @@ export function AudioVisualizer({
         const draw = (time: number) => {
             if (analyser && playingRef.current) {
                 analyser.getByteFrequencyData(bins);
-
-                for (let b = 0; b < bins.length; b++) {
-                    peaks[b] = Math.max(peaks[b] * PEAK_DECAY, bins[b]);
-                    means[b] = means[b] * 0.97 + bins[b] * 0.03;
-                }
             }
 
             context.clearRect(0, 0, width, height);
@@ -188,7 +173,7 @@ export function AudioVisualizer({
                 for (let i = 0; i < bars; i++) {
                     heights[i] += (target(i, time) - heights[i]) * 0.25;
 
-                    // i = 0 at the bottom, so the middle (bass) is at the top.
+                    // i = 0 at the bottom, so the middle (9 kHz) is at the top.
                     const angle = (i / bars) * 2 * Math.PI + Math.PI / 2;
                     const outer =
                         inner + Math.max(3, heights[i] * radius * RAY_REACH);
