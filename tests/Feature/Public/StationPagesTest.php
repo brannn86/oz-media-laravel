@@ -125,8 +125,7 @@ it('renders the corporate landing page with the network', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('corporate/home')
             ->where('stations.0.slug', 'oz-bandung')
-            ->has('stories', 4)
-            ->where('stories.0.station.slug', 'oz-bandung'));
+            ->missing('stories'));
 });
 
 it('includes what the site measures in the editable privacy policy', function () {
