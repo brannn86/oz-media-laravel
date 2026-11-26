@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Actions\Broadcast\GetCurrentBroadcastAction;
 use App\Actions\NowPlaying\GetNowPlayingAction;
+use App\Enums\StationSiteType;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Resources\AccountResource;
 use App\Http\Resources\BroadcastResource;
@@ -50,6 +51,10 @@ class ShareStationContext
                 'settings' => ChatSettingsResource::make($station)->resolve($request),
                 'google_sign_in' => GoogleAuthController::isConfigured(),
             ],
+            // A basic site's "Listen to …" link: the network's full station.
+            'sister' => fn () => $station->isBasic()
+                ? Station::query()->active()->where('site_type', StationSiteType::Full)->orderBy('id')->first(['slug', 'name'])?->only(['slug', 'name'])
+                : null,
             // The signed-in listener (points, streak), or null for guests.
             'account' => fn () => $request->user() instanceof User
                 ? AccountResource::make($request->user())->resolve($request)

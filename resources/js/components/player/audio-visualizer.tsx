@@ -26,6 +26,10 @@ function envelope(fromCentre: number): number {
 }
 /** Gap between bars, as a share of each bar's slot. */
 const GAP = 0.28;
+/** Sunbeams around the circle in `rays` mode, and where they start and reach (share of the radius). */
+const RAYS = 64;
+const RAY_INNER = 0.64;
+const RAY_REACH = 0.34;
 
 /**
  * Live bar visualizer for the radio, drawn on a canvas.
@@ -34,14 +38,19 @@ const GAP = 0.28;
  * devices, or a stream that blocks analysis) it falls back to a gentle
  * decorative motion while playing. Paused, the bars sink to a low idle
  * line; with reduced motion they stay still.
+ *
+ * `rays` draws the same spectrum as sunbeams around a circle instead (OZ
+ * Bali's sun), bass at the top, in the --bali-gold/--bali-sand colours.
  */
 export function AudioVisualizer({
     analyser,
     playing,
+    shape = 'bars',
     className,
 }: {
     analyser: AnalyserNode | null;
     playing: boolean;
+    shape?: 'bars' | 'rays';
     className?: string;
 }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -59,11 +68,15 @@ export function AudioVisualizer({
             return;
         }
 
-        const styles = getComputedStyle(document.documentElement);
+        const rays = shape === 'rays';
+        // The canvas inherits the page's variables, so the Bali ones reach it.
+        const styles = getComputedStyle(canvas);
         const yellow =
             styles.getPropertyValue('--color-oz-yellow').trim() || '#f2bd51';
         const butter =
             styles.getPropertyValue('--color-oz-butter').trim() || '#fcf48e';
+        const gold = styles.getPropertyValue('--bali-gold').trim() || yellow;
+        const sand = styles.getPropertyValue('--bali-sand').trim() || butter;
         const still = window.matchMedia(
             '(prefers-reduced-motion: reduce)',
         ).matches;
@@ -87,10 +100,12 @@ export function AudioVisualizer({
             canvas.width = Math.round(width * ratio);
             canvas.height = Math.round(height * ratio);
             context.setTransform(ratio, 0, 0, ratio, 0, 0);
-            bars = Math.min(
-                MAX_BARS,
-                Math.max(MIN_BARS, Math.round(width / BAR_SLOT_PX)),
-            );
+            bars = rays
+                ? RAYS
+                : Math.min(
+                      MAX_BARS,
+                      Math.max(MIN_BARS, Math.round(width / BAR_SLOT_PX)),
+                  );
         };
 
         const observer = new ResizeObserver(resize);
@@ -153,6 +168,50 @@ export function AudioVisualizer({
 
             context.clearRect(0, 0, width, height);
 
+            if (rays) {
+                const radius = Math.min(width, height) / 2;
+                const inner = radius * RAY_INNER;
+                const gradient = context.createRadialGradient(
+                    width / 2,
+                    height / 2,
+                    inner,
+                    width / 2,
+                    height / 2,
+                    radius,
+                );
+                gradient.addColorStop(0, gold);
+                gradient.addColorStop(1, sand);
+                context.strokeStyle = gradient;
+                context.lineCap = 'round';
+                context.lineWidth = ((2 * Math.PI * inner) / bars) * 0.42;
+
+                for (let i = 0; i < bars; i++) {
+                    heights[i] += (target(i, time) - heights[i]) * 0.25;
+
+                    // i = 0 at the bottom, so the middle (bass) is at the top.
+                    const angle = (i / bars) * 2 * Math.PI + Math.PI / 2;
+                    const outer =
+                        inner + Math.max(3, heights[i] * radius * RAY_REACH);
+                    const cos = Math.cos(angle);
+                    const sin = Math.sin(angle);
+
+                    context.beginPath();
+                    context.moveTo(
+                        width / 2 + cos * inner,
+                        height / 2 + sin * inner,
+                    );
+                    context.lineTo(
+                        width / 2 + cos * outer,
+                        height / 2 + sin * outer,
+                    );
+                    context.stroke();
+                }
+
+                frame = window.requestAnimationFrame(draw);
+
+                return;
+            }
+
             const gradient = context.createLinearGradient(0, height, 0, 0);
             gradient.addColorStop(0, yellow);
             gradient.addColorStop(0.55, butter);
@@ -190,7 +249,7 @@ export function AudioVisualizer({
             window.cancelAnimationFrame(frame);
             observer.disconnect();
         };
-    }, [analyser]);
+    }, [analyser, shape]);
 
     return (
         <canvas

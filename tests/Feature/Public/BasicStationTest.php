@@ -46,3 +46,11 @@ it('seeds OZ Bali as a basic station once', function () {
         ->and($bali->stream_audio_url)->toBeNull()
         ->and($bali->privacy_policy_content)->toContain('What this site measures');
 });
+
+it('links a basic station to the network\'s full station', function () {
+    Station::factory()->create(['slug' => 'oz-bandung', 'name' => 'OZ Bandung']);
+
+    $this->get('/oz-bali')->assertInertia(fn (Assert $page) => $page
+        ->where('sister', ['slug' => 'oz-bandung', 'name' => 'OZ Bandung']));
+    $this->get('/oz-bandung')->assertInertia(fn (Assert $page) => $page->where('sister', null));
+});

@@ -332,3 +332,136 @@
         animation: none;
     }
 }
+
+/*
+ * OZ Bali (basic site): a sunset over the lagoon. Plum sky, tangerine to
+ * berry arcs around a striped sun (the play button), the sun's reflection on
+ * the sea, and a lagoon shore for the footer. Sizes key off --bali-dial.
+ */
+.bali {
+    --bali-plum-deep: #33102a;
+    --bali-plum: #4a1835;
+    --bali-tangerine: #f0862a;
+    --bali-hibiscus: #d8432e;
+    --bali-berry: #9c2848;
+    --bali-dusk: #6a1e44;
+    --bali-gold: #f6b42c;
+    --bali-lagoon: #0d5a5f;
+    --bali-lagoon-deep: #08393d;
+    --bali-sand: #fce8c8;
+    --bali-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --bali-dial: min(84vw, 40svh, 400px);
+    --bali-play: clamp(56px, calc(var(--bali-dial) * 0.2), 76px);
+    --bali-reflection: clamp(36px, 7svh, 64px);
+    background: linear-gradient(var(--bali-plum-deep), var(--bali-plum) 40%);
+    color: var(--bali-sand);
+}
+
+.bali-arcs {
+    --r: calc(var(--bali-dial) / 2);
+    position: absolute;
+    top: var(--r);
+    left: 50%;
+    width: calc(var(--bali-dial) + 560px);
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    pointer-events: none;
+    background: radial-gradient(
+        circle closest-side,
+        transparent calc(var(--r) + 12px),
+        var(--bali-tangerine) 0 calc(var(--r) + 40px),
+        transparent 0 calc(var(--r) + 52px),
+        var(--bali-hibiscus) 0 calc(var(--r) + 80px),
+        transparent 0 calc(var(--r) + 92px),
+        var(--bali-berry) 0 calc(var(--r) + 120px),
+        transparent 0 calc(var(--r) + 132px),
+        var(--bali-dusk) 0 calc(var(--r) + 160px),
+        transparent 0
+    );
+}
+
+/* The sun's lower half is cut into the horizon stripes of a retro sunset. */
+.bali-sun {
+    position: absolute;
+    inset: 21%;
+    border-radius: 50%;
+    background: linear-gradient(
+        var(--bali-gold) 0 60%,
+        transparent 0 60.9%,
+        var(--bali-gold) 0 68%,
+        transparent 0 69.4%,
+        var(--bali-gold) 0 76%,
+        transparent 0 77.9%,
+        var(--bali-gold) 0 84%,
+        transparent 0 86.4%,
+        var(--bali-gold) 0 92%,
+        transparent 0 94.9%,
+        var(--bali-gold) 0
+    );
+}
+
+.bali-sea {
+    position: absolute;
+    top: var(--bali-dial);
+    left: 50%;
+    width: 100vw;
+    bottom: 0;
+    translate: -50%;
+    pointer-events: none;
+    border-top: 3px solid var(--bali-gold);
+    background:
+        repeating-linear-gradient(
+            transparent 0 14px,
+            rgb(252 232 200 / 0.06) 14px 16px
+        ),
+        linear-gradient(var(--bali-lagoon-deep), var(--bali-lagoon) 70%);
+}
+
+/* The sun on the water: five gold strokes, rippling while the radio plays. */
+.bali-reflection span {
+    display: block;
+    height: 4px;
+    width: calc(var(--bali-dial) * var(--w));
+    opacity: var(--o);
+    border-radius: 999px;
+    background: var(--bali-gold);
+    animation: bali-shimmer 2.4s ease-in-out var(--d) infinite alternate paused;
+}
+
+.bali-reflection[data-playing] span {
+    animation-play-state: running;
+}
+
+.bali-reflection span:nth-child(1) { --w: 0.5; --o: 0.9; --d: 0s; }
+.bali-reflection span:nth-child(2) { --w: 0.38; --o: 0.7; --d: -400ms; }
+.bali-reflection span:nth-child(3) { --w: 0.28; --o: 0.55; --d: -800ms; }
+.bali-reflection span:nth-child(4) { --w: 0.18; --o: 0.4; --d: -1200ms; }
+.bali-reflection span:nth-child(5) { --w: 0.1; --o: 0.3; --d: -1600ms; }
+
+@keyframes bali-shimmer {
+    from { transform: scaleX(0.82); }
+    to { transform: scaleX(1.08); }
+}
+@keyframes bali-arcs-open {
+    from { opacity: 0; transform: scale(0.82); }
+}
+@keyframes bali-sunrise {
+    from { translate: 0 78%; }
+}
+@keyframes bali-land {
+    from { opacity: 0; transform: translateY(-28px) scale(0.96); }
+}
+@keyframes bali-fade {
+    from { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .bali-arcs { animation: bali-arcs-open 1.1s var(--bali-ease-out) both; }
+    .bali-rise { animation: bali-sunrise 1s 0.12s var(--bali-ease-out) both; }
+    .bali-land { animation: bali-land 0.76s 0.42s var(--bali-ease-out) both; }
+    .bali-fade { animation: bali-fade 0.6s 0.6s ease-out both; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bali-reflection span { animation: none; }
+}
