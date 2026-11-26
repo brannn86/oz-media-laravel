@@ -81,7 +81,7 @@ export default function StationPrograms() {
                                     <CoverImage
                                         src={slot.program.cover_image_url}
                                         label={slot.program.title}
-                                        className="aspect-video w-full rounded-2xl"
+                                        className="aspect-[5/4] w-full rounded-2xl"
                                     />
                                     <div className="min-w-0">
                                         <h2 className="font-oz-display text-2xl leading-tight font-extrabold tracking-tight sm:text-3xl">
