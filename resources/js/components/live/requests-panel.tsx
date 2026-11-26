@@ -154,9 +154,15 @@ function Queue() {
 
     if (queue.length === 0) {
         return (
-            <p className="p-6 text-center text-oz-ink">
-                No requests yet. Be the first!
-            </p>
+            <div className="flex flex-col items-center gap-4 p-6 text-center text-oz-ink">
+                <p>No requests yet. Be the first!</p>
+                <img
+                    src="/images/ozzy/ozzy-grooving.webp"
+                    alt=""
+                    aria-hidden
+                    className="pointer-events-none w-32 select-none"
+                />
+            </div>
         );
     }
 

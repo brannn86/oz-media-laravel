@@ -3,24 +3,39 @@ import type { ReactNode } from 'react';
 export function PageHeading({
     title,
     intro,
+    illustration,
     children,
 }: {
     title: string;
     intro?: string | null;
+    illustration?: ReactNode;
     children?: ReactNode;
 }) {
     return (
         <div className="border-b border-oz-black/10">
-            <div className="mx-auto max-w-7xl px-4 pt-14 pb-10 sm:px-6 sm:pt-20">
-                <h1 className="font-oz-display text-5xl leading-[0.95] font-extrabold tracking-tight text-balance sm:text-7xl">
-                    {title}
-                </h1>
-                {intro && (
-                    <p className="mt-5 max-w-2xl text-lg text-oz-ink">
-                        {intro}
-                    </p>
+            <div
+                className={
+                    illustration
+                        ? 'mx-auto grid max-w-7xl gap-6 px-4 pt-14 sm:px-6 sm:pt-20 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:gap-10'
+                        : 'mx-auto max-w-7xl px-4 pt-14 pb-10 sm:px-6 sm:pt-20'
+                }
+            >
+                <div className={illustration ? 'md:pb-10' : undefined}>
+                    <h1 className="font-oz-display text-5xl leading-[0.95] font-extrabold tracking-tight text-balance sm:text-7xl">
+                        {title}
+                    </h1>
+                    {intro && (
+                        <p className="mt-5 max-w-2xl text-lg text-oz-ink">
+                            {intro}
+                        </p>
+                    )}
+                    {children}
+                </div>
+                {illustration && (
+                    <div className="pointer-events-none select-none self-end justify-self-end">
+                        {illustration}
+                    </div>
                 )}
-                {children}
             </div>
         </div>
     );

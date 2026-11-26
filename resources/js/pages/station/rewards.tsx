@@ -60,6 +60,14 @@ export default function StationRewards() {
             <PageHeading
                 title="OZ Poin"
                 intro={`Earn points with ${station.name} and swap them for merch, tickets and more.`}
+                illustration={
+                    <img
+                        src="/images/ozzy/ozzy-disc-trophy.webp"
+                        alt=""
+                        aria-hidden
+                        className="w-36 sm:w-44 md:w-52"
+                    />
+                }
             >
                 {account && (
                     <div className="mt-8 flex flex-wrap gap-3">

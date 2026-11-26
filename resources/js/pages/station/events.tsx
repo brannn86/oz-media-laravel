@@ -17,6 +17,14 @@ export default function StationEvents() {
             <PageHeading
                 title="Events"
                 intro={`Gigs, meet-ups and community events from ${station.name} and friends.`}
+                illustration={
+                    <img
+                        src="/images/ozzy/ozzy-speakers-rock.webp"
+                        alt=""
+                        aria-hidden
+                        className="w-28 sm:w-32 md:w-40"
+                    />
+                }
             />
 
             <section

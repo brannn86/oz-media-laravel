@@ -215,8 +215,8 @@ export default function StationHome() {
             )}
 
             <section aria-labelledby="contact-title" className="bg-oz-butter">
-                <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 sm:py-20 md:grid-cols-[1.2fr_1fr] md:items-end">
-                    <div>
+                <div className="mx-auto grid max-w-7xl gap-x-10 gap-y-8 px-4 pt-16 sm:px-6 sm:pt-20 md:grid-cols-[1.2fr_1fr_auto] md:items-end md:pt-0">
+                    <div className="md:py-20">
                         <h2
                             id="contact-title"
                             className="font-oz-display text-4xl leading-[0.95] font-extrabold tracking-tight text-balance sm:text-6xl"
@@ -224,7 +224,7 @@ export default function StationHome() {
                             {station.contact.heading}
                         </h2>
                     </div>
-                    <dl className="grid gap-5 text-base sm:grid-cols-2">
+                    <dl className="grid gap-5 text-base sm:grid-cols-2 md:py-20">
                         {whatsapp && (
                             <div>
                                 <dt className="text-sm font-semibold text-oz-black/60">
@@ -284,6 +284,14 @@ export default function StationHome() {
                             </div>
                         )}
                     </dl>
+                    <div className="pointer-events-none select-none self-end justify-self-end md:justify-self-auto">
+                        <img
+                            src="/images/ozzy/ozzy-speaker.webp"
+                            alt=""
+                            aria-hidden
+                            className="w-36 sm:w-44 lg:w-52"
+                        />
+                    </div>
                 </div>
             </section>
         </>
