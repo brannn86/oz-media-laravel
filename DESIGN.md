@@ -206,7 +206,7 @@ One container: centred, max 80rem (`max-w-7xl`) with 16px gutters rising to 24px
 
 The station hero puts the player first: on phones it is the first block after the header and the sponsor banner sits directly under it; from `lg` the player takes the wide column (with on-air and up-next cards at 18 to 20rem beside it). Program artwork pages through a two-up (phones) / three-up (`lg`) snap carousel. The header is sticky, 64px, white at 95% with backdrop blur.
 
-Ozubathon hero: a 5/12 to 7/12 split from `lg` (lockup over meter on the left, player spanning both rows on the right, sponsor banner under the player); on phones lockup, player, meter, banner in that order. The torn band sits across roughly the middle two thirds and is positioned per surface. The landing spotlight is a 1:1 split with the compact lockup.
+Ozubathon hero: a 7/12 to 5/12 split from `lg` (player spanning both rows on the left, lockup over meter on the right, sponsor banner full width under both, inside the page gutters); on phones lockup, player, meter, banner in that order. The torn band sits across roughly the middle two thirds and is positioned per surface. The landing spotlight is a 1:1 split with the compact lockup.
 
 **The Player-Above-The-Fold Rule.** On every station home, themed or not, the play control is in the first viewport at every breakpoint, and nothing decorative overlaps its controls.
 
