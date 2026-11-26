@@ -40,6 +40,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property bool $rewards_page_enabled Off: the OZ Poin page is hidden (points still accrue).
  * @property bool $ozubathon_enabled The Ozubathon (55th-anniversary subathon) theme is on.
  * @property CarbonImmutable|null $ozubathon_starts_at When its 55 hours start; null: config('oz.ozubathon.default_starts_at').
+ * @property list<string>|null $ozubathon_ticker The rolling text under the hero; null: config('oz.ozubathon.ticker').
  * @property bool $is_active
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -47,7 +48,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 #[ObservedBy(StationObserver::class)]
 #[Fillable([
     'slug', 'name', 'tagline', 'site_type', 'stream_audio_url', 'stream_video_url', 'stream_title_format', 'chat_slow_mode_seconds',
-    'contact_info', 'social_links', 'about_content', 'privacy_policy_content', 'sponsor_name', 'sponsor_url', 'sponsor_enabled', 'rewards_page_enabled', 'ozubathon_enabled', 'ozubathon_starts_at', 'is_active',
+    'contact_info', 'social_links', 'about_content', 'privacy_policy_content', 'sponsor_name', 'sponsor_url', 'sponsor_enabled', 'rewards_page_enabled', 'ozubathon_enabled', 'ozubathon_starts_at', 'ozubathon_ticker', 'is_active',
 ])]
 class Station extends Model implements HasMedia
 {
@@ -85,6 +86,7 @@ class Station extends Model implements HasMedia
             'rewards_page_enabled' => 'boolean',
             'ozubathon_enabled' => 'boolean',
             'ozubathon_starts_at' => 'immutable_datetime',
+            'ozubathon_ticker' => 'array',
             'chat_slow_mode_seconds' => 'integer',
             'contact_info' => 'array',
             'social_links' => 'array',
@@ -126,7 +128,7 @@ class Station extends Model implements HasMedia
      * The Ozubathon while its theme is on: when its 55 hours start and end.
      * Null when the theme is off (or the station is a basic, player-only site).
      *
-     * @return array{starts_at: string, ends_at: string, hours: int}|null
+     * @return array{starts_at: string, ends_at: string, hours: int, ticker: list<string>}|null
      */
     public function ozubathon(): ?array
     {
@@ -142,6 +144,7 @@ class Station extends Model implements HasMedia
             'starts_at' => $start->toIso8601String(),
             'ends_at' => $start->addHours($hours)->toIso8601String(),
             'hours' => $hours,
+            'ticker' => array_values(array_filter($this->ozubathon_ticker ?: config('oz.ozubathon.ticker'), 'filled')),
         ];
     }
 

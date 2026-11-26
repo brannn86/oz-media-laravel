@@ -183,4 +183,6 @@ export type Ozubathon = {
     starts_at: string;
     ends_at: string;
     hours: number;
+    /** The rolling text under the hero, set in the admin. */
+    ticker: string[];
 };

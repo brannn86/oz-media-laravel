@@ -17,6 +17,7 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -243,6 +244,13 @@ class StationSettings extends Page
                                     ->seconds(false)
                                     ->placeholder('23 Dec 2026, 00:00')
                                     ->helperText('The 55 hours count from here. Empty: 23 December 2026, 00:00 WIB.')
+                                    ->visible(fn (Get $get): bool => (bool) $get('ozubathon_enabled')),
+                                TagsInput::make('ozubathon_ticker')
+                                    ->label('Rolling text')
+                                    ->placeholder('Add a phrase, press Enter')
+                                    ->helperText('The phrases that scroll between the hero and Recently played, in order. Empty: '.implode(' · ', config('oz.ozubathon.ticker')).'.')
+                                    ->nestedRecursiveRules(['max:60'])
+                                    ->reorderable()
                                     ->visible(fn (Get $get): bool => (bool) $get('ozubathon_enabled')),
                             ]),
                         Tab::make('Social')

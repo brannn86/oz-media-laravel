@@ -70,3 +70,25 @@ it('is switched on and timed in station settings', function () {
     // The save clears the cached station, so the theme shows straight away.
     $this->get('/oz-bandung')->assertInertia(fn (Assert $page) => $page->whereNot('station.ozubathon', null));
 });
+
+it('rolls the default text under the hero until the admin sets its own', function () {
+    $this->station->update(['ozubathon_enabled' => true]);
+
+    $this->get('/oz-bandung')->assertInertia(fn (Assert $page) => $page
+        ->where('station.ozubathon.ticker', config('oz.ozubathon.ticker')));
+});
+
+it('sets the rolling text in station settings', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->actingAs(User::factory()->create()->assignRole('dev'));
+    $this->station->update(['ozubathon_enabled' => true]);
+
+    Livewire::test(StationSettings::class, ['stationSlug' => 'oz-bandung'])
+        ->assertFormFieldVisible('ozubathon_ticker')
+        ->fillForm(['ozubathon_ticker' => ['Ozubathon', '55 hours nonstop']])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $this->get('/oz-bandung')->assertInertia(fn (Assert $page) => $page
+        ->where('station.ozubathon.ticker', ['Ozubathon', '55 hours nonstop']));
+});

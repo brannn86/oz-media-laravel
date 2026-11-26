@@ -5,6 +5,7 @@ import { EventRow } from '@/components/station/event-row';
 import { HighlightTile } from '@/components/station/highlight-tile';
 import { LeadStory, StoryItem } from '@/components/station/news-items';
 import { OzubathonHero } from '@/components/ozubathon/ozubathon-hero';
+import { OzubathonTicker } from '@/components/ozubathon/ozubathon-ticker';
 import { OnAirHero } from '@/components/station/on-air-hero';
 import { ProgramCards } from '@/components/station/program-cards';
 import { RecentlyPlayed } from '@/components/station/recently-played';
@@ -72,6 +73,10 @@ export default function StationHome() {
                     broadcast={broadcast}
                     banner={banner}
                 />
+            )}
+
+            {station.ozubathon && (
+                <OzubathonTicker phrases={station.ozubathon.ticker} />
             )}
 
             <RecentlyPlayed />

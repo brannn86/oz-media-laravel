@@ -206,6 +206,8 @@ return [
     'ozubathon' => [
         'hours' => 55,
         'default_starts_at' => '2026-12-23 00:00',
+        // The rolling text under the hero until the admin sets its own.
+        'ticker' => ['Ozubathon', '55 hours nonstop', 'OZ Radio anniversary', '55 loud and live'],
     ],
 
 ];

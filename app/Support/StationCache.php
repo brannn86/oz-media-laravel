@@ -25,7 +25,7 @@ class StationCache
      * field in StationResource, say), so a deploy doesn't serve entries
      * cached by the old code.
      */
-    private const FORMAT = 4;
+    private const FORMAT = 5;
 
     /**
      * @template T
