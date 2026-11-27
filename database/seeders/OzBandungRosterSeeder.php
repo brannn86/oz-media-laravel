@@ -74,12 +74,13 @@ class OzBandungRosterSeeder extends Seeder
         $programs = collect(self::PROGRAMS)->map(fn (array $slots, string $title): Program => $this->seedProgram($station, $title, $slots));
 
         foreach (self::ANNOUNCERS as [$stageName, $name, $titles]) {
-            $this->seedAnnouncer($station, $stageName, $name ?? $stageName, $programs->only($titles)->pluck('id')->all());
+            $programIds = array_values($programs->only($titles)->map(fn (Program $program): int => $program->id)->all());
+            $this->seedAnnouncer($station, $stageName, $name ?? $stageName, $programIds);
         }
     }
 
     /**
-     * @param  list<array{0: 'weekdays'|list<DayOfWeek>, 1: string, 2: string}>  $slots
+     * @param  list<array{0: string|list<DayOfWeek>, 1: string, 2: string}>  $slots
      */
     private function seedProgram(Station $station, string $title, array $slots): Program
     {
@@ -91,7 +92,8 @@ class OzBandungRosterSeeder extends Seeder
 
         if ($program->wasRecentlyCreated) {
             foreach ($slots as [$days, $start, $end]) {
-                foreach ($days === 'weekdays' ? DayOfWeek::weekdays() : $days as $day) {
+                $resolvedDays = $days === 'weekdays' ? DayOfWeek::weekdays() : (is_array($days) ? $days : []);
+                foreach ($resolvedDays as $day) {
                     $program->schedules()->create(['day_of_week' => $day, 'start_time' => $start, 'end_time' => $end]);
                 }
             }
