@@ -35,19 +35,19 @@ it('renders every station page inside the station shell', function (string $path
 ]);
 
 it('shares what is on air now (WIB) with the player', function () {
-    // Monday 07:30 WIB: the seeded OZ Breakfast Club with Raka and Nadia.
+    // Monday 07:30 WIB: the seeded OZ Morning Rush with Kayra Dama and VJ.
     $this->travelTo(Carbon::parse('2026-11-16 07:30', 'Asia/Jakarta'));
 
     $this->get('/oz-bandung')->assertInertia(fn (Assert $page) => $page
-        ->where('broadcast.current.program.title', 'OZ Breakfast Club')
-        ->where('broadcast.current.start', '06:00')
-        ->where('broadcast.current.end', '10:00')
+        ->where('broadcast.current.program.title', 'OZ Morning Rush')
+        ->where('broadcast.current.start', '07:00')
+        ->where('broadcast.current.end', '09:00')
         ->has('broadcast.current.program.announcers', 2)
-        ->where('broadcast.next.program.title', 'Midday Mix'));
+        ->where('broadcast.next.program.title', 'RILIS'));
 });
 
 it('lists programs (with schedule and hosts) and announcers on the home page', function () {
-    $hidden = $this->station->programs()->where('title', '!=', 'OZ Breakfast Club')->first();
+    $hidden = $this->station->programs()->where('title', '!=', 'OZ Cool School')->first();
     $hidden->update(['is_active' => false]);
     $offAir = $this->station->announcers()->first();
     $offAir->update(['is_active' => false]);
@@ -55,10 +55,10 @@ it('lists programs (with schedule and hosts) and announcers on the home page', f
     $this->get('/oz-bandung')->assertInertia(fn (Assert $page) => $page
         ->has('programs', $this->station->programs()->active()->count())
         ->where('programs', fn ($programs) => collect($programs)->doesntContain('id', $hidden->id)
-            // Earliest show of the day first.
-            && collect($programs)->first()['title'] === 'OZ Breakfast Club')
+            // Earliest show of the day first; ties at 07:00 go by title.
+            && collect($programs)->first()['title'] === 'OZ Cool School')
         ->has('programs.0.schedules.0', fn (Assert $slot) => $slot
-            ->where('start', '06:00')
+            ->where('start', '07:00')
             ->etc())
         ->where('programs.0.announcers', fn ($hosts) => collect($hosts)->doesntContain('id', $offAir->id))
         ->has('announcers', $this->station->announcers()->active()->count())

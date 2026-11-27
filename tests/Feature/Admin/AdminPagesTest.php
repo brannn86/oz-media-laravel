@@ -120,7 +120,7 @@ it('uploads an intermission video in station settings and tells open players', f
 });
 
 it('rejects overlapping schedule slots in the program relation manager', function () {
-    $program = Program::where('slug', 'midday-mix')->first();
+    $program = Program::where('slug', 'rilis')->first();
 
     Livewire::test(SchedulesRelationManager::class, [
         'ownerRecord' => $program,

@@ -2,12 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Enums\DayOfWeek;
 use App\Enums\PostCategory;
 use App\Enums\PostStatus;
 use App\Enums\SocialPlatform;
-use App\Models\Announcer;
-use App\Models\Program;
 use App\Models\Station;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -15,8 +12,9 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Sample content for the flagship station. Safe to re-run: content is only
- * seeded when the station has no programs yet.
+ * The flagship station: its real roster (OzBandungRosterSeeder) plus sample
+ * posts, events and highlights. Safe to re-run: the roster keeps existing
+ * records, and sample content is only seeded when the station has no posts yet.
  */
 class OzBandungSeeder extends Seeder
 {
@@ -25,15 +23,14 @@ class OzBandungSeeder extends Seeder
         DB::transaction(function (): void {
             $station = $this->seedStation();
 
-            if ($station->programs()->exists()) {
+            $this->call(OzBandungRosterSeeder::class);
+
+            if ($station->posts()->exists()) {
                 $this->command?->info('OZ Bandung already has content, skipping sample data.');
 
                 return;
             }
 
-            $programs = $this->seedPrograms($station);
-            $this->seedSchedules($programs);
-            $this->seedAnnouncers($station, $programs);
             $this->seedPosts($station);
             $this->seedEvents($station);
             $this->seedSocialHighlights($station);
@@ -77,113 +74,6 @@ class OzBandungSeeder extends Seeder
                 ."\n".file_get_contents(database_path('content/privacy-account.html')),
             'is_active' => true,
         ]);
-    }
-
-    /**
-     * @return array<string, Program>
-     */
-    private function seedPrograms(Station $station): array
-    {
-        $programs = [
-            'early-bird' => ['Early Bird', 'Gentle hits and the first traffic and weather updates of the day for Bandung\'s early risers.'],
-            'breakfast-club' => ['OZ Breakfast Club', 'The city\'s favourite morning show: big hits, trending topics, games and calls from listeners on their way to school and work.'],
-            'midday-mix' => ['Midday Mix', 'Non-stop hit music to power you through the working day, plus lunchtime requests.'],
-            'afternoon-hangout' => ['Afternoon Hangout', 'Light chat, campus news and the newest releases for the after-school crowd.'],
-            'drive-time' => ['OZ Drive Time', 'Traffic updates across Pasteur, Dago and Soekarno-Hatta with the hits that get you home.'],
-            'night-session' => ['OZ Night Session', 'Deep cuts, new local artists and in-studio guest sessions.'],
-            'late-night-chill' => ['Late Night Chill', 'Lo-fi, R&B and acoustic tracks to wind down the day.'],
-            'weekend-breakfast' => ['Weekend Breakfast', 'A relaxed weekend start with brunch spots, events around town and feel-good music.'],
-            'top-40' => ['OZ Top 40 Countdown', 'The 40 most-requested songs of the week, counted down every Saturday and replayed on Sunday.'],
-            'weekend-mix' => ['Weekend Mix', 'Party starters and throwbacks to soundtrack your weekend plans.'],
-            'saturday-night-party' => ['Saturday Night Party', 'Guest DJ mixes broadcast live from the OZ studio.'],
-            'sunday-acoustic' => ['Sunday Acoustic', 'Stripped-back versions of your favourite songs and live acoustic performances.'],
-            'throwback-sunday' => ['Throwback Sunday', 'Hits from the 90s and 2000s that Bandung grew up with.'],
-        ];
-
-        return collect($programs)->map(fn (array $program, string $slug): Program => $station->programs()->create([
-            'slug' => $slug,
-            'title' => $program[0],
-            'description' => $program[1],
-            'is_active' => true,
-        ]))->all();
-    }
-
-    /**
-     * Weekly grid in WIB (Asia/Jakarta). 00:00 as an end time means midnight.
-     *
-     * @param  array<string, Program>  $programs
-     */
-    private function seedSchedules(array $programs): void
-    {
-        $weekday = [
-            ['early-bird', '05:00', '06:00'],
-            ['breakfast-club', '06:00', '10:00'],
-            ['midday-mix', '10:00', '13:00'],
-            ['afternoon-hangout', '13:00', '16:00'],
-            ['drive-time', '16:00', '19:00'],
-            ['night-session', '19:00', '22:00'],
-            ['late-night-chill', '22:00', '00:00'],
-        ];
-
-        $grid = [
-            ...array_map(fn (DayOfWeek $day): array => [$day, $weekday], DayOfWeek::weekdays()),
-            [DayOfWeek::Saturday, [
-                ['weekend-breakfast', '07:00', '10:00'],
-                ['top-40', '10:00', '13:00'],
-                ['weekend-mix', '13:00', '18:00'],
-                ['saturday-night-party', '20:00', '00:00'],
-            ]],
-            [DayOfWeek::Sunday, [
-                ['sunday-acoustic', '08:00', '11:00'],
-                ['top-40', '11:00', '14:00'],
-                ['throwback-sunday', '16:00', '19:00'],
-                ['late-night-chill', '21:00', '00:00'],
-            ]],
-        ];
-
-        foreach ($grid as [$day, $slots]) {
-            foreach ($slots as [$slug, $start, $end]) {
-                $programs[$slug]->schedules()->create([
-                    'day_of_week' => $day,
-                    'start_time' => $start,
-                    'end_time' => $end,
-                ]);
-            }
-        }
-    }
-
-    /**
-     * @param  array<string, Program>  $programs
-     */
-    private function seedAnnouncers(Station $station, array $programs): void
-    {
-        $announcers = [
-            ['Raka Pratama', 'Raka', 'Morning person by force, coffee addict by choice. Has hosted the Breakfast Club since day one.', ['breakfast-club', 'weekend-breakfast']],
-            ['Nadia Putri Lestari', 'Nadia', 'Bandung-born music nerd who loves discovering local indie bands before everyone else.', ['breakfast-club', 'night-session']],
-            ['Dimas Ardiansyah', 'Dimas', 'Your traffic-dodging guide home every weekday afternoon.', ['drive-time', 'top-40']],
-            ['Salsabila Rahma', 'Sasa', 'Campus reporter turned announcer, keeping you company through the afternoon.', ['afternoon-hangout', 'midday-mix']],
-            ['Gilang Ramadhan', 'DJ Gilang', 'Resident DJ behind the Saturday Night Party mixes.', ['saturday-night-party', 'weekend-mix']],
-            ['Ayu Kartika', 'Ayu', 'Soft voice for late nights and Sunday mornings.', ['late-night-chill', 'sunday-acoustic', 'throwback-sunday']],
-        ];
-
-        foreach ($announcers as [$name, $stageName, $bio, $programSlugs]) {
-            $handle = str($stageName)->lower()->replace(' ', '');
-
-            /** @var Announcer $announcer */
-            $announcer = $station->announcers()->create([
-                'name' => $name,
-                'stage_name' => $stageName,
-                'bio' => $bio,
-                'social_links' => [
-                    'instagram' => "https://www.instagram.com/{$handle}.oz",
-                    'tiktok' => "https://www.tiktok.com/@{$handle}.oz",
-                    'x' => null,
-                ],
-                'is_active' => true,
-            ]);
-
-            $announcer->programs()->attach(collect($programSlugs)->map(fn (string $slug): int => $programs[$slug]->id));
-        }
     }
 
     private function seedPosts(Station $station): void
