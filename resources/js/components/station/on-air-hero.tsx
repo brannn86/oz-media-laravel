@@ -186,7 +186,7 @@ function UpNextCard({
             )}
             <Link
                 href={stationRoutes.programs(station.slug)}
-                className="mt-4 inline-flex rounded-full bg-oz-yellow px-4 py-2 text-sm font-bold lg:mt-3 xl:mt-4 text-oz-black transition-colors hover:bg-oz-butter focus-visible:ring-4 focus-visible:ring-oz-yellow/50 focus-visible:outline-none"
+                className="mt-4 inline-flex rounded-full bg-oz-yellow px-4 py-2 text-sm font-bold text-oz-black transition-colors hover:bg-oz-butter focus-visible:ring-4 focus-visible:ring-oz-yellow/50 focus-visible:outline-none lg:mt-3 xl:mt-4"
             >
                 Full schedule
             </Link>

@@ -247,18 +247,18 @@ Broadcasting fails safe: if Reverb is down, the action still succeeds and the ev
 
 Beyond the standard Laravel keys in `.env.example`:
 
-| Key                                                                                 | Purpose                                                                                   |
-| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD`                                                     | First `dev` admin created by the seeder                                                   |
-| `MAIN_DOMAIN`, `ADMIN_DOMAIN`, `STUDIO_DOMAIN`                                      | Host for the public site, admin and studio (empty: one host, `/admin` and `/studio`)      |
-| `SESSION_DOMAIN`                                                                    | `.ozmedianet.com` in production, so one sign-in works across the subdomains              |
-| `ICECAST_ADMIN_USER`, `ICECAST_ADMIN_PASSWORD`                                      | Optional Icecast admin login, for the listener player breakdown in Analytics → Devices    |
-| `REVERB_*`, `VITE_REVERB_*`                                                         | WebSocket server and the client's connection to it                                        |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`                   | "Continue with Google" (hidden when unset)                                                |
-| `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID`                                              | Adds the Umami tracking script to station sites                                           |
-| `UMAMI_SHARE_URL`                                                                   | Umami share link embedded in the admin dashboard                                          |
+| Key                                                                                 | Purpose                                                                                    |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD`                                                     | First `dev` admin created by the seeder                                                    |
+| `MAIN_DOMAIN`, `ADMIN_DOMAIN`, `STUDIO_DOMAIN`                                      | Host for the public site, admin and studio (empty: one host, `/admin` and `/studio`)       |
+| `SESSION_DOMAIN`                                                                    | `.ozmedianet.com` in production, so one sign-in works across the subdomains                |
+| `ICECAST_ADMIN_USER`, `ICECAST_ADMIN_PASSWORD`                                      | Optional Icecast admin login, for the listener player breakdown in Analytics → Devices     |
+| `REVERB_*`, `VITE_REVERB_*`                                                         | WebSocket server and the client's connection to it                                         |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`                   | "Continue with Google" (hidden when unset)                                                 |
+| `UMAMI_SCRIPT_URL`, `UMAMI_WEBSITE_ID`                                              | Adds the Umami tracking script to station sites                                            |
+| `UMAMI_SHARE_URL`                                                                   | Umami share link embedded in the admin dashboard                                           |
 | `ADVERTISING_EMAIL`                                                                 | Where the house ad under the player sends advertisers (default `marketing@ozmedianet.com`) |
-| `QUEUE_MAIL`, `QUEUE_POINTS`, `QUEUE_MEDIA`, `QUEUE_ANALYTICS`, `QUEUE_MAINTENANCE` | Rename the named queues (defaults: `mail`, `points`, `media`, `analytics`, `maintenance`) |
+| `QUEUE_MAIL`, `QUEUE_POINTS`, `QUEUE_MEDIA`, `QUEUE_ANALYTICS`, `QUEUE_MAINTENANCE` | Rename the named queues (defaults: `mail`, `points`, `media`, `analytics`, `maintenance`)  |
 
 App-level tuning (chat limits, blocked words seed, points, request limits, retention) lives in `config/oz.php`.
 

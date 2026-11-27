@@ -39,7 +39,7 @@ export default function StationNewsIndex() {
                 }
             >
                 <nav aria-label="News sections" className="-mx-4 mt-8 sm:-mx-6">
-                    <ul className="flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:px-6 [&::-webkit-scrollbar]:hidden">
+                    <ul className="flex [scrollbar-width:none] gap-2 overflow-x-auto px-4 pb-1 sm:px-6 [&::-webkit-scrollbar]:hidden">
                         {[null, ...categories].map((section) => {
                             const active =
                                 (section?.value ?? null) ===

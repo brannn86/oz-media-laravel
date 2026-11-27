@@ -129,7 +129,7 @@ export function OzubathonLockup({
             </p>
             {!compact && (
                 // The poster's outlined sticker line: what the event is.
-                <p className="ozb-slap relative mt-3 ml-[4%] rotate-[1.5deg] max-lg:mr-20 bg-oz-white px-3 py-1.5 font-ozb-display text-xl leading-tight tracking-wide text-ozb-yellow uppercase shadow-[0_8px_16px_-6px_rgba(0,0,0,0.35)] [paint-order:stroke_fill] [-webkit-text-stroke:5px_var(--color-oz-black)] [--ozb-delay:360ms] sm:text-2xl">
+                <p className="ozb-slap relative mt-3 ml-[4%] rotate-[1.5deg] bg-oz-white px-3 py-1.5 font-ozb-display text-xl leading-tight tracking-wide text-ozb-yellow uppercase shadow-[0_8px_16px_-6px_rgba(0,0,0,0.35)] [--ozb-delay:360ms] [-webkit-text-stroke:5px_var(--color-oz-black)] [paint-order:stroke_fill] max-lg:mr-20 sm:text-2xl">
                     {event.hours} hours live · OZ Radio’s 55th anniversary
                 </p>
             )}
@@ -169,7 +169,7 @@ export function OzubathonMeter({
                 src={`${ASSETS}/pocket-watch.webp`}
                 alt=""
                 aria-hidden
-                className="ozb-slap pointer-events-none absolute -top-9 right-3 w-14 rotate-12 sm:-top-10 sm:-right-5 [--ozb-delay:420ms] sm:w-20"
+                className="ozb-slap pointer-events-none absolute -top-9 right-3 w-14 rotate-12 [--ozb-delay:420ms] sm:-top-10 sm:-right-5 sm:w-20"
             />
 
             {/* Room on the right for the pocket watch. */}

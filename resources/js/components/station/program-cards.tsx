@@ -79,7 +79,7 @@ export function ProgramCards({ programs }: { programs: Program[] }) {
             <div
                 ref={trackRef}
                 onScroll={() => setPage(currentPage())}
-                className="relative flex snap-x snap-mandatory gap-5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="relative flex snap-x snap-mandatory [scrollbar-width:none] gap-5 overflow-x-auto [&::-webkit-scrollbar]:hidden"
             >
                 {pages.map((items, index) => (
                     <ul

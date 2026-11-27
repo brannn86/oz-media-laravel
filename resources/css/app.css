@@ -432,36 +432,80 @@
     animation-play-state: running;
 }
 
-.bali-reflection span:nth-child(1) { --w: 0.5; --o: 0.9; --d: 0s; }
-.bali-reflection span:nth-child(2) { --w: 0.38; --o: 0.7; --d: -400ms; }
-.bali-reflection span:nth-child(3) { --w: 0.28; --o: 0.55; --d: -800ms; }
-.bali-reflection span:nth-child(4) { --w: 0.18; --o: 0.4; --d: -1200ms; }
-.bali-reflection span:nth-child(5) { --w: 0.1; --o: 0.3; --d: -1600ms; }
+.bali-reflection span:nth-child(1) {
+    --w: 0.5;
+    --o: 0.9;
+    --d: 0s;
+}
+.bali-reflection span:nth-child(2) {
+    --w: 0.38;
+    --o: 0.7;
+    --d: -400ms;
+}
+.bali-reflection span:nth-child(3) {
+    --w: 0.28;
+    --o: 0.55;
+    --d: -800ms;
+}
+.bali-reflection span:nth-child(4) {
+    --w: 0.18;
+    --o: 0.4;
+    --d: -1200ms;
+}
+.bali-reflection span:nth-child(5) {
+    --w: 0.1;
+    --o: 0.3;
+    --d: -1600ms;
+}
 
 @keyframes bali-shimmer {
-    from { transform: scaleX(0.82); }
-    to { transform: scaleX(1.08); }
+    from {
+        transform: scaleX(0.82);
+    }
+    to {
+        transform: scaleX(1.08);
+    }
 }
 @keyframes bali-arcs-open {
-    from { opacity: 0; transform: scale(0.82); }
+    from {
+        opacity: 0;
+        transform: scale(0.82);
+    }
 }
 @keyframes bali-sunrise {
-    from { translate: 0 78%; }
+    from {
+        translate: 0 78%;
+    }
 }
 @keyframes bali-land {
-    from { opacity: 0; transform: translateY(-28px) scale(0.96); }
+    from {
+        opacity: 0;
+        transform: translateY(-28px) scale(0.96);
+    }
 }
 @keyframes bali-fade {
-    from { opacity: 0; }
+    from {
+        opacity: 0;
+    }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-    .bali-arcs { animation: bali-arcs-open 1.1s var(--bali-ease-out) both; }
-    .bali-rise { animation: bali-sunrise 1s 0.12s var(--bali-ease-out) both; }
-    .bali-land { animation: bali-land 0.76s 0.42s var(--bali-ease-out) both; }
-    .bali-fade { animation: bali-fade 0.6s 0.6s ease-out both; }
+    .bali-arcs {
+        animation: bali-arcs-open 1.1s var(--bali-ease-out) both;
+    }
+    .bali-rise {
+        animation: bali-sunrise 1s 0.12s var(--bali-ease-out) both;
+    }
+    .bali-land {
+        animation: bali-land 0.76s 0.42s var(--bali-ease-out) both;
+    }
+    .bali-fade {
+        animation: bali-fade 0.6s 0.6s ease-out both;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .bali-reflection span { animation: none; }
+    .bali-reflection span {
+        animation: none;
+    }
 }

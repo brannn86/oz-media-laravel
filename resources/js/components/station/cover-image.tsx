@@ -21,7 +21,10 @@ export function CoverImage({
     if (src) {
         return (
             <div
-                className={cn('relative overflow-hidden bg-oz-black', className)}
+                className={cn(
+                    'relative overflow-hidden bg-oz-black',
+                    className,
+                )}
             >
                 <img
                     src={src}

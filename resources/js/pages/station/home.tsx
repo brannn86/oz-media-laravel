@@ -284,7 +284,7 @@ export default function StationHome() {
                             </div>
                         )}
                     </dl>
-                    <div className="pointer-events-none select-none self-end justify-self-end md:justify-self-auto">
+                    <div className="pointer-events-none self-end justify-self-end select-none md:justify-self-auto">
                         <img
                             src="/images/ozzy/ozzy-speaker.webp"
                             alt=""

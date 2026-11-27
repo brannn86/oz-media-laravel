@@ -32,7 +32,7 @@ export function PageHeading({
                     {children}
                 </div>
                 {illustration && (
-                    <div className="pointer-events-none select-none self-end justify-self-end">
+                    <div className="pointer-events-none self-end justify-self-end select-none">
                         {illustration}
                     </div>
                 )}
