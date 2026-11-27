@@ -31,6 +31,14 @@ export default function StationPrograms() {
             <PageHeading
                 title="Programs"
                 intro={`Every show on ${station.name}, all times in WIB.`}
+                illustration={
+                    <img
+                        src="/images/ozzy/ozzy-dj.webp"
+                        alt=""
+                        aria-hidden
+                        className="w-44 sm:w-52 md:w-64"
+                    />
+                }
             >
                 <div
                     className="-mx-4 mt-10 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0"
