@@ -53,7 +53,11 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             // The bare panel address opens the dashboard (or the login).
-            ->authenticatedRoutes(fn () => Route::get('/', fn () => redirect(Dashboard::getUrl()))->name('home'))
+            // The inner closure must sit on its own line: route:cache serializes closures by
+            // source line, and with two on one line it caches the outer one (returns a Route).
+            ->authenticatedRoutes(function () {
+                Route::get('/', fn () => redirect(Dashboard::getUrl()))->name('home');
+            })
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,

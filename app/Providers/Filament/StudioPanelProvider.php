@@ -45,7 +45,10 @@ class StudioPanelProvider extends PanelProvider
             ->pages([
                 StudioMode::class,
             ])
-            ->authenticatedRoutes(fn () => Route::get('/', fn () => redirect(StudioMode::getUrl()))->name('home'))
+            // Inner closure on its own line so route:cache serializes the right one (see AdminPanelProvider).
+            ->authenticatedRoutes(function () {
+                Route::get('/', fn () => redirect(StudioMode::getUrl()))->name('home');
+            })
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
